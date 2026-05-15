@@ -1,547 +1,687 @@
-/* SCHISM unstructured WebGL viewer. */
+(function () {
+  "use strict";
 
-"use strict";
+  const ROOT = "./";
 
-const CONFIG = {
-    metaUrl: "mesh_meta.json",
-    nodesUrl: "mesh_nodes.bin",
-    elemsUrl: "mesh_elems.bin",
-    currentOverlayColor: "rgba(255,255,255,0.96)",
-    flowScale: 0.018
-};
+  const state = {
+    map: null,
+    gl: null,
+    canvas: null,
 
-let meta = null;
-let map = null;
-let glCanvas = null;
-let gl = null;
-let currentCanvas = null;
-let currentCtx = null;
+    meta: null,
+    nodesLonLat: null,
+    screenXY: null,
+    elems: null,
 
-let program = null;
-let vao = null;
-let nodeBuffer = null;
-let valueBuffer = null;
-let elemBuffer = null;
+    scalarData: null,
+    scalarCache: {},
+    currentCache: {},
 
-let uZoomLoc = null;
-let uPixelOriginLoc = null;
-let uMapSizeLoc = null;
-let uVminLoc = null;
-let uVmaxLoc = null;
-let uOpacityLoc = null;
-let uCmapLoc = null;
-let uInvalidLoc = null;
+    currentVar: "temperature",
+    currentFrame: 0,
+    playing: false,
+    timer: null,
+    speed: 1,
 
-let currentVar = "temperature";
-let currentFrame = 0;
-let timer = null;
-let speed = 1.0;
+    opacity: 0.85,
 
-let scalarCache = new Map();
-let scalarLoading = new Map();
+    particleCanvas: null,
+    particleCtx: null,
+    currentData: null,
+    particles: [],
+    particleAnim: null,
+    particleCount: 2800,
+    currentOverlay: false,
 
-let currentJsonCache = {};
-let currentData = null;
-let particleCount = 2800;
-let particles = [];
-let particleAnimId = null;
-let particleRunning = false;
+    program: null,
+    posBuffer: null,
+    valueBuffer: null,
+    elemBuffer: null,
 
-const varSelect = document.getElementById("var-select");
-const playBtn = document.getElementById("play-btn");
-const frameSlider = document.getElementById("frame-slider");
-const speedSelect = document.getElementById("speed-select");
-const opacitySlider = document.getElementById("opacity-slider");
-const particleDensitySelect = document.getElementById("particle-density-select");
-const currentOverlayCheck = document.getElementById("current-overlay-check");
-const timeLabel = document.getElementById("time-label");
-const legendBox = document.getElementById("legend-box");
-const statusLine = document.getElementById("status-line");
+    attribPos: -1,
+    attribVal: -1,
+    uniResolution: null,
+    uniVmin: null,
+    uniVmax: null,
+    uniOpacity: null,
+    uniVarType: null,
 
-function setStatus(msg) { statusLine.textContent = msg; }
-function pad4(i) { return String(i).padStart(4, "0"); }
+    needsPositionUpdate: true,
+    needsRender: true,
+  };
 
-function currentOverlayEnabled() {
-    return currentOverlayCheck.checked && (currentVar === "temperature" || currentVar === "ssh");
-}
+  function $(id) {
+    return document.getElementById(id);
+  }
 
-function shouldDrawCurrentParticles() {
-    return currentVar === "current" || currentOverlayEnabled();
-}
+  function clamp(x, a, b) {
+    return Math.max(a, Math.min(b, x));
+  }
 
-function updateCurrentOverlayAvailability() {
-    if (currentVar === "current") {
-        currentOverlayCheck.checked = false;
-        currentOverlayCheck.disabled = true;
-        currentOverlayCheck.title = "Current variable already shows current particles.";
-    } else {
-        currentOverlayCheck.disabled = false;
-        currentOverlayCheck.title = "";
-    }
-}
+  function getFrameCount() {
+    return Number(state.meta.frame_count || state.meta.nframe || state.meta.frames || 24);
+  }
 
-function scalarFrameUrl(variable, frameIndex) {
-    if (variable === "temperature") return `temp_bin/frame_${pad4(frameIndex)}.bin`;
-    if (variable === "ssh") return `ssh_bin/frame_${pad4(frameIndex)}.bin`;
-    return null;
-}
+  function getLabels() {
+    return state.meta.labels || state.meta.times || [];
+  }
 
-function currentFrameUrl(frameIndex) {
-    if (!meta.current_json_dir) return null;
-    return `${meta.current_json_dir}/frame_${pad4(frameIndex)}.json`;
-}
+  function frameUrl(kind, i) {
+    const name = "frame_" + String(i).padStart(4, "0") + ".bin";
+    if (kind === "temperature") return ROOT + "temp_bin/" + name;
+    if (kind === "ssh") return ROOT + "ssh_bin/" + name;
+    throw new Error("Unknown scalar kind: " + kind);
+  }
 
-function variableMeta(variable) {
-    if (variable === "temperature") return meta.variables.temperature;
-    if (variable === "ssh") return meta.variables.ssh;
-    return null;
-}
+  function currentJsonUrl(i) {
+    return "../frames_multi/current_grid_json/frame_" + String(i).padStart(4, "0") + ".json";
+  }
 
-function updateLegend() {
-    if (!meta) return;
+  async function fetchJson(url) {
+    const r = await fetch(url, { cache: "force-cache" });
+    if (!r.ok) throw new Error(url + " " + r.status);
+    return await r.json();
+  }
 
-    if (currentVar === "temperature") {
-        const v = meta.variables.temperature;
-        legendBox.innerHTML = `
-            <div style="font-weight:bold; margin-bottom:6px;">Surface Temperature [degC]</div>
-            <div style="width:220px; height:16px; background: linear-gradient(to right, #000080, #0000ff, #00ffff, #ffff00, #ff0000, #800000); border:1px solid #666;"></div>
-            <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;">
-                <span>${v.vmin}</span><span>${((v.vmin + v.vmax) / 2).toFixed(1)}</span><span>${v.vmax}</span>
-            </div>`;
-    } else if (currentVar === "ssh") {
-        const v = meta.variables.ssh;
-        legendBox.innerHTML = `
-            <div style="font-weight:bold; margin-bottom:6px;">Elevation [m]</div>
-            <div style="width:220px; height:16px; background: linear-gradient(to right, #08306b, #6baed6, #f7f7f7, #fb6a4a, #67000d); border:1px solid #666;"></div>
-            <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;">
-                <span>${v.vmin}</span><span>${((v.vmin + v.vmax) / 2).toFixed(2)}</span><span>${v.vmax}</span>
-            </div>`;
-    } else {
-        legendBox.innerHTML = `
-            <div style="font-weight:bold; margin-bottom:6px;">Current Speed [m/s]</div>
-            <div style="width:220px; height:16px; background: linear-gradient(to right, #000080, #0000ff, #00ffff, #ffff00, #ff0000, #800000); border:1px solid #666;"></div>
-            <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;">
-                <span>0</span><span>0.5</span><span>1.0</span>
-            </div>`;
-    }
-}
-
-async function fetchArrayBuffer(url) {
-    const r = await fetch(url);
-    if (!r.ok) throw new Error(`${url}: ${r.status} ${r.statusText}`);
+  async function fetchArrayBuffer(url) {
+    const r = await fetch(url, { cache: "force-cache" });
+    if (!r.ok) throw new Error(url + " " + r.status);
     return await r.arrayBuffer();
-}
+  }
 
-async function fetchFloat32(url, expectedLength = null) {
-    const buf = await fetchArrayBuffer(url);
-    const arr = new Float32Array(buf);
-    if (expectedLength !== null && arr.length !== expectedLength) {
-        throw new Error(`${url}: Float32 length ${arr.length} != expected ${expectedLength}`);
-    }
-    return arr;
-}
+  async function loadMetaAndMesh() {
+    state.meta = await fetchJson(ROOT + "mesh_meta.json");
 
-async function fetchUint32(url, expectedLength = null) {
-    const buf = await fetchArrayBuffer(url);
-    const arr = new Uint32Array(buf);
-    if (expectedLength !== null && arr.length !== expectedLength) {
-        throw new Error(`${url}: Uint32 length ${arr.length} != expected ${expectedLength}`);
-    }
-    return arr;
-}
+    const nodesUrl = ROOT + (state.meta.nodes_bin || state.meta.mesh_nodes_bin || "mesh_nodes.bin");
+    const elemsUrl = ROOT + (state.meta.elems_bin || state.meta.mesh_elems_bin || "mesh_elems.bin");
 
-function compileShader(type, source) {
-    const sh = gl.createShader(type);
-    gl.shaderSource(sh, source);
-    gl.compileShader(sh);
-    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
-        const log = gl.getShaderInfoLog(sh);
-        gl.deleteShader(sh);
-        throw new Error(`Shader compile failed: ${log}`);
-    }
-    return sh;
-}
+    const nodeBuf = await fetchArrayBuffer(nodesUrl);
+    state.nodesLonLat = new Float32Array(nodeBuf);
 
-function makeProgram(vsSource, fsSource) {
-    const vs = compileShader(gl.VERTEX_SHADER, vsSource);
-    const fs = compileShader(gl.FRAGMENT_SHADER, fsSource);
-    const prg = gl.createProgram();
-    gl.attachShader(prg, vs);
-    gl.attachShader(prg, fs);
-    gl.linkProgram(prg);
-    gl.deleteShader(vs);
-    gl.deleteShader(fs);
-    if (!gl.getProgramParameter(prg, gl.LINK_STATUS)) {
-        const log = gl.getProgramInfoLog(prg);
-        gl.deleteProgram(prg);
-        throw new Error(`Program link failed: ${log}`);
-    }
-    return prg;
-}
+    const elemBuf = await fetchArrayBuffer(elemsUrl);
+    state.elems = new Uint32Array(elemBuf);
 
-const VERTEX_SHADER = `#version 300 es
-precision highp float;
+    const nodeCount = Math.floor(state.nodesLonLat.length / 2);
+    state.screenXY = new Float32Array(nodeCount * 2);
 
-layout(location = 0) in vec2 a_lonlat;
-layout(location = 1) in float a_value;
+    console.log("[webgl] nodeCount:", nodeCount, "elemIndexCount:", state.elems.length);
+  }
 
-uniform float u_zoom;
-uniform vec2 u_pixelOrigin;
-uniform vec2 u_mapSize;
+  function initMap() {
+    const bounds = [
+      [state.meta.lat_min ?? state.meta.south ?? state.meta.bounds?.[1], state.meta.lon_min ?? state.meta.west ?? state.meta.bounds?.[0]],
+      [state.meta.lat_max ?? state.meta.north ?? state.meta.bounds?.[3], state.meta.lon_max ?? state.meta.east ?? state.meta.bounds?.[2]]
+    ];
 
-out float v_value;
+    const centerLat = (Number(bounds[0][0]) + Number(bounds[1][0])) * 0.5;
+    const centerLon = (Number(bounds[0][1]) + Number(bounds[1][1])) * 0.5;
 
-const float PI = 3.141592653589793;
-
-vec2 lonLatToWorldPixel(vec2 lonlat, float zoom) {
-    float scale = 256.0 * exp2(zoom);
-    float lon = lonlat.x;
-    float lat = clamp(lonlat.y, -85.05112878, 85.05112878);
-    float x = (lon + 180.0) / 360.0 * scale;
-    float latRad = radians(lat);
-    float siny = clamp(sin(latRad), -0.9999, 0.9999);
-    float y = (0.5 - log((1.0 + siny) / (1.0 - siny)) / (4.0 * PI)) * scale;
-    return vec2(x, y);
-}
-
-void main() {
-    vec2 world = lonLatToWorldPixel(a_lonlat, u_zoom);
-    vec2 p = world - u_pixelOrigin;
-    vec2 clip;
-    clip.x = p.x / u_mapSize.x * 2.0 - 1.0;
-    clip.y = 1.0 - p.y / u_mapSize.y * 2.0;
-    gl_Position = vec4(clip, 0.0, 1.0);
-    v_value = a_value;
-}
-`;
-
-const FRAGMENT_SHADER = `#version 300 es
-precision highp float;
-
-in float v_value;
-
-uniform float u_vmin;
-uniform float u_vmax;
-uniform float u_opacity;
-uniform int u_cmap;
-uniform float u_invalid;
-
-out vec4 outColor;
-
-vec3 jet(float t) {
-    t = clamp(t, 0.0, 1.0);
-    float r = clamp(min(4.0 * t - 1.5, -4.0 * t + 4.5), 0.0, 1.0);
-    float g = clamp(min(4.0 * t - 0.5, -4.0 * t + 3.5), 0.0, 1.0);
-    float b = clamp(min(4.0 * t + 0.5, -4.0 * t + 2.5), 0.0, 1.0);
-    return vec3(r, g, b);
-}
-
-vec3 mix3(vec3 a, vec3 b, float t) {
-    return a * (1.0 - t) + b * t;
-}
-
-vec3 rdbu(float t) {
-    t = clamp(t, 0.0, 1.0);
-    vec3 c0 = vec3(0.031, 0.188, 0.420);
-    vec3 c1 = vec3(0.420, 0.682, 0.839);
-    vec3 c2 = vec3(0.969, 0.969, 0.969);
-    vec3 c3 = vec3(0.984, 0.416, 0.290);
-    vec3 c4 = vec3(0.404, 0.000, 0.051);
-    if (t < 0.25) return mix3(c0, c1, t / 0.25);
-    if (t < 0.50) return mix3(c1, c2, (t - 0.25) / 0.25);
-    if (t < 0.75) return mix3(c2, c3, (t - 0.50) / 0.25);
-    return mix3(c3, c4, (t - 0.75) / 0.25);
-}
-
-void main() {
-    if (v_value <= u_invalid + 1.0) discard;
-    float t = clamp((v_value - u_vmin) / (u_vmax - u_vmin), 0.0, 1.0);
-    vec3 c = (u_cmap == 1) ? rdbu(t) : jet(t);
-    outColor = vec4(c, u_opacity);
-}
-`;
-
-function initWebGL(nodes, elems) {
-    glCanvas = document.createElement("canvas");
-    glCanvas.id = "gl-canvas";
-    map.getContainer().appendChild(glCanvas);
-
-    currentCanvas = document.createElement("canvas");
-    currentCanvas.id = "current-canvas";
-    map.getContainer().appendChild(currentCanvas);
-    currentCtx = currentCanvas.getContext("2d");
-
-    gl = glCanvas.getContext("webgl2", {
-        alpha: true,
-        antialias: true,
-        premultipliedAlpha: false
+    state.map = L.map("map", {
+      center: [centerLat, centerLon],
+      zoom: 7,
+      preferCanvas: true
     });
 
-    if (!gl) throw new Error("WebGL2 is not available in this browser.");
+    const carto = L.tileLayer(
+      "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+      { attribution: "&copy; OpenStreetMap contributors &copy; CARTO" }
+    );
 
-    program = makeProgram(VERTEX_SHADER, FRAGMENT_SHADER);
+    const esri = L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      { attribution: "Tiles &copy; Esri" }
+    );
 
-    uZoomLoc = gl.getUniformLocation(program, "u_zoom");
-    uPixelOriginLoc = gl.getUniformLocation(program, "u_pixelOrigin");
-    uMapSizeLoc = gl.getUniformLocation(program, "u_mapSize");
-    uVminLoc = gl.getUniformLocation(program, "u_vmin");
-    uVmaxLoc = gl.getUniformLocation(program, "u_vmax");
-    uOpacityLoc = gl.getUniformLocation(program, "u_opacity");
-    uCmapLoc = gl.getUniformLocation(program, "u_cmap");
-    uInvalidLoc = gl.getUniformLocation(program, "u_invalid");
+    esri.addTo(state.map);
 
-    vao = gl.createVertexArray();
-    gl.bindVertexArray(vao);
+    L.control.layers({
+      "CartoDB Positron": carto,
+      "Esri Satellite": esri
+    }, null, { collapsed: false }).addTo(state.map);
 
-    nodeBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, nodeBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, nodes, gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(0);
-    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    state.map.fitBounds(bounds);
 
-    valueBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, valueBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, meta.node_count * 4, gl.DYNAMIC_DRAW);
-    gl.enableVertexAttribArray(1);
-    gl.vertexAttribPointer(1, 1, gl.FLOAT, false, 0, 0);
+    state.map.on("move zoom resize zoomend moveend", function () {
+      state.needsPositionUpdate = true;
+      state.needsRender = true;
+      resizeCanvases();
+      resetParticles();
+      requestRender();
+    });
+  }
 
-    elemBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elemBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, elems, gl.STATIC_DRAW);
+  function createCanvasLayer() {
+    const container = state.map.getContainer();
+    if (getComputedStyle(container).position === "static") {
+      container.style.position = "relative";
+    }
 
-    gl.bindVertexArray(null);
+    state.canvas = document.createElement("canvas");
+    state.canvas.id = "webgl-scalar-canvas";
+    state.canvas.style.position = "absolute";
+    state.canvas.style.left = "0";
+    state.canvas.style.top = "0";
+    state.canvas.style.width = "100%";
+    state.canvas.style.height = "100%";
+    state.canvas.style.pointerEvents = "none";
+    state.canvas.style.zIndex = "600";
+
+    state.particleCanvas = document.createElement("canvas");
+    state.particleCanvas.id = "webgl-current-particle-canvas";
+    state.particleCanvas.style.position = "absolute";
+    state.particleCanvas.style.left = "0";
+    state.particleCanvas.style.top = "0";
+    state.particleCanvas.style.width = "100%";
+    state.particleCanvas.style.height = "100%";
+    state.particleCanvas.style.pointerEvents = "none";
+    state.particleCanvas.style.zIndex = "900";
+
+    container.appendChild(state.canvas);
+    container.appendChild(state.particleCanvas);
+
+    state.gl = state.canvas.getContext("webgl2", {
+      alpha: true,
+      antialias: true,
+      premultipliedAlpha: false,
+      preserveDrawingBuffer: false
+    });
+
+    if (!state.gl) {
+      alert("WebGL2 not supported in this browser.");
+      throw new Error("WebGL2 not supported");
+    }
+
+    state.particleCtx = state.particleCanvas.getContext("2d");
 
     resizeCanvases();
+  }
 
-    map.on("move zoom resize", () => {
-        resizeCanvases();
-        resetParticles();
-        renderScalar();
-    });
+  function resizeCanvases() {
+    if (!state.map || !state.canvas) return;
 
-    window.addEventListener("resize", () => {
-        resizeCanvases();
-        resetParticles();
-        renderScalar();
-    });
-}
-
-function resizeCanvases() {
-    const size = map.getSize();
+    const size = state.map.getSize();
     const dpr = window.devicePixelRatio || 1;
 
-    for (const canvas of [glCanvas, currentCanvas]) {
-        if (!canvas) continue;
-        canvas.width = Math.max(1, Math.round(size.x * dpr));
-        canvas.height = Math.max(1, Math.round(size.y * dpr));
-        canvas.style.width = size.x + "px";
-        canvas.style.height = size.y + "px";
+    for (const c of [state.canvas, state.particleCanvas]) {
+      c.width = Math.max(1, Math.round(size.x * dpr));
+      c.height = Math.max(1, Math.round(size.y * dpr));
+      c.style.width = size.x + "px";
+      c.style.height = size.y + "px";
     }
 
-    if (gl) gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+    state.gl.viewport(0, 0, state.canvas.width, state.canvas.height);
 
-    if (currentCtx) {
-        currentCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        clearCurrentCanvas();
+    state.particleCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function compileShader(type, src) {
+    const gl = state.gl;
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+      throw new Error(gl.getShaderInfoLog(sh));
     }
-}
 
-function renderScalar() {
-    if (!gl || !program || currentVar === "current") {
-        if (gl) {
-            gl.clearColor(0, 0, 0, 0);
-            gl.clear(gl.COLOR_BUFFER_BIT);
+    return sh;
+  }
+
+  function initWebGL() {
+    const gl = state.gl;
+
+    const vs = `#version 300 es
+      precision highp float;
+
+      in vec2 a_pos;
+      in float a_value;
+
+      uniform vec2 u_resolution;
+
+      out float v_value;
+
+      void main() {
+        vec2 zeroToOne = a_pos / u_resolution;
+        vec2 clip = zeroToOne * 2.0 - 1.0;
+
+        gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);
+        v_value = a_value;
+      }
+    `;
+
+    const fs = `#version 300 es
+      precision highp float;
+
+      in float v_value;
+
+      uniform float u_vmin;
+      uniform float u_vmax;
+      uniform float u_opacity;
+      uniform int u_var_type;
+
+      out vec4 outColor;
+
+      vec3 jet(float t) {
+        t = clamp(t, 0.0, 1.0);
+        float r = clamp(min(4.0 * t - 1.5, -4.0 * t + 4.5), 0.0, 1.0);
+        float g = clamp(min(4.0 * t - 0.5, -4.0 * t + 3.5), 0.0, 1.0);
+        float b = clamp(min(4.0 * t + 0.5, -4.0 * t + 2.5), 0.0, 1.0);
+        return vec3(r, g, b);
+      }
+
+      vec3 rdBu(float t) {
+        t = clamp(t, 0.0, 1.0);
+
+        vec3 c0 = vec3(0.031, 0.188, 0.419);
+        vec3 c1 = vec3(0.420, 0.682, 0.839);
+        vec3 c2 = vec3(0.970, 0.970, 0.970);
+        vec3 c3 = vec3(0.984, 0.416, 0.290);
+        vec3 c4 = vec3(0.404, 0.000, 0.051);
+
+        if (t < 0.25) return mix(c0, c1, t / 0.25);
+        if (t < 0.50) return mix(c1, c2, (t - 0.25) / 0.25);
+        if (t < 0.75) return mix(c2, c3, (t - 0.50) / 0.25);
+        return mix(c3, c4, (t - 0.75) / 0.25);
+      }
+
+      void main() {
+        if (!isfinite(v_value) || v_value < -9000.0) {
+          discard;
         }
-        return;
+
+        float t = (v_value - u_vmin) / (u_vmax - u_vmin);
+        t = clamp(t, 0.0, 1.0);
+
+        vec3 color;
+        if (u_var_type == 0) {
+          color = jet(t);
+        } else {
+          color = rdBu(t);
+        }
+
+        outColor = vec4(color, u_opacity);
+      }
+    `;
+
+    const prog = gl.createProgram();
+    gl.attachShader(prog, compileShader(gl.VERTEX_SHADER, vs));
+    gl.attachShader(prog, compileShader(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(prog);
+
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      throw new Error(gl.getProgramInfoLog(prog));
     }
 
-    const vmeta = variableMeta(currentVar);
-    if (!vmeta) return;
+    state.program = prog;
+    gl.useProgram(prog);
 
-    const size = map.getSize();
-    const origin = map.getPixelOrigin();
-    const opacity = parseFloat(opacitySlider.value);
+    state.attribPos = gl.getAttribLocation(prog, "a_pos");
+    state.attribVal = gl.getAttribLocation(prog, "a_value");
+    state.uniResolution = gl.getUniformLocation(prog, "u_resolution");
+    state.uniVmin = gl.getUniformLocation(prog, "u_vmin");
+    state.uniVmax = gl.getUniformLocation(prog, "u_vmax");
+    state.uniOpacity = gl.getUniformLocation(prog, "u_opacity");
+    state.uniVarType = gl.getUniformLocation(prog, "u_var_type");
 
-    gl.viewport(0, 0, glCanvas.width, glCanvas.height);
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    state.posBuffer = gl.createBuffer();
+    state.valueBuffer = gl.createBuffer();
+    state.elemBuffer = gl.createBuffer();
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, state.elemBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, state.elems, gl.STATIC_DRAW);
+
+    gl.enableVertexAttribArray(state.attribPos);
+    gl.bindBuffer(gl.ARRAY_BUFFER, state.posBuffer);
+    gl.vertexAttribPointer(state.attribPos, 2, gl.FLOAT, false, 0, 0);
+
+    gl.enableVertexAttribArray(state.attribVal);
+    gl.bindBuffer(gl.ARRAY_BUFFER, state.valueBuffer);
+    gl.vertexAttribPointer(state.attribVal, 1, gl.FLOAT, false, 0, 0);
+
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  }
 
-    gl.useProgram(program);
-    gl.bindVertexArray(vao);
+  function updateScreenPositions() {
+    const n = state.nodesLonLat.length / 2;
 
-    gl.uniform1f(uZoomLoc, map.getZoom());
-    gl.uniform2f(uPixelOriginLoc, origin.x, origin.y);
-    gl.uniform2f(uMapSizeLoc, size.x, size.y);
-    gl.uniform1f(uVminLoc, vmeta.vmin);
-    gl.uniform1f(uVmaxLoc, vmeta.vmax);
-    gl.uniform1f(uOpacityLoc, opacity);
-    gl.uniform1i(uCmapLoc, vmeta.cmap === "rdbu" ? 1 : 0);
-    gl.uniform1f(uInvalidLoc, meta.invalid_value);
+    for (let i = 0; i < n; i++) {
+      const lon = state.nodesLonLat[i * 2];
+      const lat = state.nodesLonLat[i * 2 + 1];
+      const pt = state.map.latLngToContainerPoint([lat, lon]);
 
-    gl.drawElements(gl.TRIANGLES, meta.index_count, gl.UNSIGNED_INT, 0);
-    gl.bindVertexArray(null);
-}
+      state.screenXY[i * 2] = pt.x;
+      state.screenXY[i * 2 + 1] = pt.y;
+    }
 
-async function loadScalarFrame(variable, frameIndex) {
-    const url = scalarFrameUrl(variable, frameIndex);
-    if (!url) return null;
+    const gl = state.gl;
+    gl.bindBuffer(gl.ARRAY_BUFFER, state.posBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, state.screenXY, gl.DYNAMIC_DRAW);
 
-    const key = `${variable}:${frameIndex}`;
+    state.needsPositionUpdate = false;
+  }
 
-    if (scalarCache.has(key)) return scalarCache.get(key);
-    if (scalarLoading.has(key)) return await scalarLoading.get(key);
+  function getScalarRange(kind) {
+    if (kind === "temperature") {
+      return [
+        Number(state.meta.temp_vmin ?? state.meta.temperature_vmin ?? 0.0),
+        Number(state.meta.temp_vmax ?? state.meta.temperature_vmax ?? 32.0)
+      ];
+    }
 
-    const promise = fetchFloat32(url, meta.node_count).then(arr => {
-        scalarCache.set(key, arr);
-        scalarLoading.delete(key);
+    return [
+      Number(state.meta.ssh_vmin ?? state.meta.elevation_vmin ?? -1.0),
+      Number(state.meta.ssh_vmax ?? state.meta.elevation_vmax ?? 1.0)
+    ];
+  }
 
-        for (const k of Array.from(scalarCache.keys())) {
-            const [v, f] = k.split(":");
-            const fi = parseInt(f);
-            if (v !== variable || Math.abs(fi - frameIndex) > 2) {
-                scalarCache.delete(k);
-            }
-        }
+  async function loadScalarFrame(kind, frame) {
+    const key = kind + ":" + frame;
 
-        return arr;
-    });
+    if (state.scalarCache[key]) {
+      state.scalarData = state.scalarCache[key];
+      uploadScalarData();
+      return;
+    }
 
-    scalarLoading.set(key, promise);
-    return await promise;
-}
+    const buf = await fetchArrayBuffer(frameUrl(kind, frame));
+    const arr = new Float32Array(buf);
+    state.scalarCache[key] = arr;
+    state.scalarData = arr;
 
-function preloadScalarNeighbors(variable, frameIndex) {
-    if (variable === "current") return;
+    uploadScalarData();
 
-    const frameCount = meta.frames.length;
-    const prev = Math.max(0, frameIndex - 1);
-    const next = Math.min(frameCount - 1, frameIndex + 1);
+    preloadScalar(kind, Math.max(0, frame - 1));
+    preloadScalar(kind, Math.min(getFrameCount() - 1, frame + 1));
+  }
 
-    loadScalarFrame(variable, prev).catch(() => {});
-    loadScalarFrame(variable, next).catch(() => {});
-}
+  function preloadScalar(kind, frame) {
+    const key = kind + ":" + frame;
+    if (state.scalarCache[key]) return;
 
-function preloadCurrentJson(frameIndex) {
-    const url = currentFrameUrl(Math.min(meta.frames.length - 1, frameIndex + 1));
-    if (!url || currentJsonCache[url]) return;
+    fetchArrayBuffer(frameUrl(kind, frame))
+      .then(buf => {
+        state.scalarCache[key] = new Float32Array(buf);
+      })
+      .catch(() => {});
+  }
 
-    fetch(url)
-        .then(r => r.json())
-        .then(j => { currentJsonCache[url] = j; })
-        .catch(() => {});
-}
+  function uploadScalarData() {
+    const gl = state.gl;
+    gl.bindBuffer(gl.ARRAY_BUFFER, state.valueBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, state.scalarData, gl.DYNAMIC_DRAW);
+    state.needsRender = true;
+  }
 
-async function setFrame(i) {
-    const n = meta.frames.length;
-    if (n <= 0) return;
+  function renderScalar() {
+    if (!state.scalarData) return;
 
-    currentFrame = parseInt(i);
-    if (currentFrame < 0) currentFrame = 0;
-    if (currentFrame >= n) currentFrame = n - 1;
+    const gl = state.gl;
 
-    frameSlider.value = currentFrame;
-    timeLabel.textContent = meta.frames[currentFrame].label || `frame ${currentFrame}`;
+    if (state.needsPositionUpdate) {
+      updateScreenPositions();
+    }
 
-    updateCurrentOverlayAvailability();
-    updateLegend();
+    gl.viewport(0, 0, state.canvas.width, state.canvas.height);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
 
-    if (currentVar === "current") {
-        glCanvas.style.display = "none";
-        await loadCurrentFrame(currentFrame);
-        clearCurrentCanvas();
-        startParticles();
-        preloadCurrentJson(currentFrame);
+    gl.useProgram(state.program);
+
+    const dpr = window.devicePixelRatio || 1;
+    const size = state.map.getSize();
+
+    gl.uniform2f(state.uniResolution, size.x, size.y);
+
+    const [vmin, vmax] = getScalarRange(state.currentVar);
+    gl.uniform1f(state.uniVmin, vmin);
+    gl.uniform1f(state.uniVmax, vmax);
+    gl.uniform1f(state.uniOpacity, state.opacity);
+    gl.uniform1i(state.uniVarType, state.currentVar === "temperature" ? 0 : 1);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, state.posBuffer);
+    gl.vertexAttribPointer(state.attribPos, 2, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, state.valueBuffer);
+    gl.vertexAttribPointer(state.attribVal, 1, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, state.elemBuffer);
+    gl.drawElements(gl.TRIANGLES, state.elems.length, gl.UNSIGNED_INT, 0);
+
+    state.needsRender = false;
+  }
+
+  function updateLegend() {
+    const box = $("legend-box") || $("legend");
+    if (!box) return;
+
+    if (state.currentVar === "temperature") {
+      box.innerHTML = `
+        <div style="font-weight:bold; margin-bottom:6px;">Surface Temperature [degC]</div>
+        <div style="width:220px; height:16px; background:linear-gradient(to right, blue, cyan, yellow, red); border:1px solid #666;"></div>
+        <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;">
+          <span>0</span><span>8</span><span>16</span><span>24</span><span>32</span>
+        </div>`;
+    } else if (state.currentVar === "ssh") {
+      box.innerHTML = `
+        <div style="font-weight:bold; margin-bottom:6px;">Elevation [m]</div>
+        <div style="width:220px; height:16px; background:linear-gradient(to right, #08306b, #6baed6, #f7f7f7, #fb6a4a, #67000d); border:1px solid #666;"></div>
+        <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;">
+          <span>-1.0</span><span>-0.5</span><span>0</span><span>0.5</span><span>1.0</span>
+        </div>`;
     } else {
-        glCanvas.style.display = "block";
+      box.innerHTML = `
+        <div style="font-weight:bold; margin-bottom:6px;">Current Speed [m/s]</div>
+        <div style="width:220px; height:16px; background:linear-gradient(to right, #000080, #0000ff, #00ffff, #ffff00, #ff0000, #800000); border:1px solid #666;"></div>
+        <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;">
+          <span>0</span><span>0.25</span><span>0.5</span><span>0.75</span><span>1.0</span>
+        </div>`;
+    }
+  }
 
-        const arr = await loadScalarFrame(currentVar, currentFrame);
-        gl.bindBuffer(gl.ARRAY_BUFFER, valueBuffer);
-        gl.bufferSubData(gl.ARRAY_BUFFER, 0, arr);
+  function updateTimeLabel() {
+    const labels = getLabels();
+    const el = $("time-label");
+    if (!el) return;
+    el.innerHTML = labels[state.currentFrame] || String(state.currentFrame);
+  }
 
-        renderScalar();
-        preloadScalarNeighbors(currentVar, currentFrame);
+  async function setFrame(i) {
+    const n = getFrameCount();
 
-        if (currentOverlayEnabled()) {
-            await loadCurrentFrame(currentFrame);
-            clearCurrentCanvas();
-            startParticles();
-            preloadCurrentJson(currentFrame);
-        } else {
-            stopParticles();
+    state.currentFrame = clamp(parseInt(i), 0, n - 1);
+
+    const slider = $("frame-slider");
+    if (slider) slider.value = state.currentFrame;
+
+    updateTimeLabel();
+
+    if (state.currentVar === "current") {
+      state.canvas.style.display = "none";
+      clearParticleCanvas();
+      await loadCurrentFrame(state.currentFrame);
+      resetParticles();
+      startParticles();
+      updateLegend();
+      return;
+    }
+
+    state.canvas.style.display = "block";
+
+    await loadScalarFrame(state.currentVar, state.currentFrame);
+    renderScalar();
+
+    if (state.currentOverlay) {
+      await loadCurrentFrame(state.currentFrame);
+      resetParticles();
+      startParticles();
+    } else {
+      stopParticles();
+    }
+
+    updateLegend();
+  }
+
+  function startTimer() {
+    stopTimer();
+
+    const interval = 1000 / state.speed;
+    state.timer = setInterval(() => {
+      const n = getFrameCount();
+      setFrame((state.currentFrame + 1) % n);
+    }, interval);
+  }
+
+  function stopTimer() {
+    if (state.timer !== null) {
+      clearInterval(state.timer);
+      state.timer = null;
+    }
+  }
+
+  function setupControls() {
+    const frameCount = getFrameCount();
+
+    const slider = $("frame-slider");
+    if (slider) {
+      slider.min = 0;
+      slider.max = frameCount - 1;
+      slider.value = 0;
+      slider.addEventListener("input", e => setFrame(e.target.value));
+    }
+
+    const varSel = $("var-select");
+    if (varSel) {
+      varSel.addEventListener("change", e => {
+        state.currentVar = e.target.value;
+        const overlay = $("current-overlay-check");
+
+        if (state.currentVar === "current" && overlay) {
+          overlay.checked = false;
+          overlay.disabled = true;
+          state.currentOverlay = false;
+        } else if (overlay) {
+          overlay.disabled = false;
         }
+
+        setFrame(state.currentFrame);
+      });
     }
 
-    setStatus(`${currentVar} frame ${currentFrame + 1}/${n}`);
-}
-
-function startTimer() {
-    if (timer !== null) clearInterval(timer);
-
-    const intervalMs = 1000 / speed;
-
-    timer = setInterval(() => {
-        currentFrame += 1;
-        if (currentFrame >= meta.frames.length) currentFrame = 0;
-        setFrame(currentFrame);
-    }, intervalMs);
-}
-
-function clearCurrentCanvas() {
-    if (!currentCtx || !map) return;
-    const size = map.getSize();
-    currentCtx.clearRect(0, 0, size.x, size.y);
-}
-
-function speedToColor(s, vmin, vmax) {
-    let t = (s - vmin) / (vmax - vmin);
-    if (!isFinite(t)) t = 0;
-    t = Math.max(0, Math.min(1, t));
-
-    const four = 4.0 * t;
-    const r = Math.round(255 * Math.max(0, Math.min(1, Math.min(four - 1.5, -four + 4.5))));
-    const g = Math.round(255 * Math.max(0, Math.min(1, Math.min(four - 0.5, -four + 3.5))));
-    const b = Math.round(255 * Math.max(0, Math.min(1, Math.min(four + 0.5, -four + 2.5))));
-
-    return `rgba(${r},${g},${b},0.92)`;
-}
-
-function currentParticleColor(speedValue) {
-    if (!currentData) return CONFIG.currentOverlayColor;
-
-    if (currentVar === "current") {
-        return speedToColor(speedValue, currentData.vmin, currentData.vmax);
+    const overlay = $("current-overlay-check");
+    if (overlay) {
+      overlay.addEventListener("change", e => {
+        state.currentOverlay = e.target.checked;
+        setFrame(state.currentFrame);
+      });
     }
 
-    return CONFIG.currentOverlayColor;
-}
+    const playBtn = $("play-btn");
+    if (playBtn) {
+      playBtn.addEventListener("click", () => {
+        state.playing = !state.playing;
+        playBtn.innerHTML = state.playing ? "Pause" : "Play";
 
-function gridInfo() {
-    if (!currentData) return null;
+        if (state.playing) startTimer();
+        else stopTimer();
+      });
+    }
+
+    const speedSel = $("speed-select");
+    if (speedSel) {
+      speedSel.addEventListener("change", e => {
+        state.speed = Number(e.target.value || 1);
+        if (state.playing) startTimer();
+      });
+    }
+
+    const opacity = $("opacity-slider");
+    if (opacity) {
+      opacity.addEventListener("input", e => {
+        state.opacity = Number(e.target.value);
+        state.needsRender = true;
+        requestRender();
+      });
+    }
+
+    const density = $("particle-density-select");
+    if (density) {
+      state.particleCount = Number(density.value || 2800);
+      density.addEventListener("change", e => {
+        state.particleCount = Number(e.target.value || 2800);
+        resetParticles();
+      });
+    }
+  }
+
+  function requestRender() {
+    requestAnimationFrame(() => {
+      if (state.currentVar !== "current") {
+        renderScalar();
+      }
+    });
+  }
+
+  function normalizeCurrentData(j) {
+    return j;
+  }
+
+  async function loadCurrentFrame(i) {
+    const url = currentJsonUrl(i);
+
+    if (state.currentCache[url]) {
+      state.currentData = state.currentCache[url];
+      preloadCurrent(Math.min(getFrameCount() - 1, i + 1));
+      return;
+    }
+
+    const j = normalizeCurrentData(await fetchJson(url));
+    state.currentCache[url] = j;
+    state.currentData = j;
+
+    preloadCurrent(Math.min(getFrameCount() - 1, i + 1));
+  }
+
+  function preloadCurrent(i) {
+    const url = currentJsonUrl(i);
+    if (state.currentCache[url]) return;
+
+    fetchJson(url)
+      .then(j => {
+        state.currentCache[url] = normalizeCurrentData(j);
+      })
+      .catch(() => {});
+  }
+
+  function currentGridInfo() {
+    const d = state.currentData;
+    if (!d) return null;
 
     return {
-        nx: currentData.nx,
-        ny: currentData.ny,
-        lonMin: currentData.lon_min,
-        lonMax: currentData.lon_max,
-        latMin: currentData.lat_min,
-        latMax: currentData.lat_max,
-        invalid: currentData.invalid
+      nx: d.nx,
+      ny: d.ny,
+      lonMin: d.lon_min,
+      lonMax: d.lon_max,
+      latMin: d.lat_min,
+      latMax: d.lat_max,
+      invalid: d.invalid
     };
-}
+  }
 
-function idx(ix, iy, nx) { return iy * nx + ix; }
+  function cidx(ix, iy, nx) {
+    return iy * nx + ix;
+  }
 
-function isValidValue(v) {
-    if (!currentData) return false;
-    return isFinite(v) && v !== currentData.invalid;
-}
+  function isCurrentValid(v) {
+    const d = state.currentData;
+    return Number.isFinite(v) && v !== d.invalid;
+  }
 
-function vectorAt(lon, lat) {
-    if (!currentData) return null;
+  function vectorAt(lon, lat) {
+    const d = state.currentData;
+    if (!d) return null;
 
-    const g = gridInfo();
+    const g = currentGridInfo();
     if (!g) return null;
 
     if (lon < g.lonMin || lon > g.lonMax || lat < g.latMin || lat > g.latMax) return null;
@@ -559,28 +699,21 @@ function vectorAt(lon, lat) {
     const tx = fx - ix0;
     const ty = fy - iy0;
 
-    const i00 = idx(ix0, iy0, g.nx);
-    const i10 = idx(ix1, iy0, g.nx);
-    const i01 = idx(ix0, iy1, g.nx);
-    const i11 = idx(ix1, iy1, g.nx);
+    const i00 = cidx(ix0, iy0, g.nx);
+    const i10 = cidx(ix1, iy0, g.nx);
+    const i01 = cidx(ix0, iy1, g.nx);
+    const i11 = cidx(ix1, iy1, g.nx);
 
-    const u00 = currentData.u[i00];
-    const u10 = currentData.u[i10];
-    const u01 = currentData.u[i01];
-    const u11 = currentData.u[i11];
-
-    const v00 = currentData.v[i00];
-    const v10 = currentData.v[i10];
-    const v01 = currentData.v[i01];
-    const v11 = currentData.v[i11];
+    const u00 = d.u[i00], u10 = d.u[i10], u01 = d.u[i01], u11 = d.u[i11];
+    const v00 = d.v[i00], v10 = d.v[i10], v01 = d.v[i01], v11 = d.v[i11];
 
     if (
-        !isValidValue(u00) || !isValidValue(u10) ||
-        !isValidValue(u01) || !isValidValue(u11) ||
-        !isValidValue(v00) || !isValidValue(v10) ||
-        !isValidValue(v01) || !isValidValue(v11)
+      !isCurrentValid(u00) || !isCurrentValid(u10) ||
+      !isCurrentValid(u01) || !isCurrentValid(u11) ||
+      !isCurrentValid(v00) || !isCurrentValid(v10) ||
+      !isCurrentValid(v01) || !isCurrentValid(v11)
     ) {
-        return null;
+      return null;
     }
 
     const w00 = (1 - tx) * (1 - ty);
@@ -590,19 +723,19 @@ function vectorAt(lon, lat) {
 
     const u = w00 * u00 + w10 * u10 + w01 * u01 + w11 * u11;
     const v = w00 * v00 + w10 * v10 + w01 * v01 + w11 * v11;
-    const spd = Math.sqrt(u * u + v * v);
+    const speed = Math.hypot(u, v);
 
-    if (!isFinite(spd)) return null;
-    return {u, v, speed: spd};
-}
+    return { u, v, speed };
+  }
 
-function randomValidPoint() {
-    if (!currentData) return null;
+  function randomCurrentPoint() {
+    const d = state.currentData;
+    if (!d) return null;
 
-    const g = gridInfo();
+    const g = currentGridInfo();
     if (!g) return null;
 
-    const b = map.getBounds();
+    const b = state.map.getBounds();
     const west = Math.max(b.getWest(), g.lonMin);
     const east = Math.min(b.getEast(), g.lonMax);
     const south = Math.max(b.getSouth(), g.latMin);
@@ -610,246 +743,177 @@ function randomValidPoint() {
 
     if (west >= east || south >= north) return null;
 
-    for (let trial = 0; trial < 200; trial++) {
-        const lon = west + Math.random() * (east - west);
-        const lat = south + Math.random() * (north - south);
-
-        if (vectorAt(lon, lat)) return {lon, lat};
+    for (let k = 0; k < 80; k++) {
+      const lon = west + Math.random() * (east - west);
+      const lat = south + Math.random() * (north - south);
+      if (vectorAt(lon, lat)) {
+        return { lon, lat, age: Math.floor(Math.random() * 80), maxAge: 90 + Math.floor(Math.random() * 80) };
+      }
     }
 
     return null;
-}
+  }
 
-function resetParticle(p) {
-    const ll = randomValidPoint();
+  function resetParticles() {
+    state.particles = [];
+    if (!state.currentData) return;
 
-    if (!ll) {
-        p.lon = meta.bounds[0][1];
-        p.lat = meta.bounds[0][0];
-    } else {
-        p.lon = ll.lon;
-        p.lat = ll.lat;
+    for (let i = 0; i < state.particleCount; i++) {
+      const p = randomCurrentPoint();
+      if (p) state.particles.push(p);
+    }
+  }
+
+  function currentJet(speed) {
+    const d = state.currentData;
+    let t = (speed - d.vmin) / (d.vmax - d.vmin);
+    if (!Number.isFinite(t)) t = 0;
+    t = clamp(t, 0, 1);
+
+    const four = 4.0 * t;
+    const r = Math.round(255 * clamp(Math.min(four - 1.5, -four + 4.5), 0, 1));
+    const g = Math.round(255 * clamp(Math.min(four - 0.5, -four + 3.5), 0, 1));
+    const b = Math.round(255 * clamp(Math.min(four + 0.5, -four + 2.5), 0, 1));
+
+    return `rgba(${r},${g},${b},0.92)`;
+  }
+
+  function particleColor(speed) {
+    if (state.currentVar === "current") {
+      return currentJet(speed);
+    }
+    return "rgba(255,255,255,0.96)";
+  }
+
+  function clearParticleCanvas() {
+    if (!state.particleCtx) return;
+    const size = state.map.getSize();
+    state.particleCtx.clearRect(0, 0, size.x, size.y);
+  }
+
+  function startParticles() {
+    if (state.particleAnim !== null) {
+      cancelAnimationFrame(state.particleAnim);
+      state.particleAnim = null;
     }
 
-    p.age = Math.floor(Math.random() * 100);
-    p.maxAge = 80 + Math.floor(Math.random() * 80);
-}
-
-function resetParticles() {
-    particles = [];
-
-    for (let i = 0; i < particleCount; i++) {
-        const p = {};
-        resetParticle(p);
-        particles.push(p);
-    }
-}
-
-async function loadCurrentFrame(i) {
-    const url = currentFrameUrl(i);
-    if (!url) {
-        currentData = null;
+    const step = () => {
+      if (!state.currentData || (state.currentVar !== "current" && !state.currentOverlay)) {
+        clearParticleCanvas();
+        state.particleAnim = requestAnimationFrame(step);
         return;
-    }
+      }
 
-    if (currentJsonCache[url]) {
-        currentData = currentJsonCache[url];
-        resetParticles();
-        return;
-    }
-
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`${url}: ${resp.status} ${resp.statusText}`);
-
-    const data = await resp.json();
-    currentJsonCache[url] = data;
-    currentData = data;
-    resetParticles();
-}
-
-function startParticles() {
-    if (particleAnimId !== null) {
-        cancelAnimationFrame(particleAnimId);
-        particleAnimId = null;
-    }
-
-    particleRunning = true;
-    resetParticles();
-
-    function step() {
-        if (!particleRunning || !shouldDrawCurrentParticles()) return;
-
-        const size = map.getSize();
-
-        currentCtx.globalCompositeOperation = "destination-in";
-        currentCtx.fillStyle = "rgba(0, 0, 0, 0.92)";
-        currentCtx.fillRect(0, 0, size.x, size.y);
-
-        currentCtx.globalCompositeOperation = "source-over";
-        currentCtx.lineWidth = 1.2;
-
-        for (const p of particles) {
-            if (p.age > p.maxAge) {
-                resetParticle(p);
-                continue;
-            }
-
-            const vec = vectorAt(p.lon, p.lat);
-            if (!vec || !isFinite(vec.u) || !isFinite(vec.v)) {
-                resetParticle(p);
-                continue;
-            }
-
-            const oldPoint = map.latLngToContainerPoint([p.lat, p.lon]);
-
-            const latRad = p.lat * Math.PI / 180.0;
-            let coslat = Math.cos(latRad);
-            if (Math.abs(coslat) < 1e-6) coslat = 1e-6;
-
-            const dt = CONFIG.flowScale * speed;
-
-            const newLon = p.lon + (vec.u * dt) / coslat;
-            const newLat = p.lat + vec.v * dt;
-
-            const vec2 = vectorAt(newLon, newLat);
-            if (!vec2) {
-                resetParticle(p);
-                continue;
-            }
-
-            p.lon = newLon;
-            p.lat = newLat;
-            p.age += 1;
-
-            const newPoint = map.latLngToContainerPoint([p.lat, p.lon]);
-
-            if (
-                newPoint.x < -50 || newPoint.x > size.x + 50 ||
-                newPoint.y < -50 || newPoint.y > size.y + 50
-            ) {
-                resetParticle(p);
-                continue;
-            }
-
-            currentCtx.strokeStyle = currentParticleColor(vec.speed);
-            currentCtx.beginPath();
-            currentCtx.moveTo(oldPoint.x, oldPoint.y);
-            currentCtx.lineTo(newPoint.x, newPoint.y);
-            currentCtx.stroke();
-        }
-
-        particleAnimId = requestAnimationFrame(step);
-    }
-
-    particleAnimId = requestAnimationFrame(step);
-}
-
-function stopParticles() {
-    particleRunning = false;
-
-    if (particleAnimId !== null) {
-        cancelAnimationFrame(particleAnimId);
-        particleAnimId = null;
-    }
-
-    clearCurrentCanvas();
-}
-
-function setupEvents() {
-    varSelect.addEventListener("change", e => {
-        currentVar = e.target.value;
-        updateCurrentOverlayAvailability();
-        updateLegend();
-        setFrame(currentFrame);
-    });
-
-    currentOverlayCheck.addEventListener("change", () => {
-        updateCurrentOverlayAvailability();
-        setFrame(currentFrame);
-    });
-
-    playBtn.addEventListener("click", () => {
-        if (timer === null) {
-            playBtn.textContent = "Pause";
-            startTimer();
-        } else {
-            playBtn.textContent = "Play";
-            clearInterval(timer);
-            timer = null;
-        }
-    });
-
-    frameSlider.addEventListener("input", e => setFrame(e.target.value));
-
-    speedSelect.addEventListener("change", e => {
-        speed = parseFloat(e.target.value);
-        if (timer !== null) startTimer();
-    });
-
-    opacitySlider.addEventListener("input", () => renderScalar());
-
-    particleDensitySelect.addEventListener("change", e => {
-        particleCount = parseInt(e.target.value);
-        resetParticles();
-        clearCurrentCanvas();
-    });
-}
-
-async function boot() {
-    setStatus("Loading metadata...");
-
-    const metaResp = await fetch(CONFIG.metaUrl);
-    if (!metaResp.ok) throw new Error(`Failed to load ${CONFIG.metaUrl}`);
-    meta = await metaResp.json();
-
-    frameSlider.max = meta.frames.length - 1;
-
-    const bounds = meta.bounds;
-    map = L.map("map", {
-        center: [
-            (bounds[0][0] + bounds[1][0]) / 2,
-            (bounds[0][1] + bounds[1][1]) / 2
-        ],
-        zoom: 7
-    });
-
-    const carto = L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-        { attribution: "&copy; OpenStreetMap contributors &copy; CARTO" }
-    );
-
-    const esri = L.tileLayer(
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        { attribution: "Tiles &copy; Esri" }
-    );
-
-    esri.addTo(map);
-
-    const baseMaps = {
-        "CartoDB Positron": carto,
-        "Esri Satellite": esri
+      drawParticles();
+      state.particleAnim = requestAnimationFrame(step);
     };
 
-    L.control.layers(baseMaps, null, {collapsed:false}).addTo(map);
-    map.fitBounds(bounds);
+    state.particleAnim = requestAnimationFrame(step);
+  }
 
-    setStatus("Loading mesh geometry...");
+  function stopParticles() {
+    if (state.particleAnim !== null) {
+      cancelAnimationFrame(state.particleAnim);
+      state.particleAnim = null;
+    }
+    clearParticleCanvas();
+  }
 
-    const nodes = await fetchFloat32(CONFIG.nodesUrl, meta.node_count * 2);
-    const elems = await fetchUint32(CONFIG.elemsUrl, meta.index_count);
+  function drawParticles() {
+    const ctx = state.particleCtx;
+    const size = state.map.getSize();
 
-    initWebGL(nodes, elems);
-    setupEvents();
-    updateLegend();
-    updateCurrentOverlayAvailability();
+    ctx.globalCompositeOperation = "destination-in";
+    ctx.fillStyle = "rgba(0,0,0,0.92)";
+    ctx.fillRect(0, 0, size.x, size.y);
 
+    ctx.globalCompositeOperation = "source-over";
+    ctx.lineWidth = 1.2;
+
+    if (state.particles.length < state.particleCount * 0.65) {
+      resetParticles();
+    }
+
+    const flowScale = 0.018 * state.speed;
+
+    for (let i = 0; i < state.particles.length; i++) {
+      const p = state.particles[i];
+
+      if (!p || p.age > p.maxAge) {
+        state.particles[i] = randomCurrentPoint();
+        continue;
+      }
+
+      const vec = vectorAt(p.lon, p.lat);
+      if (!vec) {
+        state.particles[i] = randomCurrentPoint();
+        continue;
+      }
+
+      const oldPt = state.map.latLngToContainerPoint([p.lat, p.lon]);
+
+      const latRad = p.lat * Math.PI / 180.0;
+      let coslat = Math.cos(latRad);
+      if (Math.abs(coslat) < 1e-6) coslat = 1e-6;
+
+      const newLon = p.lon + (vec.u * flowScale) / coslat;
+      const newLat = p.lat + vec.v * flowScale;
+
+      if (!vectorAt(newLon, newLat)) {
+        state.particles[i] = randomCurrentPoint();
+        continue;
+      }
+
+      p.lon = newLon;
+      p.lat = newLat;
+      p.age += 1;
+
+      const newPt = state.map.latLngToContainerPoint([p.lat, p.lon]);
+
+      if (
+        newPt.x < -50 || newPt.x > size.x + 50 ||
+        newPt.y < -50 || newPt.y > size.y + 50
+      ) {
+        state.particles[i] = randomCurrentPoint();
+        continue;
+      }
+
+      ctx.strokeStyle = particleColor(vec.speed);
+      ctx.beginPath();
+      ctx.moveTo(oldPt.x, oldPt.y);
+      ctx.lineTo(newPt.x, newPt.y);
+      ctx.stroke();
+    }
+  }
+
+  async function main() {
+    await loadMetaAndMesh();
+
+    initMap();
+    createCanvasLayer();
+    initWebGL();
+    setupControls();
+
+    updateScreenPositions();
     await setFrame(0);
 
-    setStatus(`Ready: ${meta.node_count.toLocaleString()} nodes, ${meta.triangle_count.toLocaleString()} triangles`);
-}
+    window.addEventListener("resize", () => {
+      resizeCanvases();
+      state.needsPositionUpdate = true;
+      state.needsRender = true;
+      requestRender();
+    });
 
-boot().catch(err => {
+    requestAnimationFrame(function loop() {
+      if (state.needsRender && state.currentVar !== "current") {
+        renderScalar();
+      }
+      requestAnimationFrame(loop);
+    });
+  }
+
+  main().catch(err => {
     console.error(err);
-    setStatus("ERROR: " + err.message);
-    alert(err.message);
-});
+    alert("WebGL viewer error: " + err.message);
+  });
+})();
