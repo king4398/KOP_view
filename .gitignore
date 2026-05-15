@@ -1,0 +1,6 @@
+*.bak
+*.bak_*
+index.html.bak_*
+.DS_Store
+__pycache__/
+*.pyc

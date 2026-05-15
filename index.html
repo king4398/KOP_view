@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SCHISM Web Viewer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+html, body, #map {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.current-canvas {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 12000;
+    pointer-events: none;
+}
+
+.control-box {
+    position: fixed;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    z-index: 9999;
+    background: rgba(255,255,255,0.95);
+    padding: 10px 14px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    font-family: Arial, sans-serif;
+    min-width: 920px;
+}
+
+.legend-box {
+    position: fixed;
+    right: 14px;
+    bottom: 86px;
+    z-index: 9999;
+    background: rgba(255,255,255,0.95);
+    padding: 10px 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    font-family: Arial, sans-serif;
+}
+
+.title-box {
+    position: fixed;
+    left: 14px;
+    bottom: 86px;
+    z-index: 9999;
+    background: rgba(255,255,255,0.95);
+    padding: 8px 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+}
+
+.side-panel {
+    position: fixed;
+    right: 14px;
+    top: 72px;
+    z-index: 30000;
+    width: 255px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(15, 18, 24, 0.84);
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.38);
+}
+
+.side-panel-title {
+    font-weight: bold;
+    font-size: 15px;
+    margin-bottom: 9px;
+}
+
+.side-panel label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 8px 0;
+}
+
+.side-panel select {
+    width: 135px;
+    max-width: 135px;
+    padding: 4px 6px;
+}
+
+.side-panel input[type="checkbox"] {
+    transform: scale(1.12);
+}
+
+</style>
+</head>
+
+<body>
+<div id="map"></div>
+<canvas id="current-canvas" class="current-canvas"></canvas>
+
+<div class="title-box">SCHISM Web Viewer</div>
+<div class="legend-box" id="legend-box"></div>
+
+
+<div class="side-panel">
+  <div class="side-panel-title">Layer Options</div>
+
+  <label>
+    <span><b>Variable</b></span>
+    <select id="var-select">
+      <option value="temperature">Temperature</option>
+      <option value="ssh">Elevation</option>
+      <option value="current">Current</option>
+      <option value="mesh">Mesh</option>
+    </select>
+  </label>
+
+  <label>
+    <span><b>Current overlay</b></span>
+    <input id="current-overlay-check" type="checkbox">
+  </label>
+
+  <label>
+    <span><b>Particles</b></span>
+    <select id="particle-density-select">
+      <option value="800">Low</option>
+      <option value="1600">Mid</option>
+      <option value="2800" selected>High</option>
+    </select>
+  </label>
+</div>
+
+<div class="control-box">
+  <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+<button id="play-btn" style="padding:5px 12px; cursor:pointer;">Play</button>
+
+    <input id="frame-slider" type="range" min="0" max="0" value="0" step="1" style="width:250px;">
+
+    <select id="speed-select" style="padding:5px 8px;">
+      <option value="1">1x</option>
+      <option value="2">2x</option>
+      <option value="3">3x</option>
+    </select>
+
+    <label><b>Opacity</b></label>
+    <input id="opacity-slider" type="range" min="0.1" max="1.0" value="0.78" step="0.05" style="width:110px;">
+<span id="time-label" style="font-size:13px; min-width:180px; display:inline-block;"></span>
+  </div>
+</div>
+
+<script>
+const datasets = {"temperature": ["frames_multi/temp/frame_0000.png", "frames_multi/temp/frame_0001.png", "frames_multi/temp/frame_0002.png", "frames_multi/temp/frame_0003.png", "frames_multi/temp/frame_0004.png", "frames_multi/temp/frame_0005.png", "frames_multi/temp/frame_0006.png", "frames_multi/temp/frame_0007.png", "frames_multi/temp/frame_0008.png", "frames_multi/temp/frame_0009.png", "frames_multi/temp/frame_0010.png", "frames_multi/temp/frame_0011.png", "frames_multi/temp/frame_0012.png", "frames_multi/temp/frame_0013.png", "frames_multi/temp/frame_0014.png", "frames_multi/temp/frame_0015.png", "frames_multi/temp/frame_0016.png", "frames_multi/temp/frame_0017.png", "frames_multi/temp/frame_0018.png", "frames_multi/temp/frame_0019.png", "frames_multi/temp/frame_0020.png", "frames_multi/temp/frame_0021.png", "frames_multi/temp/frame_0022.png", "frames_multi/temp/frame_0023.png"], "ssh": ["frames_multi/ssh/frame_0000.png", "frames_multi/ssh/frame_0001.png", "frames_multi/ssh/frame_0002.png", "frames_multi/ssh/frame_0003.png", "frames_multi/ssh/frame_0004.png", "frames_multi/ssh/frame_0005.png", "frames_multi/ssh/frame_0006.png", "frames_multi/ssh/frame_0007.png", "frames_multi/ssh/frame_0008.png", "frames_multi/ssh/frame_0009.png", "frames_multi/ssh/frame_0010.png", "frames_multi/ssh/frame_0011.png", "frames_multi/ssh/frame_0012.png", "frames_multi/ssh/frame_0013.png", "frames_multi/ssh/frame_0014.png", "frames_multi/ssh/frame_0015.png", "frames_multi/ssh/frame_0016.png", "frames_multi/ssh/frame_0017.png", "frames_multi/ssh/frame_0018.png", "frames_multi/ssh/frame_0019.png", "frames_multi/ssh/frame_0020.png", "frames_multi/ssh/frame_0021.png", "frames_multi/ssh/frame_0022.png", "frames_multi/ssh/frame_0023.png"], "current": ["frames_multi/current_grid_json/frame_0000.json", "frames_multi/current_grid_json/frame_0001.json", "frames_multi/current_grid_json/frame_0002.json", "frames_multi/current_grid_json/frame_0003.json", "frames_multi/current_grid_json/frame_0004.json", "frames_multi/current_grid_json/frame_0005.json", "frames_multi/current_grid_json/frame_0006.json", "frames_multi/current_grid_json/frame_0007.json", "frames_multi/current_grid_json/frame_0008.json", "frames_multi/current_grid_json/frame_0009.json", "frames_multi/current_grid_json/frame_0010.json", "frames_multi/current_grid_json/frame_0011.json", "frames_multi/current_grid_json/frame_0012.json", "frames_multi/current_grid_json/frame_0013.json", "frames_multi/current_grid_json/frame_0014.json", "frames_multi/current_grid_json/frame_0015.json", "frames_multi/current_grid_json/frame_0016.json", "frames_multi/current_grid_json/frame_0017.json", "frames_multi/current_grid_json/frame_0018.json", "frames_multi/current_grid_json/frame_0019.json", "frames_multi/current_grid_json/frame_0020.json", "frames_multi/current_grid_json/frame_0021.json", "frames_multi/current_grid_json/frame_0022.json", "frames_multi/current_grid_json/frame_0023.json"], "mesh": ["frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png", "frames_multi/mesh/schism_mesh.png"]};
+const labels = ["2023-01-01 01:00:00", "2023-01-01 02:00:00", "2023-01-01 03:00:00", "2023-01-01 04:00:00", "2023-01-01 05:00:00", "2023-01-01 06:00:00", "2023-01-01 07:00:00", "2023-01-01 08:00:00", "2023-01-01 09:00:00", "2023-01-01 10:00:00", "2023-01-01 11:00:00", "2023-01-01 12:00:00", "2023-01-01 13:00:00", "2023-01-01 14:00:00", "2023-01-01 15:00:00", "2023-01-01 16:00:00", "2023-01-01 17:00:00", "2023-01-01 18:00:00", "2023-01-01 19:00:00", "2023-01-01 20:00:00", "2023-01-01 21:00:00", "2023-01-01 22:00:00", "2023-01-01 23:00:00", "2023-01-02 00:00:00"];
+const legends = {"temperature": "\n        <div style=\"font-weight:bold; margin-bottom:6px;\">Surface Temperature [degC]</div>\n        <div style=\"width:220px; height:16px; background: linear-gradient(to right, blue, cyan, yellow, red); border:1px solid #666;\"></div>\n        <div style=\"display:flex; justify-content:space-between; font-size:12px; margin-top:4px;\">\n            <span>0</span><span>8</span><span>16</span><span>24</span><span>32</span>\n        </div>\n        ", "ssh": "\n        <div style=\"font-weight:bold; margin-bottom:6px;\">Elevation [m]</div>\n        <div style=\"width:220px; height:16px; background: linear-gradient(to right, #08306b, #6baed6, #f7f7f7, #fb6a4a, #67000d); border:1px solid #666;\"></div>\n        <div style=\"display:flex; justify-content:space-between; font-size:12px; margin-top:4px;\">\n            <span>-1.0</span><span>-0.5</span><span>0</span><span>0.5</span><span>1.0</span>\n        </div>\n        ", "current": "\n        <div style=\"font-weight:bold; margin-bottom:6px;\">Current Speed [m/s]</div>\n        <div style=\"width:220px; height:16px; background: linear-gradient(to right, #0000ff, #00ffff, #ffff00, #ff0000); border:1px solid #666;\"></div>\n        <div style=\"display:flex; justify-content:space-between; font-size:12px; margin-top:4px;\">\n            <span>0</span><span>0.25</span><span>0.5</span><span>0.75</span><span>1.0</span>\n        </div>\n        ", "mesh": "\n        <div style=\"font-weight:bold; margin-bottom:6px;\">SCHISM Mesh</div>\n        <div style=\"font-size:12px;\">\n            White faces + black triangle edges<br>\n            Debug layer for mesh coverage\n        </div>\n        "};
+const bounds = [[23.721833441000005, 117.54826466170002], [51.950810675499994, 142.2513359992]];
+
+let currentVar = "temperature";
+let currentFrame = 0;
+let timer = null;
+let speed = 1.0;
+
+let currentData = null;
+let currentJsonCache = {};
+
+let particleCount = 2800;
+let particles = [];
+let particleAnimId = null;
+let particleRunning = false;
+
+let flowScale = 0.018;
+
+const map = L.map('map', {
+    center: [37.83632205825, 129.89980033045],
+    zoom: 7
+});
+
+const carto = L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    {
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+    }
+);
+
+const esri = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    {
+        attribution: 'Tiles &copy; Esri'
+    }
+);
+
+esri.addTo(map);
+
+const baseMaps = {
+    "CartoDB Positron": carto,
+    "Esri Satellite": esri
+};
+
+L.control.layers(baseMaps, null, {collapsed:false}).addTo(map);
+
+let imageOverlay = L.imageOverlay(
+    datasets.temperature[0],
+    bounds,
+    {
+        opacity: 0.78,
+        interactive: false,
+        zIndex: 500
+    }
+).addTo(map);
+
+map.fitBounds(bounds);
+
+const canvas = document.getElementById("current-canvas");
+const ctx = canvas.getContext("2d");
+
+const varSelect = document.getElementById("var-select");
+const playBtn = document.getElementById("play-btn");
+const frameSlider = document.getElementById("frame-slider");
+const speedSelect = document.getElementById("speed-select");
+const opacitySlider = document.getElementById("opacity-slider");
+const particleDensitySelect = document.getElementById("particle-density-select");
+const currentOverlayCheck = document.getElementById("current-overlay-check");
+const timeLabel = document.getElementById("time-label");
+const legendBox = document.getElementById("legend-box");
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    clearCanvas();
+}
+
+function clearCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+window.addEventListener("resize", resizeCanvas);
+
+map.on("move zoom resize", function() {
+    clearCanvas();
+    resetParticles();
+});
+
+resizeCanvas();
+
+function updateLegend() {
+    legendBox.innerHTML = legends[currentVar];
+}
+
+function updateSliderMax() {
+    frameSlider.max = datasets[currentVar].length - 1;
+}
+
+function setImageOverlayVisible(visible) {
+    if (visible) {
+        if (!map.hasLayer(imageOverlay)) {
+            imageOverlay.addTo(map);
+        }
+        imageOverlay.setOpacity(parseFloat(opacitySlider.value));
+    } else {
+        if (map.hasLayer(imageOverlay)) {
+            map.removeLayer(imageOverlay);
+        }
+    }
+}
+
+
+function speedToColor(s, vmin, vmax) {
+    let t = (s - vmin) / (vmax - vmin);
+    if (!isFinite(t)) t = 0;
+    t = Math.max(0, Math.min(1, t));
+
+    const four = 4.0 * t;
+    const r = Math.round(255 * Math.max(0, Math.min(1, Math.min(four - 1.5, -four + 4.5))));
+    const g = Math.round(255 * Math.max(0, Math.min(1, Math.min(four - 0.5, -four + 3.5))));
+    const b = Math.round(255 * Math.max(0, Math.min(1, Math.min(four + 0.5, -four + 2.5))));
+
+    return `rgba(${r},${g},${b},0.92)`;
+}
+
+
+function overlaySpeedToColor(s, vmin, vmax) {
+    let t = (s - vmin) / (vmax - vmin);
+    if (!isFinite(t)) t = 0;
+    t = Math.max(0, Math.min(1, t));
+
+    // Overlay on Temperature/Elevation: white/black only
+    if (t < 0.5) {
+        return "rgba(255,255,255,0.96)";
+    }
+    return "rgba(0,0,0,0.96)";
+}
+
+function currentOverlayEnabled() {
+    return (
+        currentOverlayCheck &&
+        currentOverlayCheck.checked &&
+        (currentVar === "temperature" || currentVar === "ssh")
+    );
+}
+
+function shouldDrawCurrentParticles() {
+    return currentVar === "current" || currentOverlayEnabled();
+}
+
+function currentParticleColor(speedValue) {
+    if (!currentData) return "rgba(255,255,255,0.96)";
+
+    if (currentVar === "current") {
+        // Standalone Current variable: jet
+        return speedToColor(speedValue, currentData.vmin, currentData.vmax);
+    }
+
+    // Current over Temperature/Elevation: white/black
+    return overlaySpeedToColor(speedValue, currentData.vmin, currentData.vmax);
+}
+
+function updateCurrentOverlayAvailability() {
+    if (!currentOverlayCheck) return;
+
+    if (currentVar === "current") {
+        currentOverlayCheck.checked = false;
+        currentOverlayCheck.disabled = true;
+        currentOverlayCheck.title = "Current variable already shows current particles.";
+    } else {
+        currentOverlayCheck.disabled = false;
+        currentOverlayCheck.title = "";
+    }
+}
+
+
+function idx(ix, iy, nx) {
+    return iy * nx + ix;
+}
+
+function gridInfo() {
+    if (!currentData) return null;
+
+    return {
+        nx: currentData.nx,
+        ny: currentData.ny,
+        lonMin: currentData.lon_min,
+        lonMax: currentData.lon_max,
+        latMin: currentData.lat_min,
+        latMax: currentData.lat_max,
+        invalid: currentData.invalid
+    };
+}
+
+function isValidValue(v) {
+    if (!currentData) return false;
+    return isFinite(v) && v !== currentData.invalid;
+}
+
+function vectorAt(lon, lat) {
+    if (!currentData) return null;
+
+    const g = gridInfo();
+
+    if (!g) return null;
+
+    if (lon < g.lonMin || lon > g.lonMax || lat < g.latMin || lat > g.latMax) {
+        return null;
+    }
+
+    const fx = (lon - g.lonMin) / (g.lonMax - g.lonMin) * (g.nx - 1);
+    const fy = (lat - g.latMin) / (g.latMax - g.latMin) * (g.ny - 1);
+
+    const ix0 = Math.floor(fx);
+    const iy0 = Math.floor(fy);
+
+    const ix1 = ix0 + 1;
+    const iy1 = iy0 + 1;
+
+    if (ix0 < 0 || iy0 < 0 || ix1 >= g.nx || iy1 >= g.ny) {
+        return null;
+    }
+
+    const tx = fx - ix0;
+    const ty = fy - iy0;
+
+    const i00 = idx(ix0, iy0, g.nx);
+    const i10 = idx(ix1, iy0, g.nx);
+    const i01 = idx(ix0, iy1, g.nx);
+    const i11 = idx(ix1, iy1, g.nx);
+
+    const u00 = currentData.u[i00];
+    const u10 = currentData.u[i10];
+    const u01 = currentData.u[i01];
+    const u11 = currentData.u[i11];
+
+    const v00 = currentData.v[i00];
+    const v10 = currentData.v[i10];
+    const v01 = currentData.v[i01];
+    const v11 = currentData.v[i11];
+
+    if (
+        !isValidValue(u00) || !isValidValue(u10) ||
+        !isValidValue(u01) || !isValidValue(u11) ||
+        !isValidValue(v00) || !isValidValue(v10) ||
+        !isValidValue(v01) || !isValidValue(v11)
+    ) {
+        return null;
+    }
+
+    const w00 = (1 - tx) * (1 - ty);
+    const w10 = tx * (1 - ty);
+    const w01 = (1 - tx) * ty;
+    const w11 = tx * ty;
+
+    const u = w00 * u00 + w10 * u10 + w01 * u01 + w11 * u11;
+    const v = w00 * v00 + w10 * v10 + w01 * v01 + w11 * v11;
+    const s = Math.sqrt(u * u + v * v);
+
+    if (!isFinite(s)) return null;
+
+    return {u: u, v: v, speed: s};
+}
+
+function randomValidPoint() {
+    if (!currentData) return null;
+
+    const g = gridInfo();
+
+    if (!g) return null;
+
+    for (let trial = 0; trial < 500; trial++) {
+        const ix = Math.floor(Math.random() * g.nx);
+        const iy = Math.floor(Math.random() * g.ny);
+        const k = idx(ix, iy, g.nx);
+
+        const u = currentData.u[k];
+        const v = currentData.v[k];
+
+        if (!isValidValue(u) || !isValidValue(v)) {
+            continue;
+        }
+
+        const lon = g.lonMin + (ix + Math.random()) / (g.nx - 1) * (g.lonMax - g.lonMin);
+        const lat = g.latMin + (iy + Math.random()) / (g.ny - 1) * (g.latMax - g.latMin);
+
+        if (vectorAt(lon, lat)) {
+            return {lon: lon, lat: lat};
+        }
+    }
+
+    return null;
+}
+
+function resetParticle(p) {
+    const ll = randomValidPoint();
+
+    if (!ll) {
+        p.lon = bounds[0][1];
+        p.lat = bounds[0][0];
+    } else {
+        p.lon = ll.lon;
+        p.lat = ll.lat;
+    }
+
+    p.age = Math.floor(Math.random() * 100);
+    p.maxAge = 80 + Math.floor(Math.random() * 80);
+}
+
+function resetParticles() {
+    particles = [];
+
+    for (let i = 0; i < particleCount; i++) {
+        const p = {};
+        resetParticle(p);
+        particles.push(p);
+    }
+}
+
+async function loadCurrentFrame(i) {
+    const url = datasets.current[i];
+
+    if (currentJsonCache[url]) {
+        currentData = currentJsonCache[url];
+        resetParticles();
+        return;
+    }
+
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    currentJsonCache[url] = data;
+    currentData = data;
+    resetParticles();
+}
+
+function startParticles() {
+    if (particleAnimId !== null) {
+        cancelAnimationFrame(particleAnimId);
+        particleAnimId = null;
+    }
+
+    particleRunning = true;
+    resetParticles();
+
+    function step() {
+        if (!particleRunning || !shouldDrawCurrentParticles()) {
+            return;
+        }
+
+        ctx.globalCompositeOperation = "destination-in";
+        ctx.fillStyle = "rgba(0, 0, 0, 0.90)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.globalCompositeOperation = "source-over";
+        ctx.lineWidth = 1.2;
+
+        for (let p of particles) {
+            if (p.age > p.maxAge) {
+                resetParticle(p);
+                continue;
+            }
+
+            const vec = vectorAt(p.lon, p.lat);
+
+            if (!vec || !isFinite(vec.u) || !isFinite(vec.v)) {
+                resetParticle(p);
+                continue;
+            }
+
+            const oldPoint = map.latLngToContainerPoint([p.lat, p.lon]);
+
+            const latRad = p.lat * Math.PI / 180.0;
+            let coslat = Math.cos(latRad);
+
+            if (Math.abs(coslat) < 1e-6) coslat = 1e-6;
+
+            const dt = flowScale * speed;
+
+            const newLon = p.lon + (vec.u * dt) / coslat;
+            const newLat = p.lat + vec.v * dt;
+
+            const vec2 = vectorAt(newLon, newLat);
+
+            if (!vec2) {
+                resetParticle(p);
+                continue;
+            }
+
+            p.lon = newLon;
+            p.lat = newLat;
+            p.age += 1;
+
+            const newPoint = map.latLngToContainerPoint([p.lat, p.lon]);
+
+            if (
+                newPoint.x < -50 || newPoint.x > canvas.width + 50 ||
+                newPoint.y < -50 || newPoint.y > canvas.height + 50
+            ) {
+                resetParticle(p);
+                continue;
+            }
+
+            ctx.strokeStyle = currentParticleColor(vec.speed);
+            ctx.beginPath();
+            ctx.moveTo(oldPoint.x, oldPoint.y);
+            ctx.lineTo(newPoint.x, newPoint.y);
+            ctx.stroke();
+        }
+
+        particleAnimId = requestAnimationFrame(step);
+    }
+
+    particleAnimId = requestAnimationFrame(step);
+}
+
+function stopParticles() {
+    particleRunning = false;
+
+    if (particleAnimId !== null) {
+        cancelAnimationFrame(particleAnimId);
+        particleAnimId = null;
+    }
+
+    clearCanvas();
+}
+
+
+async function setFrame(i) {
+    const n = datasets[currentVar].length;
+
+    if (n <= 0) return;
+
+    currentFrame = parseInt(i);
+
+    if (currentFrame < 0) currentFrame = 0;
+    if (currentFrame >= n) currentFrame = n - 1;
+
+    frameSlider.value = currentFrame;
+    timeLabel.innerHTML = labels[currentFrame];
+
+    updateCurrentOverlayAvailability();
+
+    if (currentVar === "current") {
+        setImageOverlayVisible(false);
+        await loadCurrentFrame(currentFrame);
+        clearCanvas();
+        startParticles();
+    } else {
+        setImageOverlayVisible(true);
+        imageOverlay.setUrl(datasets[currentVar][currentFrame]);
+
+        if (currentOverlayEnabled()) {
+            await loadCurrentFrame(currentFrame);
+            clearCanvas();
+            startParticles();
+        } else {
+            stopParticles();
+        }
+    }
+}
+
+
+function startTimer() {
+    if (timer !== null) {
+        clearInterval(timer);
+    }
+
+    const intervalMs = 1000 / speed;
+
+    timer = setInterval(function() {
+        currentFrame += 1;
+
+        if (currentFrame >= datasets[currentVar].length) {
+            currentFrame = 0;
+        }
+
+        setFrame(currentFrame);
+    }, intervalMs);
+}
+
+varSelect.addEventListener("change", function(e) {
+    currentVar = e.target.value;
+    updateSliderMax();
+    updateLegend();
+    updateCurrentOverlayAvailability();
+    setFrame(currentFrame);
+});
+
+playBtn.addEventListener("click", function() {
+    if (timer === null) {
+        playBtn.innerHTML = "Pause";
+        startTimer();
+    } else {
+        playBtn.innerHTML = "Play";
+        clearInterval(timer);
+        timer = null;
+    }
+});
+
+frameSlider.addEventListener("input", function(e) {
+    setFrame(e.target.value);
+});
+
+speedSelect.addEventListener("change", function(e) {
+    speed = parseFloat(e.target.value);
+
+    if (timer !== null) {
+        startTimer();
+    }
+});
+
+opacitySlider.addEventListener("input", function(e) {
+    if (currentVar !== "current") {
+        imageOverlay.setOpacity(parseFloat(e.target.value));
+    }
+});
+
+particleDensitySelect.addEventListener("change", function(e) {
+    particleCount = parseInt(e.target.value);
+    resetParticles();
+    clearCanvas();
+});
+
+
+if (currentOverlayCheck) {
+    currentOverlayCheck.addEventListener("change", function() {
+        updateCurrentOverlayAvailability();
+        setFrame(currentFrame);
+    });
+}
+
+
+updateSliderMax();
+updateLegend();
+updateCurrentOverlayAvailability();
+setFrame(0);
+</script>
+
+
+</body>
+</html>
