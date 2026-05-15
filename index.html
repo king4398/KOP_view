@@ -29,7 +29,7 @@ html, body, #map {
     left: 50%;
     bottom: 20px;
     transform: translateX(-50%);
-    z-index: 9999;
+    z-index: 50000;
     background: rgba(255,255,255,0.95);
     padding: 10px 14px;
     border-radius: 8px;
@@ -42,7 +42,7 @@ html, body, #map {
     position: fixed;
     right: 14px;
     bottom: 86px;
-    z-index: 9999;
+    z-index: 40000;
     background: rgba(255,255,255,0.95);
     padding: 10px 12px;
     border-radius: 8px;
@@ -54,7 +54,7 @@ html, body, #map {
     position: fixed;
     left: 14px;
     bottom: 86px;
-    z-index: 9999;
+    z-index: 40000;
     background: rgba(255,255,255,0.95);
     padding: 8px 12px;
     border-radius: 8px;
@@ -67,7 +67,7 @@ html, body, #map {
     position: fixed;
     right: 14px;
     top: 72px;
-    z-index: 30000;
+    z-index: 45000;
     width: 255px;
     padding: 12px 14px;
     border-radius: 12px;
@@ -289,15 +289,8 @@ function speedToColor(s, vmin, vmax) {
 
 
 function overlaySpeedToColor(s, vmin, vmax) {
-    let t = (s - vmin) / (vmax - vmin);
-    if (!isFinite(t)) t = 0;
-    t = Math.max(0, Math.min(1, t));
-
-    // Overlay on Temperature/Elevation: white/black only
-    if (t < 0.5) {
-        return "rgba(255,255,255,0.96)";
-    }
-    return "rgba(0,0,0,0.96)";
+    // Temperature/Elevation + Current overlay: all white particles
+    return "rgba(255,255,255,0.96)";
 }
 
 function currentOverlayEnabled() {
@@ -320,7 +313,7 @@ function currentParticleColor(speedValue) {
         return speedToColor(speedValue, currentData.vmin, currentData.vmax);
     }
 
-    // Current over Temperature/Elevation: white/black
+    // Temperature/Elevation overlay: white
     return overlaySpeedToColor(speedValue, currentData.vmin, currentData.vmax);
 }
 
@@ -590,6 +583,53 @@ function stopParticles() {
 }
 
 
+
+const imagePreloadCache = {};
+
+function preloadImageUrl(url) {
+    if (!url || imagePreloadCache[url]) return;
+
+    const img = new Image();
+    img.src = url;
+    imagePreloadCache[url] = img;
+}
+
+function preloadNeighborFrames(i) {
+    if (currentVar === "current") return;
+
+    const arr = datasets[currentVar];
+    if (!arr || arr.length <= 0) return;
+
+    const ii = parseInt(i);
+    if (!Number.isFinite(ii)) return;
+
+    const prev = Math.max(0, ii - 1);
+    const next = Math.min(arr.length - 1, ii + 1);
+
+    preloadImageUrl(arr[prev]);
+    preloadImageUrl(arr[next]);
+}
+
+function preloadCurrentJson(i) {
+    const arr = datasets.current;
+    if (!arr || arr.length <= 0) return;
+
+    const ii = parseInt(i);
+    if (!Number.isFinite(ii)) return;
+
+    const next = Math.min(arr.length - 1, ii + 1);
+    const url = arr[next];
+
+    if (!url || currentJsonCache[url]) return;
+
+    fetch(url)
+        .then(resp => resp.json())
+        .then(data => {
+            currentJsonCache[url] = data;
+        })
+        .catch(() => {});
+}
+
 async function setFrame(i) {
     const n = datasets[currentVar].length;
 
@@ -608,14 +648,17 @@ async function setFrame(i) {
     if (currentVar === "current") {
         setImageOverlayVisible(false);
         await loadCurrentFrame(currentFrame);
+        preloadCurrentJson(currentFrame);
         clearCanvas();
         startParticles();
     } else {
         setImageOverlayVisible(true);
         imageOverlay.setUrl(datasets[currentVar][currentFrame]);
+        preloadNeighborFrames(currentFrame);
 
         if (currentOverlayEnabled()) {
             await loadCurrentFrame(currentFrame);
+            preloadCurrentJson(currentFrame);
             clearCanvas();
             startParticles();
         } else {
