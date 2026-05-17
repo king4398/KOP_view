@@ -107,14 +107,173 @@
     console.log("[webgl] nodeCount:", nodeCount, "elemIndexCount:", state.elems.length);
   }
 
-  function initMap() {
+
+  function firstFinite(values) {
+    for (const v of values) {
+      const x = Number(v);
+      if (Number.isFinite(x)) return x;
+    }
+    return NaN;
+  }
+
+  function getMetaValue(names) {
+    const m = state.meta || {};
+    for (const name of names) {
+      if (m[name] !== undefined && m[name] !== null) return Number(m[name]);
+    }
+    return NaN;
+  }
+
+  function boundsFromMeta() {
+    const m = state.meta || {};
+
+    let lonMin = getMetaValue(["lon_min", "lonMin", "xmin", "x_min", "west"]);
+    let lonMax = getMetaValue(["lon_max", "lonMax", "xmax", "x_max", "east"]);
+    let latMin = getMetaValue(["lat_min", "latMin", "ymin", "y_min", "south"]);
+    let latMax = getMetaValue(["lat_max", "latMax", "ymax", "y_max", "north"]);
+
+    const b = m.bounds || m.extent || m.bbox;
+
+    if (Array.isArray(b)) {
+      if (b.length === 4) {
+        const v = b.map(Number);
+        if (v.every(Number.isFinite)) {
+          // [lon_min, lon_max, lat_min, lat_max]
+          if (Math.abs(v[1]) > 90) {
+            lonMin = v[0];
+            lonMax = v[1];
+            latMin = v[2];
+            latMax = v[3];
+          }
+          // [lon_min, lat_min, lon_max, lat_max]
+          else {
+            lonMin = v[0];
+            latMin = v[1];
+            lonMax = v[2];
+            latMax = v[3];
+          }
+        }
+      } else if (b.length === 2 && Array.isArray(b[0]) && Array.isArray(b[1])) {
+        // [[lat_min, lon_min], [lat_max, lon_max]]
+        latMin = Number(b[0][0]);
+        lonMin = Number(b[0][1]);
+        latMax = Number(b[1][0]);
+        lonMax = Number(b[1][1]);
+      }
+    } else if (b && typeof b === "object") {
+      lonMin = firstFinite([b.lon_min, b.lonMin, b.xmin, b.x_min, b.west, lonMin]);
+      lonMax = firstFinite([b.lon_max, b.lonMax, b.xmax, b.x_max, b.east, lonMax]);
+      latMin = firstFinite([b.lat_min, b.latMin, b.ymin, b.y_min, b.south, latMin]);
+      latMax = firstFinite([b.lat_max, b.latMax, b.ymax, b.y_max, b.north, latMax]);
+    }
+
+    if ([lonMin, lonMax, latMin, latMax].every(Number.isFinite)) {
+      return {
+        lonMin: Math.min(lonMin, lonMax),
+        lonMax: Math.max(lonMin, lonMax),
+        latMin: Math.min(latMin, latMax),
+        latMax: Math.max(latMin, latMax)
+      };
+    }
+
+    return null;
+  }
+
+  function boundsFromNodes() {
+    if (!state.nodesLonLat || state.nodesLonLat.length < 4) return null;
+
+    function scan(swapped) {
+      let lonMin = Infinity;
+      let lonMax = -Infinity;
+      let latMin = Infinity;
+      let latMax = -Infinity;
+      let valid = 0;
+
+      for (let i = 0; i < state.nodesLonLat.length / 2; i++) {
+        const a = Number(state.nodesLonLat[i * 2]);
+        const b = Number(state.nodesLonLat[i * 2 + 1]);
+
+        const lon = swapped ? b : a;
+        const lat = swapped ? a : b;
+
+        if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue;
+        if (lon < -180 || lon > 180 || lat < -90 || lat > 90) continue;
+
+        lonMin = Math.min(lonMin, lon);
+        lonMax = Math.max(lonMax, lon);
+        latMin = Math.min(latMin, lat);
+        latMax = Math.max(latMax, lat);
+        valid += 1;
+      }
+
+      if (valid <= 0) return null;
+
+      return { lonMin, lonMax, latMin, latMax, valid };
+    }
+
+    const normal = scan(false);
+    const swapped = scan(true);
+
+    if (normal && !swapped) return normal;
+    if (!normal && swapped) {
+      console.warn("[webgl] mesh_nodes.bin looks like [lat, lon]. Using swapped interpretation for bounds.");
+      state.nodesAreLatLon = true;
+      return swapped;
+    }
+
+    if (normal && swapped) {
+      // For Korea/Japan domain, normal lon range should generally be much larger than lat range.
+      const normalScore = normal.valid;
+      const swappedScore = swapped.valid;
+
+      if (swappedScore > normalScore) {
+        console.warn("[webgl] using swapped [lat, lon] node interpretation for bounds.");
+        state.nodesAreLatLon = true;
+        return swapped;
+      }
+
+      state.nodesAreLatLon = false;
+      return normal;
+    }
+
+    return null;
+  }
+
+  function getDomainBounds() {
+    let b = boundsFromMeta();
+
+    if (!b) {
+      console.warn("[webgl] mesh_meta.json bounds not found. Computing bounds from mesh_nodes.bin.");
+      b = boundsFromNodes();
+    }
+
+    if (!b) {
+      console.error("[webgl] meta:", state.meta);
+      console.error("[webgl] first node values:", state.nodesLonLat ? Array.from(state.nodesLonLat.slice(0, 10)) : null);
+      throw new Error("Cannot determine valid lon/lat bounds for Leaflet map.");
+    }
+
+    if (![b.lonMin, b.lonMax, b.latMin, b.latMax].every(Number.isFinite)) {
+      throw new Error("Domain bounds contain NaN.");
+    }
+
+    return b;
+  }
+
+  
+function initMap() {
+    const b = getDomainBounds();
+
     const bounds = [
-      [state.meta.lat_min ?? state.meta.south ?? state.meta.bounds?.[1], state.meta.lon_min ?? state.meta.west ?? state.meta.bounds?.[0]],
-      [state.meta.lat_max ?? state.meta.north ?? state.meta.bounds?.[3], state.meta.lon_max ?? state.meta.east ?? state.meta.bounds?.[2]]
+      [b.latMin, b.lonMin],
+      [b.latMax, b.lonMax]
     ];
 
-    const centerLat = (Number(bounds[0][0]) + Number(bounds[1][0])) * 0.5;
-    const centerLon = (Number(bounds[0][1]) + Number(bounds[1][1])) * 0.5;
+    const centerLat = (b.latMin + b.latMax) * 0.5;
+    const centerLon = (b.lonMin + b.lonMax) * 0.5;
+
+    console.log("[webgl] domain bounds:", b);
+    console.log("[webgl] map center:", centerLat, centerLon);
 
     state.map = L.map("map", {
       center: [centerLat, centerLon],
@@ -149,6 +308,7 @@
       requestRender();
     });
   }
+
 
   function createCanvasLayer() {
     const container = state.map.getContainer();
@@ -346,8 +506,10 @@
     const n = state.nodesLonLat.length / 2;
 
     for (let i = 0; i < n; i++) {
-      const lon = state.nodesLonLat[i * 2];
-      const lat = state.nodesLonLat[i * 2 + 1];
+      const a = state.nodesLonLat[i * 2];
+      const b = state.nodesLonLat[i * 2 + 1];
+      const lon = state.nodesAreLatLon ? b : a;
+      const lat = state.nodesAreLatLon ? a : b;
       const pt = state.map.latLngToContainerPoint([lat, lon]);
 
       state.screenXY[i * 2] = pt.x;
