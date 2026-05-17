@@ -58,20 +58,51 @@
     return Math.max(a, Math.min(b, x));
   }
 
-  function getFrameCount() {
-    return Number(state.meta.frame_count || state.meta.nframe || state.meta.frames || 24);
+  
+function getFrameCount() {
+    const m = state.meta || {};
+
+    const candidates = [
+      m.frame_count,
+      m.nframe,
+      m.nframes,
+      m.frames,
+      m.nt,
+      m.time_count,
+      Array.isArray(m.labels) ? m.labels.length : NaN,
+      Array.isArray(m.times) ? m.times.length : NaN
+    ];
+
+    for (const v of candidates) {
+      const n = Number(v);
+      if (Number.isFinite(n) && n > 0) {
+        return Math.floor(n);
+      }
+    }
+
+    // Fallback for current test case
+    return 24;
   }
+
 
   function getLabels() {
     return state.meta.labels || state.meta.times || [];
   }
 
-  function frameUrl(kind, i) {
-    const name = "frame_" + String(i).padStart(4, "0") + ".bin";
+  
+function frameUrl(kind, i) {
+    let ii = Number(i);
+    if (!Number.isFinite(ii)) ii = 0;
+    ii = Math.max(0, Math.floor(ii));
+
+    const name = "frame_" + String(ii).padStart(4, "0") + ".bin";
+
     if (kind === "temperature") return ROOT + "temp_bin/" + name;
     if (kind === "ssh") return ROOT + "ssh_bin/" + name;
+
     throw new Error("Unknown scalar kind: " + kind);
   }
+
 
   function currentJsonUrl(i) {
     return "../frames_multi/current_grid_json/frame_" + String(i).padStart(4, "0") + ".json";
@@ -649,10 +680,14 @@ function initMap() {
     el.innerHTML = labels[state.currentFrame] || String(state.currentFrame);
   }
 
-  async function setFrame(i) {
+  async 
+async function setFrame(i) {
     const n = getFrameCount();
 
-    state.currentFrame = clamp(parseInt(i), 0, n - 1);
+    let ii = Number(i);
+    if (!Number.isFinite(ii)) ii = 0;
+
+    state.currentFrame = clamp(Math.floor(ii), 0, n - 1);
 
     const slider = $("frame-slider");
     if (slider) slider.value = state.currentFrame;
@@ -685,6 +720,7 @@ function initMap() {
     updateLegend();
   }
 
+
   function startTimer() {
     stopTimer();
 
@@ -708,7 +744,7 @@ function initMap() {
     const slider = $("frame-slider");
     if (slider) {
       slider.min = 0;
-      slider.max = frameCount - 1;
+      slider.max = Math.max(0, frameCount - 1);
       slider.value = 0;
       slider.addEventListener("input", e => setFrame(e.target.value));
     }
