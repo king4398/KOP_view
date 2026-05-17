@@ -445,7 +445,8 @@ function initMap() {
       }
 
       void main() {
-        if (!isfinite(v_value) || v_value < -9000.0) {
+        // NaN check: NaN is not equal to itself in GLSL
+        if ((v_value != v_value) || v_value < -9000.0) {
           discard;
         }
 
