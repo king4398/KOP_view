@@ -1567,16 +1567,15 @@ boot().catch(err => {
 })();
 
 
-// KOP_ZOOM_SNAPSHOT_OVERLAY_START
+// KOP_FINAL_SNAPSHOT_ONLY_ZOOM_START
 (function () {
     "use strict";
 
     let snapshotOverlay = null;
-    let snapshotUrl = null;
-    let snapshotActive = false;
-    let snapshotPaneName = "kop-zoom-snapshot-pane";
+    let snapshotPaneName = "kop-final-snapshot-pane";
+    let installed = false;
 
-    function getCanvasByName(name) {
+    function getVar(name) {
         try {
             return eval(name);
         } catch (e) {
@@ -1584,12 +1583,11 @@ boot().catch(err => {
         }
     }
 
-    function getLayerCanvasesSafe() {
+    function getLayerCanvasesFinal() {
         const out = [];
-
-        const a = getCanvasByName("glCanvas");
-        const b = getCanvasByName("currentCanvas");
-        const c = getCanvasByName("meshCanvas");
+        const a = getVar("glCanvas");
+        const b = getVar("currentCanvas");
+        const c = getVar("meshCanvas");
 
         if (a) out.push(a);
         if (b) out.push(b);
@@ -1598,13 +1596,32 @@ boot().catch(err => {
         return out;
     }
 
-    function setRealLayerVisibility(visible) {
-        for (const c of getLayerCanvasesSafe()) {
+    function setRealLayersVisible(visible) {
+        for (const c of getLayerCanvasesFinal()) {
             c.style.visibility = visible ? "visible" : "hidden";
         }
     }
 
-    function clearOldSnapshot() {
+    function pauseParticlesNoClearFinal() {
+        try {
+            if (typeof pauseParticlesNoClear === "function") {
+                pauseParticlesNoClear();
+                return;
+            }
+        } catch (e) {}
+
+        try {
+            if (typeof particleRunning !== "undefined") {
+                particleRunning = false;
+            }
+            if (typeof particleAnimId !== "undefined" && particleAnimId !== null) {
+                cancelAnimationFrame(particleAnimId);
+                particleAnimId = null;
+            }
+        } catch (e) {}
+    }
+
+    function removeSnapshot() {
         try {
             if (snapshotOverlay && typeof map !== "undefined" && map) {
                 map.removeLayer(snapshotOverlay);
@@ -1612,15 +1629,6 @@ boot().catch(err => {
         } catch (e) {}
 
         snapshotOverlay = null;
-
-        if (snapshotUrl) {
-            try {
-                URL.revokeObjectURL(snapshotUrl);
-            } catch (e) {}
-        }
-
-        snapshotUrl = null;
-        snapshotActive = false;
     }
 
     function ensureSnapshotPane() {
@@ -1633,23 +1641,18 @@ boot().catch(err => {
         }
 
         if (pane) {
-            pane.style.zIndex = "900";
+            pane.style.zIndex = "950";
             pane.style.pointerEvents = "none";
         }
 
         return pane;
     }
 
-    function hideOldGhostIfAny() {
-        const g = document.getElementById("zoom-ghost-canvas");
-        if (g) {
-            g.style.display = "none";
-            g.style.opacity = "0";
-        }
-    }
-
-    function captureCurrentViewAsDataUrl() {
+    function captureCurrentLayers() {
         if (typeof map === "undefined" || !map) return null;
+
+        const canvases = getLayerCanvasesFinal();
+        if (!canvases.length) return null;
 
         const size = map.getSize();
         const dpr = window.devicePixelRatio || 1;
@@ -1662,7 +1665,7 @@ boot().catch(err => {
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, size.x, size.y);
 
-        for (const c of getLayerCanvasesSafe()) {
+        for (const c of canvases) {
             if (!c) continue;
             if (c.style.display === "none") continue;
             if (c.style.visibility === "hidden") continue;
@@ -1670,23 +1673,23 @@ boot().catch(err => {
             try {
                 ctx.drawImage(c, 0, 0, size.x, size.y);
             } catch (e) {
-                console.warn("[KOP snapshot zoom] drawImage failed:", e);
+                console.warn("[KOP final snapshot] drawImage failed:", e);
             }
         }
 
         return cap.toDataURL("image/png");
     }
 
-    function startSnapshotZoom() {
+    function onZoomStartFinal() {
         if (typeof map === "undefined" || !map) return;
 
-        hideOldGhostIfAny();
-        clearOldSnapshot();
+        removeSnapshot();
 
         const pane = ensureSnapshotPane();
         if (!pane) return;
 
-        const dataUrl = captureCurrentViewAsDataUrl();
+        // Capture BEFORE hiding real layers.
+        const dataUrl = captureCurrentLayers();
         if (!dataUrl) return;
 
         const bounds = map.getBounds();
@@ -1694,35 +1697,30 @@ boot().catch(err => {
         snapshotOverlay = L.imageOverlay(dataUrl, bounds, {
             pane: snapshotPaneName,
             opacity: 1.0,
-            interactive: false,
-            crossOrigin: false
+            interactive: false
         });
 
         snapshotOverlay.addTo(map);
-        snapshotActive = true;
 
-        // Hide real WebGL/current/mesh layers while Leaflet animates the captured image.
-        // This makes the layer zoom exactly like a normal Leaflet image overlay.
-        setRealLayerVisibility(false);
+        // From now until zoomend, only the Leaflet imageOverlay is visible.
+        // It zooms exactly like a normal Leaflet layer.
+        setRealLayersVisible(false);
+        pauseParticlesNoClearFinal();
 
-        try {
-            if (typeof pauseParticlesNoClear === "function") {
-                pauseParticlesNoClear();
-            }
-        } catch (e) {}
+        console.log("[KOP final snapshot] zoomstart snapshot active");
     }
 
-    function finishSnapshotZoom() {
+    function onZoomEndFinal() {
         if (typeof map === "undefined" || !map) return;
 
-        // Redraw real data at final zoom first.
         try {
+            if (typeof coordsDirty !== "undefined") coordsDirty = true;
+
             if (typeof renderViewportLayers === "function") {
-                coordsDirty = true;
                 renderViewportLayers(true);
             }
         } catch (e) {
-            console.warn("[KOP snapshot zoom] renderViewportLayers failed:", e);
+            console.warn("[KOP final snapshot] renderViewportLayers failed:", e);
         }
 
         try {
@@ -1737,61 +1735,56 @@ boot().catch(err => {
             }
         } catch (e) {}
 
-        setRealLayerVisibility(true);
+        setRealLayersVisible(true);
 
-        // Keep snapshot a tiny moment to cover tile/WebGL refresh,
-        // then remove it. No fade, no artificial ghost movement.
-        setTimeout(() => {
-            clearOldSnapshot();
-        }, 40);
+        // Remove after one frame so the exact redraw is already visible.
+        requestAnimationFrame(() => {
+            removeSnapshot();
+        });
+
+        console.log("[KOP final snapshot] zoomend exact redraw");
     }
 
-    function prependLeafletHandler(type, fn) {
-        if (typeof map === "undefined" || !map) return;
-
-        map.on(type, fn);
-
-        // Leaflet stores event handlers in map._events[type].
-        // Move this handler to the front so snapshot is captured before other zoomstart handlers hide layers.
-        try {
-            const arr = map._events && map._events[type];
-            if (Array.isArray(arr) && arr.length > 1) {
-                const last = arr.pop();
-                arr.unshift(last);
-            }
-        } catch (e) {}
-    }
-
-    function installSnapshotZoom() {
+    function installFinalSnapshotZoom() {
         if (typeof map === "undefined" || !map) {
-            setTimeout(installSnapshotZoom, 300);
+            setTimeout(installFinalSnapshotZoom, 300);
             return;
         }
 
-        if (map.__kopSnapshotZoomInstalled) return;
-        map.__kopSnapshotZoomInstalled = true;
+        if (installed || map.__kopFinalSnapshotZoomInstalled) return;
 
-        prependLeafletHandler("zoomstart", function () {
-            startSnapshotZoom();
-        });
+        installed = true;
+        map.__kopFinalSnapshotZoomInstalled = true;
 
-        map.on("zoomend", function () {
-            finishSnapshotZoom();
-        });
+        /*
+          Important:
+          Remove all previous custom zoom handlers.
+          This is the part that was missing before.
+          Without this, old zoomanim/applyLeafletRendererZoom logic still runs.
+        */
+        map.off("zoomstart");
+        map.off("zoomanim");
+        map.off("zoomend");
 
-        console.log("[KOP snapshot zoom] installed");
+        map.on("zoomstart", onZoomStartFinal);
+
+        // Do NOT handle zoomanim.
+        // Leaflet imageOverlay handles zoom animation by itself.
+
+        map.on("zoomend", onZoomEndFinal);
+
+        console.log("[KOP final snapshot] installed snapshot-only zoom");
     }
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", function () {
-            setTimeout(installSnapshotZoom, 800);
+            setTimeout(installFinalSnapshotZoom, 1200);
         });
     } else {
-        setTimeout(installSnapshotZoom, 800);
+        setTimeout(installFinalSnapshotZoom, 1200);
     }
 
-    window.KOP_START_SNAPSHOT_ZOOM = startSnapshotZoom;
-    window.KOP_FINISH_SNAPSHOT_ZOOM = finishSnapshotZoom;
+    window.KOP_INSTALL_FINAL_SNAPSHOT_ZOOM = installFinalSnapshotZoom;
 })();
-// KOP_ZOOM_SNAPSHOT_OVERLAY_END
+// KOP_FINAL_SNAPSHOT_ONLY_ZOOM_END
 
