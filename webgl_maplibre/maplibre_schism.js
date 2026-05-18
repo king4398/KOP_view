@@ -132,9 +132,71 @@ async function loadCurrentFrame(i){ const key=String(i); if(currentCache.has(key
 function preloadCurrentFrame(i){ const next=Math.min(frameCount()-1,i+1), key=String(next); if(currentCache.has(key)) return; Promise.all([fetchFloat32(currentUUrl(next),meta.node_count),fetchFloat32(currentVUrl(next),meta.node_count)]).then(([u,v])=>currentCache.set(key,{u,v})).catch(()=>{}); }
 async function setFrame(i){ const n=frameCount(); if(n<=0) return; currentFrame=parseInt(i); if(!Number.isFinite(currentFrame)) currentFrame=0; currentFrame=Math.max(0,Math.min(n-1,currentFrame)); els.frameSlider.value=currentFrame; const fm=meta.frames[currentFrame]||{}; els.timeLabel.textContent=fm.label||`frame ${currentFrame}`; updateCurrentOverlayAvailability(); updateLegend(); if(currentVar!=="current"){ const arr=await loadScalarFrame(currentVar,currentFrame); if(GLState.gl && GLState.valueBuffer){ const gl=GLState.gl; gl.bindBuffer(gl.ARRAY_BUFFER,GLState.valueBuffer); gl.bufferSubData(gl.ARRAY_BUFFER,0,arr); } preloadScalarNeighbors(currentVar,currentFrame); } if(shouldDrawCurrentParticles()){ await loadCurrentFrame(currentFrame); clearCurrentCanvas(); startParticles(); preloadCurrentFrame(currentFrame); } else stopParticles(); setStatus(`${currentVar} frame ${currentFrame+1}/${n}`); map.triggerRepaint(); }
 function startTimer(){ if(timer!==null) clearInterval(timer); timer=setInterval(()=>{ currentFrame=(currentFrame+1)%frameCount(); setFrame(currentFrame); },1000/speed); }
-function initParticleCanvas(){ const container=map.getCanvasContainer(); particleCanvas=document.createElement("canvas"); particleCanvas.id="particle-canvas"; container.appendChild(particleCanvas); particleCtx=particleCanvas.getContext("2d"); resizeParticleCanvas(); window.addEventListener("resize",resizeParticleCanvas); map.on("resize",resizeParticleCanvas); }
-function resizeParticleCanvas(){ if(!map||!particleCanvas||!particleCtx) return; const c=map.getCanvas(), w=c.clientWidth, h=c.clientHeight, dpr=window.devicePixelRatio||1; particleCanvas.width=Math.max(1,Math.round(w*dpr)); particleCanvas.height=Math.max(1,Math.round(h*dpr)); particleCanvas.style.width=w+"px"; particleCanvas.style.height=h+"px"; particleCtx.setTransform(dpr,0,0,dpr,0,0); clearCurrentCanvas(); }
-function clearCurrentCanvas(){ if(!particleCtx||!map) return; const c=map.getCanvas(); particleCtx.clearRect(0,0,c.clientWidth,c.clientHeight); }
+
+function initParticleCanvas() {
+    // Important:
+    // Attach particle canvas to the map container itself, not to MapLibre's canvasContainer.
+    // The canvasContainer can participate in map transforms during navigation.
+    // We want particles to stay screen-fixed while the map is being dragged.
+    const container = map.getContainer();
+
+    if (particleCanvas && particleCanvas.parentNode) {
+        particleCanvas.parentNode.removeChild(particleCanvas);
+    }
+
+    particleCanvas = document.createElement("canvas");
+    particleCanvas.id = "particle-canvas";
+
+    particleCanvas.style.position = "absolute";
+    particleCanvas.style.left = "0";
+    particleCanvas.style.top = "0";
+    particleCanvas.style.width = "100%";
+    particleCanvas.style.height = "100%";
+    particleCanvas.style.pointerEvents = "none";
+    particleCanvas.style.zIndex = "20";
+    particleCanvas.style.transform = "none";
+    particleCanvas.style.willChange = "auto";
+
+    container.appendChild(particleCanvas);
+
+    particleCtx = particleCanvas.getContext("2d");
+
+    resizeParticleCanvas();
+
+    window.addEventListener("resize", resizeParticleCanvas);
+    map.on("resize", resizeParticleCanvas);
+}
+
+function resizeParticleCanvas() {
+    if (!map || !particleCanvas || !particleCtx) return;
+
+    const container = map.getContainer();
+    const rect = container.getBoundingClientRect();
+
+    const w = Math.max(1, Math.round(rect.width));
+    const h = Math.max(1, Math.round(rect.height));
+    const dpr = window.devicePixelRatio || 1;
+
+    particleCanvas.width = Math.max(1, Math.round(w * dpr));
+    particleCanvas.height = Math.max(1, Math.round(h * dpr));
+    particleCanvas.style.width = w + "px";
+    particleCanvas.style.height = h + "px";
+    particleCanvas.style.left = "0";
+    particleCanvas.style.top = "0";
+    particleCanvas.style.transform = "none";
+
+    particleCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    clearCurrentCanvas();
+}
+
+function clearCurrentCanvas() {
+    if (!particleCtx || !map) return;
+
+    const container = map.getContainer();
+    const rect = container.getBoundingClientRect();
+
+    particleCtx.clearRect(0, 0, rect.width, rect.height);
+}
 
 
 function speedToColor(s, vmin, vmax) {
@@ -177,8 +239,21 @@ function resetParticles(){ particles=[]; if(!currentU||!currentV) return; for(le
 let frozenParticleView = null;
 
 
+
+function lockParticleCanvasToScreen() {
+    if (!particleCanvas) return;
+
+    particleCanvas.style.position = "absolute";
+    particleCanvas.style.left = "0";
+    particleCanvas.style.top = "0";
+    particleCanvas.style.transform = "none";
+    particleCanvas.style.visibility = "visible";
+}
+
 function freezeParticleProjection() {
     if (!map) return;
+
+    lockParticleCanvasToScreen();
 
     const c = map.getCenter();
     const centerMerc = maplibregl.MercatorCoordinate.fromLngLat({
@@ -226,7 +301,7 @@ function projectParticlePoint(lon, lat) {
     return map.project([lon, lat]);
 }
 
-function startParticles(){ if(particleAnimId!==null) cancelAnimationFrame(particleAnimId); particleRunning=true; resetParticles(); function step(){ if(!particleRunning||!shouldDrawCurrentParticles()){ particleAnimId=requestAnimationFrame(step); return; } const canvas=map.getCanvas(), width=canvas.clientWidth, height=canvas.clientHeight; particleCtx.globalCompositeOperation="destination-in"; particleCtx.fillStyle="rgba(0,0,0,0.92)"; particleCtx.fillRect(0,0,width,height); particleCtx.globalCompositeOperation="source-over"; particleCtx.lineWidth=1.2; for(const p of particles){ if(!p||p.age>p.maxAge){resetParticle(p);continue;} const vec=vectorAt(p.lon,p.lat); if(!vec){resetParticle(p);continue;} const oldPoint = projectParticlePoint(p.lon, p.lat); const latRad=p.lat*Math.PI/180; let coslat=Math.cos(latRad); if(Math.abs(coslat)<1e-6) coslat=1e-6; const dt=CONFIG.flowScale*speed; const newLon=p.lon+(vec.u*dt)/coslat, newLat=p.lat+vec.v*dt; if(!vectorAt(newLon,newLat)){resetParticle(p);continue;} p.lon=newLon; p.lat=newLat; p.age++; const newPoint = projectParticlePoint(p.lon, p.lat); if(newPoint.x<-50||newPoint.x>width+50||newPoint.y<-50||newPoint.y>height+50){resetParticle(p);continue;} particleCtx.strokeStyle=currentParticleColor(vec.speed); particleCtx.beginPath(); particleCtx.moveTo(oldPoint.x,oldPoint.y); particleCtx.lineTo(newPoint.x,newPoint.y); particleCtx.stroke(); } particleAnimId=requestAnimationFrame(step); } particleAnimId=requestAnimationFrame(step); }
+function startParticles(){ if(particleAnimId!==null) cancelAnimationFrame(particleAnimId); particleRunning=true; resetParticles(); function step(){ if(!particleRunning||!shouldDrawCurrentParticles()){ particleAnimId=requestAnimationFrame(step); return; } const rect=map.getContainer().getBoundingClientRect(), width=rect.width, height=rect.height; particleCtx.globalCompositeOperation="destination-in"; particleCtx.fillStyle="rgba(0,0,0,0.92)"; particleCtx.fillRect(0,0,width,height); particleCtx.globalCompositeOperation="source-over"; particleCtx.lineWidth=1.2; for(const p of particles){ if(!p||p.age>p.maxAge){resetParticle(p);continue;} const vec=vectorAt(p.lon,p.lat); if(!vec){resetParticle(p);continue;} const oldPoint = projectParticlePoint(p.lon, p.lat); const latRad=p.lat*Math.PI/180; let coslat=Math.cos(latRad); if(Math.abs(coslat)<1e-6) coslat=1e-6; const dt=CONFIG.flowScale*speed; const newLon=p.lon+(vec.u*dt)/coslat, newLat=p.lat+vec.v*dt; if(!vectorAt(newLon,newLat)){resetParticle(p);continue;} p.lon=newLon; p.lat=newLat; p.age++; const newPoint = projectParticlePoint(p.lon, p.lat); if(newPoint.x<-50||newPoint.x>width+50||newPoint.y<-50||newPoint.y>height+50){resetParticle(p);continue;} particleCtx.strokeStyle=currentParticleColor(vec.speed); particleCtx.beginPath(); particleCtx.moveTo(oldPoint.x,oldPoint.y); particleCtx.lineTo(newPoint.x,newPoint.y); particleCtx.stroke(); } particleAnimId=requestAnimationFrame(step); } particleAnimId=requestAnimationFrame(step); }
 function stopParticles(){ particleRunning=false; if(particleAnimId!==null){ cancelAnimationFrame(particleAnimId); particleAnimId=null; } clearCurrentCanvas(); }
 function setupEvents(){ els.currentOverlay.checked=true; els.currentOverlay.dataset.userTouched=""; els.currentOverlay.addEventListener("change",()=>{els.currentOverlay.dataset.userTouched="1"; updateCurrentOverlayAvailability(); setFrame(currentFrame);}); els.meshOverlay.addEventListener("change",()=>map.triggerRepaint()); els.varSelect.addEventListener("change",e=>{currentVar=e.target.value; updateCurrentOverlayAvailability(); updateLegend(); setFrame(currentFrame); map.triggerRepaint();}); els.playBtn.addEventListener("click",()=>{ if(timer===null){els.playBtn.textContent="Pause"; startTimer();} else {els.playBtn.textContent="Play"; clearInterval(timer); timer=null;} }); els.frameSlider.addEventListener("input",e=>setFrame(e.target.value)); els.speedSelect.addEventListener("change",e=>{ speed=parseFloat(e.target.value); if(timer!==null) startTimer(); }); els.opacitySlider.addEventListener("input",()=>map.triggerRepaint()); els.densitySelect.addEventListener("change",e=>{ particleCount=parseInt(e.target.value); resetParticles(); clearCurrentCanvas(); }); map.on("moveend",()=>resetParticles());
 }
@@ -401,3 +476,5 @@ function setBaseMap(name) {
 
 
 // KOP_PARTICLE_FREEZE_REAL2_APPLIED
+
+// KOP_PARTICLE_FIXED_CANVAS_SCREEN_OVERLAY
