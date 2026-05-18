@@ -111,6 +111,12 @@ let meshOverlayCheck = document.getElementById("mesh-overlay-check");
 // Canvases are positioned in overlay panes using Leaflet layer coordinates.
 let canvasTopLeft = null;
 
+// Ghost canvas used during zoom to avoid black flicker.
+// It temporarily displays the last rendered view while real WebGL/tile layers update.
+let zoomGhostCanvas = null;
+let zoomGhostCtx = null;
+let zoomGhostTimer = null;
+
 function setStatus(msg) {
     if (statusLine) statusLine.textContent = msg;
 }
@@ -492,12 +498,22 @@ function initMap() {
 
     const carto = L.tileLayer(
         "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-        { attribution: "&copy; OpenStreetMap contributors &copy; CARTO" }
+        {
+            attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
+            keepBuffer: 8,
+            updateWhenZooming: false,
+            updateWhenIdle: false
+        }
     );
 
     const esri = L.tileLayer(
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        { attribution: "Tiles &copy; Esri" }
+        {
+            attribution: "Tiles &copy; Esri",
+            keepBuffer: 8,
+            updateWhenZooming: false,
+            updateWhenIdle: false
+        }
     );
 
     esri.addTo(map);
@@ -519,7 +535,9 @@ function initMap() {
         mapInteracting = true;
         rememberExactRenderView();
 
-        // Avoid particle/mesh smear during zoom.
+        // Hold last rendered layer to prevent black flicker during zoom.
+        showZoomGhost();
+
         if (typeof stopParticles === "function") stopParticles();
 
         if (meshCanvas && meshOverlayCheck && meshOverlayCheck.checked) {
@@ -552,6 +570,8 @@ function initMap() {
         if (shouldDrawCurrentParticles()) {
             startParticles();
         }
+
+        hideZoomGhostSoon(180);
     });
 
     window.addEventListener("resize", () => {
@@ -563,6 +583,104 @@ function initMap() {
     });
 }
 
+
+
+function ensureZoomGhostCanvas() {
+    if (zoomGhostCanvas) return;
+
+    const container = map.getContainer();
+
+    zoomGhostCanvas = document.createElement("canvas");
+    zoomGhostCanvas.id = "zoom-ghost-canvas";
+    zoomGhostCanvas.style.position = "absolute";
+    zoomGhostCanvas.style.left = "0";
+    zoomGhostCanvas.style.top = "0";
+    zoomGhostCanvas.style.width = "100%";
+    zoomGhostCanvas.style.height = "100%";
+    zoomGhostCanvas.style.pointerEvents = "none";
+    zoomGhostCanvas.style.zIndex = "30000";
+    zoomGhostCanvas.style.opacity = "0";
+    zoomGhostCanvas.style.transition = "opacity 220ms ease-out";
+    zoomGhostCanvas.style.display = "none";
+
+    container.appendChild(zoomGhostCanvas);
+    zoomGhostCtx = zoomGhostCanvas.getContext("2d");
+}
+
+function resizeZoomGhostCanvas() {
+    if (!zoomGhostCanvas || !map) return;
+
+    const size = map.getSize();
+    const dpr = window.devicePixelRatio || 1;
+
+    zoomGhostCanvas.width = Math.max(1, Math.round(size.x * dpr));
+    zoomGhostCanvas.height = Math.max(1, Math.round(size.y * dpr));
+    zoomGhostCanvas.style.width = size.x + "px";
+    zoomGhostCanvas.style.height = size.y + "px";
+
+    zoomGhostCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function showZoomGhost() {
+    if (!map) return;
+
+    ensureZoomGhostCanvas();
+    resizeZoomGhostCanvas();
+
+    if (zoomGhostTimer) {
+        clearTimeout(zoomGhostTimer);
+        zoomGhostTimer = null;
+    }
+
+    const size = map.getSize();
+
+    zoomGhostCtx.clearRect(0, 0, size.x, size.y);
+
+    // Copy current visible WebGL/canvas layers into one temporary canvas.
+    // drawImage can copy WebGL canvases if preserveDrawingBuffer is available enough
+    // for the current frame in most browsers.
+    try {
+        if (glCanvas && glCanvas.style.display !== "none") {
+            zoomGhostCtx.drawImage(glCanvas, 0, 0, size.x, size.y);
+        }
+    } catch (e) {}
+
+    try {
+        if (currentCanvas && currentCanvas.style.display !== "none") {
+            zoomGhostCtx.drawImage(currentCanvas, 0, 0, size.x, size.y);
+        }
+    } catch (e) {}
+
+    try {
+        if (meshCanvas && meshCanvas.style.display !== "none") {
+            zoomGhostCtx.drawImage(meshCanvas, 0, 0, size.x, size.y);
+        }
+    } catch (e) {}
+
+    zoomGhostCanvas.style.display = "block";
+    zoomGhostCanvas.style.opacity = "1";
+}
+
+function hideZoomGhostSoon(delayMs = 260) {
+    if (!zoomGhostCanvas) return;
+
+    if (zoomGhostTimer) {
+        clearTimeout(zoomGhostTimer);
+        zoomGhostTimer = null;
+    }
+
+    zoomGhostTimer = setTimeout(() => {
+        if (!zoomGhostCanvas) return;
+
+        zoomGhostCanvas.style.opacity = "0";
+
+        setTimeout(() => {
+            if (zoomGhostCanvas && zoomGhostCanvas.style.opacity === "0") {
+                zoomGhostCanvas.style.display = "none";
+            }
+        }, 260);
+    }, delayMs);
+}
 
 function initCanvases() {
     const panes = map.getPanes();
@@ -610,13 +728,15 @@ function initCanvases() {
     gl = glCanvas.getContext("webgl2", {
         alpha: true,
         antialias: true,
-        premultipliedAlpha: false
+        premultipliedAlpha: false,
+        preserveDrawingBuffer: true
     });
 
     meshGl = meshCanvas.getContext("webgl2", {
         alpha: true,
         antialias: true,
-        premultipliedAlpha: false
+        premultipliedAlpha: false,
+        preserveDrawingBuffer: true
     });
 
     currentCtx = currentCanvas.getContext("2d");
