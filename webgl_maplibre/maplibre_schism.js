@@ -10,7 +10,7 @@ const CONFIG = {
   lookupOffsetsUrl: DATA_ROOT + "lookup_offsets.bin",
   lookupTrianglesUrl: DATA_ROOT + "lookup_triangles.bin",
   flowScale: 0.005,
-  overlayParticleColor: "rgba(218,218,218,0.84)"
+  overlayParticleColor: "rgba(238,238,238,0.90)"
 };
 
 const els = {
@@ -51,7 +51,7 @@ function updateLegend(){
     els.legendBox.innerHTML=`<div style="font-weight:bold; margin-bottom:6px;">Surface Temperature [degC]</div><div style="width:220px; height:16px; background:linear-gradient(to right, #0d2ef2, #0d9eff, #1ac76b, #ebe038, #f28c1a, #d11f14); border:1px solid #666;"></div><div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;"><span>${v.vmin}</span><span>${((v.vmin+v.vmax)/2).toFixed(1)}</span><span>${v.vmax}</span></div>`;
   } else if(currentVar==="ssh"){
     const v=meta.variables.ssh;
-    els.legendBox.innerHTML=`<div style="font-weight:bold; margin-bottom:6px;">Elevation [m]</div><div style="width:220px; height:16px; background:linear-gradient(to right, #0d266b, #1c56a0, #6baed6, #f6f6ef, #f4a582, #d94830, #800026); border:1px solid #666;"></div><div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;"><span>${v.vmin}</span><span>${((v.vmin+v.vmax)/2).toFixed(2)}</span><span>${v.vmax}</span></div>`;
+    els.legendBox.innerHTML=`<div style="font-weight:bold; margin-bottom:6px;">Elevation [m]</div><div style="width:220px; height:16px; background:linear-gradient(to right, #0d2ef2, #f7f7f4, #d11f14); border:1px solid #666;"></div><div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;"><span>${v.vmin}</span><span>${((v.vmin+v.vmax)/2).toFixed(2)}</span><span>${v.vmax}</span></div>`;
   } else {
     els.legendBox.innerHTML=`<div style="font-weight:bold; margin-bottom:6px;">Current Speed [m/s]</div><div style="width:220px; height:16px; background:linear-gradient(to right, #0d2ef2, #0d9eff, #1ac76b, #ebe038, #f28c1a, #d11f14); border:1px solid #666;"></div><div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;"><span>0</span><span>0.5</span><span>1.0</span></div>`;
   }
@@ -81,6 +81,23 @@ vec3 smoothJet(float t) {
 }
 
 
+
+vec3 simpleBlueWhiteRed(float t) {
+    // Simple smooth elevation colormap:
+    // jet-blue -> white -> jet-red
+    t = clamp(t, 0.0, 1.0);
+
+    vec3 blue  = vec3(0.05, 0.18, 0.95); // #0d2ef2
+    vec3 white = vec3(0.98, 0.98, 0.96);
+    vec3 red   = vec3(0.82, 0.12, 0.08); // #d11f14
+
+    if (t < 0.5) {
+        return mix(blue, white, t / 0.5);
+    }
+
+    return mix(white, red, (t - 0.5) / 0.5);
+}
+
 vec3 smoothRdBu(float t) {
     // Smooth RdBu-like colormap:
     // deep blue -> blue -> light blue -> soft white -> peach -> red -> deep red
@@ -102,7 +119,7 @@ vec3 smoothRdBu(float t) {
     return mix(c5, c6, (t - 0.8333) / 0.1667);
 }
 
-vec3 rdbu(float t){t=clamp(t,0.0,1.0);vec3 c0=vec3(0.031,0.188,0.420);vec3 c1=vec3(0.420,0.682,0.839);vec3 c2=vec3(0.969);vec3 c3=vec3(0.984,0.416,0.290);vec3 c4=vec3(0.404,0.0,0.051);if(t<0.25)return mix3(c0,c1,t/0.25);if(t<0.50)return mix3(c1,c2,(t-0.25)/0.25);if(t<0.75)return mix3(c2,c3,(t-0.50)/0.25);return mix3(c3,c4,(t-0.75)/0.25);} void main(){ if((v_value!=v_value)||v_value<=u_invalid+1.0) discard; float den=max(abs(u_vmax-u_vmin),1e-12); float t=clamp((v_value-u_vmin)/den,0.0,1.0); vec3 c = (u_cmap == 1) ? smoothRdBu(t) : smoothJet(t); gl_FragColor=vec4(c,u_opacity); }`;
+vec3 rdbu(float t){t=clamp(t,0.0,1.0);vec3 c0=vec3(0.031,0.188,0.420);vec3 c1=vec3(0.420,0.682,0.839);vec3 c2=vec3(0.969);vec3 c3=vec3(0.984,0.416,0.290);vec3 c4=vec3(0.404,0.0,0.051);if(t<0.25)return mix3(c0,c1,t/0.25);if(t<0.50)return mix3(c1,c2,(t-0.25)/0.25);if(t<0.75)return mix3(c2,c3,(t-0.50)/0.25);return mix3(c3,c4,(t-0.75)/0.25);} void main(){ if((v_value!=v_value)||v_value<=u_invalid+1.0) discard; float den=max(abs(u_vmax-u_vmin),1e-12); float t=clamp((v_value-u_vmin)/den,0.0,1.0); vec3 c = (u_cmap == 1) ? simpleBlueWhiteRed(t) : smoothJet(t); gl_FragColor=vec4(c,u_opacity); }`;
 const MESH_VS=`precision highp float; attribute vec2 a_pos; uniform mat4 u_matrix; void main(){ gl_Position=u_matrix*vec4(a_pos,0.0,1.0); }`;
 const MESH_FS=`precision highp float; uniform vec4 u_color; void main(){ gl_FragColor=u_color; }`;
 
@@ -325,3 +342,5 @@ function setBaseMap(name) {
 // KOP_TUNE_MESH04_FLOW005
 
 // KOP_SMOOTH_RDBU_MESH035
+
+// KOP_ELEVATION_SIMPLE_BWR_PARTICLE238
