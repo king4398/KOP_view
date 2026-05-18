@@ -9,7 +9,7 @@ const CONFIG = {
   lookupMetaUrl: DATA_ROOT + "lookup_meta.json",
   lookupOffsetsUrl: DATA_ROOT + "lookup_offsets.bin",
   lookupTrianglesUrl: DATA_ROOT + "lookup_triangles.bin",
-  flowScale: 0.018,
+  flowScale: 0.0126,
   overlayParticleColor: "rgba(255,255,255,0.96)"
 };
 
