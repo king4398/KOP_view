@@ -106,6 +106,10 @@ const statusLine = document.getElementById("status-line");
 
 let meshOverlayCheck = document.getElementById("mesh-overlay-check");
 
+// Leaflet pane-based canvas origin.
+// Canvases are positioned in overlay panes using Leaflet layer coordinates.
+let canvasTopLeft = null;
+
 function setStatus(msg) {
     if (statusLine) statusLine.textContent = msg;
 }
@@ -390,40 +394,23 @@ function rememberExactRenderView() {
 }
 
 function resetCanvasTransforms() {
-    for (const c of getLayerCanvases()) {
+    for (const c of [glCanvas, currentCanvas, meshCanvas]) {
+        if (!c) continue;
         c.style.transform = "";
-        c.style.transformOrigin = "0 0";
+        c.style.transformOrigin = "";
     }
 }
 
 function applyCanvasMapTransform() {
-    if (!map || !renderPixelOrigin || renderZoom === null) return;
-
-    const o = map.getPixelOrigin();
-    const z = map.getZoom();
-
-    const scale = Math.pow(2, z - renderZoom);
-
-    // Old screen = world(renderZoom) - renderPixelOrigin
-    // New screen = world(z) - currentPixelOrigin
-    // world(z) = scale * world(renderZoom)
-    // Therefore:
-    // New screen = scale * Old screen + (scale * renderPixelOrigin - currentPixelOrigin)
-    const tx = scale * renderPixelOrigin.x - o.x;
-    const ty = scale * renderPixelOrigin.y - o.y;
-
-    const tr = `translate(${tx}px, ${ty}px) scale(${scale})`;
-
-    for (const c of getLayerCanvases()) {
-        c.style.transformOrigin = "0 0";
-        c.style.transform = tr;
-    }
+    // Disabled.
+    // Canvas is now attached to Leaflet panes and follows map movement automatically.
 }
 
 function renderViewportLayers(includeMesh) {
     resetCanvasTransforms();
 
     resizeCanvases();
+    coordsDirty = true;
     updateScreenCoordinates();
     renderScalar();
 
@@ -496,20 +483,22 @@ function initMap() {
 
     map.fitBounds(bounds);
 
+
     map.on("movestart zoomstart", () => {
         mapInteracting = true;
-
-        if (!renderPixelOrigin) {
-            rememberExactRenderView();
-        }
     });
 
     map.on("move zoom", () => {
-        applyCanvasMapTransform();
+        // Leaflet panes already move the canvases.
+        // Do not recompute 300k nodes here.
     });
 
     map.on("resize", () => {
-        scheduleViewportRedraw(true);
+        mapInteracting = false;
+        coordsDirty = true;
+
+        renderViewportLayers(true);
+        resetParticles();
     });
 
     map.on("moveend zoomend", () => {
@@ -529,46 +518,46 @@ function initMap() {
     });
 }
 
-function initCanvases() {
-    const container = map.getContainer();
 
-    if (getComputedStyle(container).position === "static") {
-        container.style.position = "relative";
-    }
+function initCanvases() {
+    const panes = map.getPanes();
+
+    const scalarPane = map.createPane ? map.createPane("kop-scalar-pane") : panes.overlayPane;
+    const currentPane = map.createPane ? map.createPane("kop-current-pane") : panes.overlayPane;
+    const meshPane = map.createPane ? map.createPane("kop-mesh-pane") : panes.overlayPane;
+
+    scalarPane.style.zIndex = "450";
+    currentPane.style.zIndex = "650";
+    meshPane.style.zIndex = "800";
+
+    scalarPane.style.pointerEvents = "none";
+    currentPane.style.pointerEvents = "none";
+    meshPane.style.pointerEvents = "none";
 
     glCanvas = document.createElement("canvas");
     glCanvas.id = "gl-canvas";
     glCanvas.style.position = "absolute";
     glCanvas.style.left = "0";
     glCanvas.style.top = "0";
-    glCanvas.style.width = "100%";
-    glCanvas.style.height = "100%";
-    glCanvas.style.zIndex = "700";
     glCanvas.style.pointerEvents = "none";
-    container.appendChild(glCanvas);
+    scalarPane.appendChild(glCanvas);
 
     currentCanvas = document.createElement("canvas");
     currentCanvas.id = "current-canvas";
     currentCanvas.style.position = "absolute";
     currentCanvas.style.left = "0";
     currentCanvas.style.top = "0";
-    currentCanvas.style.width = "100%";
-    currentCanvas.style.height = "100%";
-    currentCanvas.style.zIndex = "12000";
     currentCanvas.style.pointerEvents = "none";
-    container.appendChild(currentCanvas);
+    currentPane.appendChild(currentCanvas);
 
     meshCanvas = document.createElement("canvas");
     meshCanvas.id = "mesh-canvas";
     meshCanvas.style.position = "absolute";
     meshCanvas.style.left = "0";
     meshCanvas.style.top = "0";
-    meshCanvas.style.width = "100%";
-    meshCanvas.style.height = "100%";
-    meshCanvas.style.zIndex = "20000";
     meshCanvas.style.pointerEvents = "none";
     meshCanvas.style.display = "none";
-    container.appendChild(meshCanvas);
+    meshPane.appendChild(meshCanvas);
 
     gl = glCanvas.getContext("webgl2", {
         alpha: true,
@@ -590,18 +579,30 @@ function initCanvases() {
     resizeCanvases();
 }
 
+
+
 function resizeCanvases() {
     if (!map) return;
 
     const size = map.getSize();
     const dpr = window.devicePixelRatio || 1;
 
+    canvasTopLeft = map.containerPointToLayerPoint([0, 0]);
+
     for (const canvas of [glCanvas, currentCanvas, meshCanvas]) {
         if (!canvas) continue;
+
         canvas.width = Math.max(1, Math.round(size.x * dpr));
         canvas.height = Math.max(1, Math.round(size.y * dpr));
         canvas.style.width = size.x + "px";
         canvas.style.height = size.y + "px";
+
+        if (window.L && L.DomUtil) {
+            L.DomUtil.setPosition(canvas, canvasTopLeft);
+        } else {
+            canvas.style.left = canvasTopLeft.x + "px";
+            canvas.style.top = canvasTopLeft.y + "px";
+        }
     }
 
     if (gl && glCanvas) gl.viewport(0, 0, glCanvas.width, glCanvas.height);
@@ -611,12 +612,20 @@ function resizeCanvases() {
         currentCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
         clearCurrentCanvas();
     }
+
+    coordsDirty = true;
 }
+
+
 
 
 function updateScreenCoordinates() {
     if (!map || !nodes || !screenCoords) return;
     if (!coordsDirty) return;
+
+    if (!canvasTopLeft) {
+        canvasTopLeft = map.containerPointToLayerPoint([0, 0]);
+    }
 
     const n = nodes.length / 2;
 
@@ -624,10 +633,10 @@ function updateScreenCoordinates() {
         const lon = nodes[i * 2];
         const lat = nodes[i * 2 + 1];
 
-        const pt = map.latLngToContainerPoint([lat, lon]);
+        const pt = map.latLngToLayerPoint([lat, lon]);
 
-        screenCoords[i * 2] = pt.x;
-        screenCoords[i * 2 + 1] = pt.y;
+        screenCoords[i * 2] = pt.x - canvasTopLeft.x;
+        screenCoords[i * 2 + 1] = pt.y - canvasTopLeft.y;
     }
 
     if (gl && nodeBuffer) {
@@ -642,6 +651,7 @@ function updateScreenCoordinates() {
 
     coordsDirty = false;
 }
+
 
 
 function initWebGL() {
@@ -934,6 +944,20 @@ function startTimer() {
     }, intervalMs);
 }
 
+
+function latLngToCanvasPoint(lat, lon) {
+    if (!canvasTopLeft) {
+        canvasTopLeft = map.containerPointToLayerPoint([0, 0]);
+    }
+
+    const pt = map.latLngToLayerPoint([lat, lon]);
+
+    return {
+        x: pt.x - canvasTopLeft.x,
+        y: pt.y - canvasTopLeft.y
+    };
+}
+
 function clearCurrentCanvas() {
     if (!currentCtx || !map) return;
     const size = map.getSize();
@@ -1178,7 +1202,7 @@ function startParticles() {
                 continue;
             }
 
-            const oldPoint = map.latLngToContainerPoint([p.lat, p.lon]);
+            const oldPoint = latLngToCanvasPoint(p.lat, p.lon);
 
             const latRad = p.lat * Math.PI / 180.0;
             let coslat = Math.cos(latRad);
@@ -1198,7 +1222,7 @@ function startParticles() {
             p.lat = newLat;
             p.age += 1;
 
-            const newPoint = map.latLngToContainerPoint([p.lat, p.lon]);
+            const newPoint = latLngToCanvasPoint(p.lat, p.lon);
 
             if (
                 newPoint.x < -50 || newPoint.x > size.x + 50 ||
