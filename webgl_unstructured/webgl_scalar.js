@@ -402,10 +402,10 @@ function rememberExactRenderView() {
 }
 
 function resetCanvasTransforms() {
-    for (const c of [glCanvas, currentCanvas, meshCanvas]) {
+    for (const c of getLayerCanvases()) {
         if (!c) continue;
         c.style.transform = "";
-        c.style.transformOrigin = "";
+        c.style.transformOrigin = "0 0";
     }
 }
 
@@ -415,10 +415,42 @@ function applyCanvasMapTransform() {
 }
 
 
+
 function applyCanvasZoomAnimation(e) {
-    // Disabled intentionally.
-    // We do not animate WebGL canvas during zoom; we redraw exactly on zoomend.
+    if (!map || !renderLatLngBounds) return;
+
+    // Same idea as Leaflet ImageOverlay._animateZoom:
+    // keep the last rendered canvas as a geographic overlay and let Leaflet
+    // compute the correct animated top-left + scale.
+    let scale;
+    let offset;
+
+    try {
+        scale = map.getZoomScale(e.zoom, renderZoom !== null ? renderZoom : map.getZoom());
+    } catch (err) {
+        scale = map.getZoomScale(e.zoom);
+    }
+
+    if (map._latLngBoundsToNewLayerBounds) {
+        const b = map._latLngBoundsToNewLayerBounds(renderLatLngBounds, e.zoom, e.center);
+        offset = b.min;
+    } else {
+        const nw = renderLatLngBounds.getNorthWest();
+        offset = map.latLngToLayerPoint(nw);
+    }
+
+    for (const c of getLayerCanvases()) {
+        if (!c) continue;
+        c.style.transformOrigin = "0 0";
+
+        if (window.L && L.DomUtil && L.DomUtil.setTransform) {
+            L.DomUtil.setTransform(c, offset, scale);
+        } else {
+            c.style.transform = `translate(${offset.x}px, ${offset.y}px) scale(${scale})`;
+        }
+    }
 }
+
 
 function renderViewportLayers(includeMesh) {
     resetCanvasTransforms();
@@ -477,9 +509,9 @@ function initMap() {
         zoom: 7,
 
         // Disable animated zoom to prevent WebGL layer drift/nausea during zoom.
-        zoomAnimation: false,
-        markerZoomAnimation: false,
-        fadeAnimation: false,
+        zoomAnimation: true,
+        markerZoomAnimation: true,
+        fadeAnimation: true,
 
         // Softer zoom sensitivity.
         zoomSnap: 0.25,
@@ -531,26 +563,21 @@ function initMap() {
         rememberExactRenderView();
     });
 
+    map.on("move", () => {
+        // Leaflet panes move canvases naturally during pan.
+    });
+
     map.on("zoomstart", () => {
         mapInteracting = true;
         rememberExactRenderView();
 
-        // Hold last rendered layer to prevent black flicker during zoom.
-        showZoomGhost();
-
-        if (typeof stopParticles === "function") stopParticles();
-
-        if (meshCanvas && meshOverlayCheck && meshOverlayCheck.checked) {
-            meshCanvas.style.display = "none";
-        }
+        // Freeze current particle animation during zoom, but keep its last canvas visible.
+        if (typeof pauseParticlesNoClear === "function") pauseParticlesNoClear();
     });
 
-    map.on("move", () => {
-        // Leaflet panes move canvases naturally during pan.
-        // No heavy redraw here.
+    map.on("zoomanim", (e) => {
+        applyCanvasZoomAnimation(e);
     });
-
-    // zoomanim disabled: exact redraw happens on zoomend.
 
     map.on("resize", () => {
         mapInteracting = false;
@@ -558,6 +585,10 @@ function initMap() {
 
         renderViewportLayers(true);
         resetParticles();
+
+        if (shouldDrawCurrentParticles()) {
+            startParticles();
+        }
     });
 
     map.on("moveend zoomend", () => {
@@ -570,8 +601,6 @@ function initMap() {
         if (shouldDrawCurrentParticles()) {
             startParticles();
         }
-
-        hideZoomGhostSoon(180);
     });
 
     window.addEventListener("resize", () => {
@@ -580,6 +609,10 @@ function initMap() {
 
         renderViewportLayers(true);
         resetParticles();
+
+        if (shouldDrawCurrentParticles()) {
+            startParticles();
+        }
     });
 }
 
@@ -622,64 +655,14 @@ function resizeZoomGhostCanvas() {
 }
 
 function showZoomGhost() {
-    if (!map) return;
-
-    ensureZoomGhostCanvas();
-    resizeZoomGhostCanvas();
-
-    if (zoomGhostTimer) {
-        clearTimeout(zoomGhostTimer);
-        zoomGhostTimer = null;
-    }
-
-    const size = map.getSize();
-
-    zoomGhostCtx.clearRect(0, 0, size.x, size.y);
-
-    // Copy current visible WebGL/canvas layers into one temporary canvas.
-    // drawImage can copy WebGL canvases if preserveDrawingBuffer is available enough
-    // for the current frame in most browsers.
-    try {
-        if (glCanvas && glCanvas.style.display !== "none") {
-            zoomGhostCtx.drawImage(glCanvas, 0, 0, size.x, size.y);
-        }
-    } catch (e) {}
-
-    try {
-        if (currentCanvas && currentCanvas.style.display !== "none") {
-            zoomGhostCtx.drawImage(currentCanvas, 0, 0, size.x, size.y);
-        }
-    } catch (e) {}
-
-    try {
-        if (meshCanvas && meshCanvas.style.display !== "none") {
-            zoomGhostCtx.drawImage(meshCanvas, 0, 0, size.x, size.y);
-        }
-    } catch (e) {}
-
-    zoomGhostCanvas.style.display = "block";
-    zoomGhostCanvas.style.opacity = "1";
+    // Disabled. Native Leaflet canvas zoom is used instead.
 }
 
 function hideZoomGhostSoon(delayMs = 260) {
-    if (!zoomGhostCanvas) return;
-
-    if (zoomGhostTimer) {
-        clearTimeout(zoomGhostTimer);
-        zoomGhostTimer = null;
-    }
-
-    zoomGhostTimer = setTimeout(() => {
-        if (!zoomGhostCanvas) return;
-
+    if (zoomGhostCanvas) {
+        zoomGhostCanvas.style.display = "none";
         zoomGhostCanvas.style.opacity = "0";
-
-        setTimeout(() => {
-            if (zoomGhostCanvas && zoomGhostCanvas.style.opacity === "0") {
-                zoomGhostCanvas.style.display = "none";
-            }
-        }, 260);
-    }, delayMs);
+    }
 }
 
 function initCanvases() {
@@ -1411,6 +1394,16 @@ function startParticles() {
     }
 
     particleAnimId = requestAnimationFrame(step);
+}
+
+
+function pauseParticlesNoClear() {
+    particleRunning = false;
+
+    if (particleAnimId !== null) {
+        cancelAnimationFrame(particleAnimId);
+        particleAnimId = null;
+    }
 }
 
 function stopParticles() {
