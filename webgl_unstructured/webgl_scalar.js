@@ -92,6 +92,7 @@ const LIVE_REDRAW_INTERVAL_MS = 80;
 // On moveend/zoomend, redraw exactly.
 let renderPixelOrigin = null;
 let renderZoom = null;
+let renderLatLngBounds = null;
 
 const varSelect = document.getElementById("var-select");
 const playBtn = document.getElementById("play-btn");
@@ -391,6 +392,7 @@ function rememberExactRenderView() {
     const o = map.getPixelOrigin();
     renderPixelOrigin = { x: o.x, y: o.y };
     renderZoom = map.getZoom();
+    renderLatLngBounds = map.getBounds();
 }
 
 function resetCanvasTransforms() {
@@ -404,6 +406,45 @@ function resetCanvasTransforms() {
 function applyCanvasMapTransform() {
     // Disabled.
     // Canvas is now attached to Leaflet panes and follows map movement automatically.
+}
+
+
+function applyCanvasZoomAnimation(e) {
+    if (!map || !renderLatLngBounds) return;
+
+    // During Leaflet zoom animation, treat the already-rendered canvas
+    // like an image overlay covering the last exact render bounds.
+    // This prevents the layer from drifting to a wrong place during zoom.
+    const nw = renderLatLngBounds.getNorthWest();
+    const se = renderLatLngBounds.getSouthEast();
+
+    let topLeft;
+    let bottomRight;
+
+    if (map._latLngToNewLayerPoint) {
+        topLeft = map._latLngToNewLayerPoint(nw, e.zoom, e.center);
+        bottomRight = map._latLngToNewLayerPoint(se, e.zoom, e.center);
+    } else {
+        topLeft = map.latLngToLayerPoint(nw);
+        bottomRight = map.latLngToLayerPoint(se);
+    }
+
+    const width = Math.max(1, bottomRight.x - topLeft.x);
+    const height = Math.max(1, bottomRight.y - topLeft.y);
+
+    for (const c of getLayerCanvases()) {
+        c.style.transform = "";
+        c.style.transformOrigin = "0 0";
+        c.style.width = width + "px";
+        c.style.height = height + "px";
+
+        if (window.L && L.DomUtil) {
+            L.DomUtil.setPosition(c, topLeft);
+        } else {
+            c.style.left = topLeft.x + "px";
+            c.style.top = topLeft.y + "px";
+        }
+    }
 }
 
 function renderViewportLayers(includeMesh) {
@@ -484,13 +525,23 @@ function initMap() {
     map.fitBounds(bounds);
 
 
-    map.on("movestart zoomstart", () => {
+    map.on("movestart", () => {
         mapInteracting = true;
+        rememberExactRenderView();
     });
 
-    map.on("move zoom", () => {
-        // Leaflet panes already move the canvases.
-        // Do not recompute 300k nodes here.
+    map.on("zoomstart", () => {
+        mapInteracting = true;
+        rememberExactRenderView();
+    });
+
+    map.on("move", () => {
+        // Leaflet panes move the canvases during pan.
+        // No heavy redraw here.
+    });
+
+    map.on("zoomanim", (e) => {
+        applyCanvasZoomAnimation(e);
     });
 
     map.on("resize", () => {
@@ -540,6 +591,7 @@ function initCanvases() {
     glCanvas.style.left = "0";
     glCanvas.style.top = "0";
     glCanvas.style.pointerEvents = "none";
+    glCanvas.style.willChange = "transform,width,height";
     scalarPane.appendChild(glCanvas);
 
     currentCanvas = document.createElement("canvas");
@@ -548,6 +600,7 @@ function initCanvases() {
     currentCanvas.style.left = "0";
     currentCanvas.style.top = "0";
     currentCanvas.style.pointerEvents = "none";
+    currentCanvas.style.willChange = "transform,width,height";
     currentPane.appendChild(currentCanvas);
 
     meshCanvas = document.createElement("canvas");
@@ -556,6 +609,7 @@ function initCanvases() {
     meshCanvas.style.left = "0";
     meshCanvas.style.top = "0";
     meshCanvas.style.pointerEvents = "none";
+    meshCanvas.style.willChange = "transform,width,height";
     meshCanvas.style.display = "none";
     meshPane.appendChild(meshCanvas);
 
