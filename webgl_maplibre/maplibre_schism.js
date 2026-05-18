@@ -48,19 +48,39 @@ function updateLegend(){
   if(!els.legendBox || !meta) return;
   if(currentVar==="temperature"){
     const v=meta.variables.temperature;
-    els.legendBox.innerHTML=`<div style="font-weight:bold; margin-bottom:6px;">Surface Temperature [degC]</div><div style="width:220px; height:16px; background:linear-gradient(to right,#000080,#0000ff,#00ffff,#ffff00,#ff0000,#800000); border:1px solid #666;"></div><div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;"><span>${v.vmin}</span><span>${((v.vmin+v.vmax)/2).toFixed(1)}</span><span>${v.vmax}</span></div>`;
+    els.legendBox.innerHTML=`<div style="font-weight:bold; margin-bottom:6px;">Surface Temperature [degC]</div><div style="width:220px; height:16px; background:linear-gradient(to right, #0d2ef2, #0d9eff, #1ac76b, #ebe038, #f28c1a, #d11f14); border:1px solid #666;"></div><div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;"><span>${v.vmin}</span><span>${((v.vmin+v.vmax)/2).toFixed(1)}</span><span>${v.vmax}</span></div>`;
   } else if(currentVar==="ssh"){
     const v=meta.variables.ssh;
     els.legendBox.innerHTML=`<div style="font-weight:bold; margin-bottom:6px;">Elevation [m]</div><div style="width:220px; height:16px; background:linear-gradient(to right,#08306b,#6baed6,#f7f7f7,#fb6a4a,#67000d); border:1px solid #666;"></div><div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;"><span>${v.vmin}</span><span>${((v.vmin+v.vmax)/2).toFixed(2)}</span><span>${v.vmax}</span></div>`;
   } else {
-    els.legendBox.innerHTML=`<div style="font-weight:bold; margin-bottom:6px;">Current Speed [m/s]</div><div style="width:220px; height:16px; background:linear-gradient(to right,#000080,#0000ff,#00ffff,#ffff00,#ff0000,#800000); border:1px solid #666;"></div><div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;"><span>0</span><span>0.5</span><span>1.0</span></div>`;
+    els.legendBox.innerHTML=`<div style="font-weight:bold; margin-bottom:6px;">Current Speed [m/s]</div><div style="width:220px; height:16px; background:linear-gradient(to right, #0d2ef2, #0d9eff, #1ac76b, #ebe038, #f28c1a, #d11f14); border:1px solid #666;"></div><div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;"><span>0</span><span>0.5</span><span>1.0</span></div>`;
   }
 }
 
 function compileShader(gl,type,src){ const sh=gl.createShader(type); gl.shaderSource(sh,src); gl.compileShader(sh); if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)){ const log=gl.getShaderInfoLog(sh); gl.deleteShader(sh); throw new Error(log); } return sh; }
 function makeProgram(gl,vs,fs){ const p=gl.createProgram(); const a=compileShader(gl,gl.VERTEX_SHADER,vs); const b=compileShader(gl,gl.FRAGMENT_SHADER,fs); gl.attachShader(p,a); gl.attachShader(p,b); gl.linkProgram(p); gl.deleteShader(a); gl.deleteShader(b); if(!gl.getProgramParameter(p,gl.LINK_STATUS)){ const log=gl.getProgramInfoLog(p); gl.deleteProgram(p); throw new Error(log); } return p; }
 const SCALAR_VS=`precision highp float; attribute vec2 a_pos; attribute float a_value; uniform mat4 u_matrix; varying float v_value; void main(){ gl_Position=u_matrix*vec4(a_pos,0.0,1.0); v_value=a_value; }`;
-const SCALAR_FS=`precision highp float; varying float v_value; uniform float u_vmin; uniform float u_vmax; uniform float u_opacity; uniform int u_cmap; uniform float u_invalid; vec3 jet(float t){t=clamp(t,0.0,1.0);float r=clamp(min(4.0*t-1.5,-4.0*t+4.5),0.0,1.0);float g=clamp(min(4.0*t-0.5,-4.0*t+3.5),0.0,1.0);float b=clamp(min(4.0*t+0.5,-4.0*t+2.5),0.0,1.0);return vec3(r,g,b);} vec3 mix3(vec3 a,vec3 b,float t){return a*(1.0-t)+b*t;} vec3 rdbu(float t){t=clamp(t,0.0,1.0);vec3 c0=vec3(0.031,0.188,0.420);vec3 c1=vec3(0.420,0.682,0.839);vec3 c2=vec3(0.969);vec3 c3=vec3(0.984,0.416,0.290);vec3 c4=vec3(0.404,0.0,0.051);if(t<0.25)return mix3(c0,c1,t/0.25);if(t<0.50)return mix3(c1,c2,(t-0.25)/0.25);if(t<0.75)return mix3(c2,c3,(t-0.50)/0.25);return mix3(c3,c4,(t-0.75)/0.25);} void main(){ if((v_value!=v_value)||v_value<=u_invalid+1.0) discard; float den=max(abs(u_vmax-u_vmin),1e-12); float t=clamp((v_value-u_vmin)/den,0.0,1.0); vec3 c=(u_cmap==1)?rdbu(t):jet(t); gl_FragColor=vec4(c,u_opacity); }`;
+const SCALAR_FS=`precision highp float; varying float v_value; uniform float u_vmin; uniform float u_vmax; uniform float u_opacity; uniform int u_cmap; uniform float u_invalid; vec3 jet(float t){t=clamp(t,0.0,1.0);float r=clamp(min(4.0*t-1.5,-4.0*t+4.5),0.0,1.0);float g=clamp(min(4.0*t-0.5,-4.0*t+3.5),0.0,1.0);float b=clamp(min(4.0*t+0.5,-4.0*t+2.5),0.0,1.0);return vec3(r,g,b);} vec3 mix3(vec3 a,vec3 b,float t){return a*(1.0-t)+b*t;} 
+vec3 smoothJet(float t) {
+    // Smooth jet-like colormap:
+    // blue -> cyan -> green -> yellow -> orange -> red
+    t = clamp(t, 0.0, 1.0);
+
+    vec3 c0 = vec3(0.05, 0.18, 0.95); // blue
+    vec3 c1 = vec3(0.05, 0.62, 1.00); // sky/cyan
+    vec3 c2 = vec3(0.10, 0.78, 0.42); // green
+    vec3 c3 = vec3(0.92, 0.86, 0.22); // yellow
+    vec3 c4 = vec3(0.95, 0.55, 0.10); // orange
+    vec3 c5 = vec3(0.82, 0.12, 0.08); // red
+
+    if (t < 0.20) return mix(c0, c1, t / 0.20);
+    if (t < 0.40) return mix(c1, c2, (t - 0.20) / 0.20);
+    if (t < 0.60) return mix(c2, c3, (t - 0.40) / 0.20);
+    if (t < 0.80) return mix(c3, c4, (t - 0.60) / 0.20);
+    return mix(c4, c5, (t - 0.80) / 0.20);
+}
+
+vec3 rdbu(float t){t=clamp(t,0.0,1.0);vec3 c0=vec3(0.031,0.188,0.420);vec3 c1=vec3(0.420,0.682,0.839);vec3 c2=vec3(0.969);vec3 c3=vec3(0.984,0.416,0.290);vec3 c4=vec3(0.404,0.0,0.051);if(t<0.25)return mix3(c0,c1,t/0.25);if(t<0.50)return mix3(c1,c2,(t-0.25)/0.25);if(t<0.75)return mix3(c2,c3,(t-0.50)/0.25);return mix3(c3,c4,(t-0.75)/0.25);} void main(){ if((v_value!=v_value)||v_value<=u_invalid+1.0) discard; float den=max(abs(u_vmax-u_vmin),1e-12); float t=clamp((v_value-u_vmin)/den,0.0,1.0); vec3 c = (u_cmap == 1) ? rdbu(t) : smoothJet(t); gl_FragColor=vec4(c,u_opacity); }`;
 const MESH_VS=`precision highp float; attribute vec2 a_pos; uniform mat4 u_matrix; void main(){ gl_Position=u_matrix*vec4(a_pos,0.0,1.0); }`;
 const MESH_FS=`precision highp float; uniform vec4 u_color; void main(){ gl_FragColor=u_color; }`;
 
@@ -77,19 +97,19 @@ function initParticleCanvas(){ const container=map.getCanvasContainer(); particl
 function resizeParticleCanvas(){ if(!map||!particleCanvas||!particleCtx) return; const c=map.getCanvas(), w=c.clientWidth, h=c.clientHeight, dpr=window.devicePixelRatio||1; particleCanvas.width=Math.max(1,Math.round(w*dpr)); particleCanvas.height=Math.max(1,Math.round(h*dpr)); particleCanvas.style.width=w+"px"; particleCanvas.style.height=h+"px"; particleCtx.setTransform(dpr,0,0,dpr,0,0); clearCurrentCanvas(); }
 function clearCurrentCanvas(){ if(!particleCtx||!map) return; const c=map.getCanvas(); particleCtx.clearRect(0,0,c.clientWidth,c.clientHeight); }
 
+
 function speedToColor(s, vmin, vmax) {
     let t = (s - vmin) / (vmax - vmin);
     if (!Number.isFinite(t)) t = 0;
     t = Math.max(0, Math.min(1, t));
 
     const stops = [
-        [0.18995, 0.07176, 0.23217],
-        [0.25107, 0.25237, 0.63374],
-        [0.27628, 0.60412, 0.96756],
-        [0.20400, 0.77900, 0.42300],
-        [0.99300, 0.90600, 0.14400],
-        [0.97600, 0.45100, 0.08000],
-        [0.70600, 0.01600, 0.15000]
+        [0.05, 0.18, 0.95],
+        [0.05, 0.62, 1.00],
+        [0.10, 0.78, 0.42],
+        [0.92, 0.86, 0.22],
+        [0.95, 0.55, 0.10],
+        [0.82, 0.12, 0.08]
     ];
 
     const x = t * (stops.length - 1);
@@ -271,3 +291,5 @@ function setBaseMap(name) {
     }
 })();
 // KOP_FORCE_BASEMAP_SWITCH_END
+
+// KOP_SMOOTH_JET_STYLE applied
