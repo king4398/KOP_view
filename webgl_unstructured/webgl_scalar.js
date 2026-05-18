@@ -946,18 +946,44 @@ function vectorAt(lon, lat) {
     return null;
 }
 
+
 function randomValidPoint() {
     const g = getLookupBounds();
 
-    for (let trial = 0; trial < 500; trial++) {
-        const lon = g.lonMin + Math.random() * (g.lonMax - g.lonMin);
-        const lat = g.latMin + Math.random() * (g.latMax - g.latMin);
+    let west = g.lonMin;
+    let east = g.lonMax;
+    let south = g.latMin;
+    let north = g.latMax;
+
+    // Important:
+    // Seed particles inside the current visible map bounds, not the whole model domain.
+    // Otherwise many particles are created off-screen and visible density looks too low.
+    if (map) {
+        const b = map.getBounds();
+        west = Math.max(g.lonMin, b.getWest());
+        east = Math.min(g.lonMax, b.getEast());
+        south = Math.max(g.latMin, b.getSouth());
+        north = Math.min(g.latMax, b.getNorth());
+    }
+
+    // Fallback to whole domain if viewport does not intersect valid lookup bounds.
+    if (!(west < east && south < north)) {
+        west = g.lonMin;
+        east = g.lonMax;
+        south = g.latMin;
+        north = g.latMax;
+    }
+
+    for (let trial = 0; trial < 800; trial++) {
+        const lon = west + Math.random() * (east - west);
+        const lat = south + Math.random() * (north - south);
 
         if (vectorAt(lon, lat)) return { lon, lat };
     }
 
     return null;
 }
+
 
 function resetParticle(p) {
     const ll = randomValidPoint();
