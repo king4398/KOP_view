@@ -405,50 +405,20 @@ function resetCanvasTransforms() {
     for (const c of getLayerCanvases()) {
         if (!c) continue;
         c.style.transform = "";
-        c.style.transformOrigin = "0 0";
+        c.style.transformOrigin = "";
     }
 }
 
 function applyCanvasMapTransform() {
     // Disabled.
-    // Canvas is now attached to Leaflet panes and follows map movement automatically.
+    // Leaflet pane/mapPane transform handles pan/zoom naturally.
 }
 
 
 
-function applyCanvasZoomAnimation(e) {
-    if (!map || !renderLatLngBounds) return;
-
-    // Same idea as Leaflet ImageOverlay._animateZoom:
-    // keep the last rendered canvas as a geographic overlay and let Leaflet
-    // compute the correct animated top-left + scale.
-    let scale;
-    let offset;
-
-    try {
-        scale = map.getZoomScale(e.zoom, renderZoom !== null ? renderZoom : map.getZoom());
-    } catch (err) {
-        scale = map.getZoomScale(e.zoom);
-    }
-
-    if (map._latLngBoundsToNewLayerBounds) {
-        const b = map._latLngBoundsToNewLayerBounds(renderLatLngBounds, e.zoom, e.center);
-        offset = b.min;
-    } else {
-        const nw = renderLatLngBounds.getNorthWest();
-        offset = map.latLngToLayerPoint(nw);
-    }
-
-    for (const c of getLayerCanvases()) {
-        if (!c) continue;
-        c.style.transformOrigin = "0 0";
-
-        if (window.L && L.DomUtil && L.DomUtil.setTransform) {
-            L.DomUtil.setTransform(c, offset, scale);
-        } else {
-            c.style.transform = `translate(${offset.x}px, ${offset.y}px) scale(${scale})`;
-        }
-    }
+function applyCanvasZoomAnimation() {
+    // Disabled.
+    // Leaflet pane/mapPane transform handles pan/zoom naturally.
 }
 
 
@@ -560,23 +530,27 @@ function initMap() {
 
     map.on("movestart", () => {
         mapInteracting = true;
-        rememberExactRenderView();
     });
 
     map.on("move", () => {
         // Leaflet panes move canvases naturally during pan.
+        // Do not redraw or manually transform here.
     });
 
     map.on("zoomstart", () => {
         mapInteracting = true;
-        rememberExactRenderView();
 
-        // Freeze current particle animation during zoom, but keep its last canvas visible.
-        if (typeof pauseParticlesNoClear === "function") pauseParticlesNoClear();
+        // Keep the last rendered canvas visible and let Leaflet scale the pane.
+        // Pause particles only to avoid drawing into a zooming canvas.
+        if (typeof pauseParticlesNoClear === "function") {
+            pauseParticlesNoClear();
+        }
     });
 
-    map.on("zoomanim", (e) => {
-        applyCanvasZoomAnimation(e);
+    map.on("zoomanim", () => {
+        // Important:
+        // Do nothing. Leaflet's own mapPane transform scales the canvas
+        // exactly like the map tiles.
     });
 
     map.on("resize", () => {
@@ -595,6 +569,7 @@ function initMap() {
         mapInteracting = false;
         coordsDirty = true;
 
+        // After Leaflet finishes pan/zoom, redraw exactly once using new coordinates.
         renderViewportLayers(true);
         resetParticles();
 
@@ -655,14 +630,13 @@ function resizeZoomGhostCanvas() {
 }
 
 function showZoomGhost() {
-    // Disabled. Native Leaflet canvas zoom is used instead.
+    // Disabled.
+    // Leaflet pane/mapPane transform handles pan/zoom naturally.
 }
 
-function hideZoomGhostSoon(delayMs = 260) {
-    if (zoomGhostCanvas) {
-        zoomGhostCanvas.style.display = "none";
-        zoomGhostCanvas.style.opacity = "0";
-    }
+function hideZoomGhostSoon() {
+    // Disabled.
+    // Leaflet pane/mapPane transform handles pan/zoom naturally.
 }
 
 function initCanvases() {
@@ -1522,3 +1496,12 @@ boot().catch(err => {
     setStatus("ERROR: " + err.message);
     alert(err.message);
 });
+
+
+(function disableZoomGhostIfAny() {
+    const g = document.getElementById("zoom-ghost-canvas");
+    if (g) {
+        g.style.display = "none";
+        g.style.opacity = "0";
+    }
+})();
