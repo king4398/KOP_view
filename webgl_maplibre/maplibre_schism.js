@@ -10,7 +10,7 @@ const CONFIG = {
   lookupOffsetsUrl: DATA_ROOT + "lookup_offsets.bin",
   lookupTrianglesUrl: DATA_ROOT + "lookup_triangles.bin",
   flowScale: 0.0126,
-  overlayParticleColor: "rgba(255,255,255,0.96)"
+  overlayParticleColor: "rgba(225,225,225,0.88)"
 };
 
 const els = {
