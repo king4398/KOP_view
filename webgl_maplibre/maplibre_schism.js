@@ -14,7 +14,6 @@ const CONFIG = {
 };
 
 const els = {
-    basemapSelect: document.getElementById("basemap-select"),
   varSelect: document.getElementById("var-select"), playBtn: document.getElementById("play-btn"),
   frameSlider: document.getElementById("frame-slider"), speedSelect: document.getElementById("speed-select"),
   opacitySlider: document.getElementById("opacity-slider"), densitySelect: document.getElementById("particle-density-select"),
@@ -91,19 +90,12 @@ function startParticles(){ if(particleAnimId!==null) cancelAnimationFrame(partic
 function stopParticles(){ particleRunning=false; if(particleAnimId!==null){ cancelAnimationFrame(particleAnimId); particleAnimId=null; } clearCurrentCanvas(); }
 function setupEvents(){ els.currentOverlay.checked=true; els.currentOverlay.dataset.userTouched=""; els.currentOverlay.addEventListener("change",()=>{els.currentOverlay.dataset.userTouched="1"; updateCurrentOverlayAvailability(); setFrame(currentFrame);}); els.meshOverlay.addEventListener("change",()=>map.triggerRepaint()); els.varSelect.addEventListener("change",e=>{currentVar=e.target.value; updateCurrentOverlayAvailability(); updateLegend(); setFrame(currentFrame); map.triggerRepaint();}); els.playBtn.addEventListener("click",()=>{ if(timer===null){els.playBtn.textContent="Pause"; startTimer();} else {els.playBtn.textContent="Play"; clearInterval(timer); timer=null;} }); els.frameSlider.addEventListener("input",e=>setFrame(e.target.value)); els.speedSelect.addEventListener("change",e=>{ speed=parseFloat(e.target.value); if(timer!==null) startTimer(); }); els.opacitySlider.addEventListener("input",()=>map.triggerRepaint()); els.densitySelect.addEventListener("change",e=>{ particleCount=parseInt(e.target.value); resetParticles(); clearCurrentCanvas(); }); map.on("moveend",()=>resetParticles()); map.on("zoomend",()=>{ resizeParticleCanvas(); resetParticles(); }); }
 
+
 function makeMapStyle() {
     return {
         version: 8,
         sources: {
-            "esri-satellite": {
-                type: "raster",
-                tiles: [
-                    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                ],
-                tileSize: 256,
-                attribution: "Tiles © Esri"
-            },
-            "carto-light": {
+            "carto-positron": {
                 type: "raster",
                 tiles: [
                     "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
@@ -113,20 +105,28 @@ function makeMapStyle() {
                 ],
                 tileSize: 256,
                 attribution: "© OpenStreetMap contributors © CARTO"
+            },
+            "esri-satellite": {
+                type: "raster",
+                tiles: [
+                    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                ],
+                tileSize: 256,
+                attribution: "Tiles © Esri"
             }
         },
         layers: [
+            {
+                id: "basemap-carto",
+                type: "raster",
+                source: "carto-positron",
+                layout: { visibility: "none" }
+            },
             {
                 id: "basemap-esri",
                 type: "raster",
                 source: "esri-satellite",
                 layout: { visibility: "visible" }
-            },
-            {
-                id: "basemap-carto-light",
-                type: "raster",
-                source: "carto-light",
-                layout: { visibility: "none" }
             }
         ]
     };
@@ -137,25 +137,29 @@ boot().catch(err=>{ console.error(err); setStatus("ERROR: "+err.message); alert(
 
 
 
+
 function setBaseMap(name) {
     if (!map) return;
 
-    const ids = {
-        "esri": "basemap-esri",
-        "carto-light": "basemap-carto-light"
-    };
+    const useCarto = name === "carto";
+    const useEsri = name === "esri";
 
-    for (const key of Object.keys(ids)) {
-        const layerId = ids[key];
-        if (!map.getLayer(layerId)) continue;
-
-        map.setLayoutProperty(
-            layerId,
-            "visibility",
-            key === name ? "visible" : "none"
-        );
+    if (map.getLayer("basemap-carto")) {
+        map.setLayoutProperty("basemap-carto", "visibility", useCarto ? "visible" : "none");
     }
 
+    if (map.getLayer("basemap-esri")) {
+        map.setLayoutProperty("basemap-esri", "visibility", useEsri ? "visible" : "none");
+    }
+
+    // Keep SCHISM custom layer above base maps.
+    try {
+        if (map.getLayer("schism-custom-layer")) {
+            map.moveLayer("schism-custom-layer");
+        }
+    } catch (e) {}
+
     map.triggerRepaint();
+    console.log("[basemap] switched to", name);
 }
 

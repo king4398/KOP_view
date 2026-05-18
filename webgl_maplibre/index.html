@@ -32,25 +32,54 @@ html, body, #map { width:100%; height:100%; margin:0; padding:0; overflow:hidden
 .side-panel input[type="checkbox"] { transform:scale(1.12); }
 .status-line { font-size:11px; opacity:0.80; margin-top:8px; line-height:1.35; }
 button, select, input { font-family:Arial,sans-serif; }
+
+.basemap-radio-box {
+    position: fixed;
+    right: 14px;
+    top: 10px;
+    z-index: 70000;
+    background: rgba(255,255,255,0.96);
+    color: #222;
+    padding: 7px 10px;
+    border-radius: 4px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.35);
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.basemap-radio-box label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.basemap-radio-box input {
+    margin: 0;
+}
 </style>
 </head>
 <body>
 <div id="map"></div>
+
+<div id="basemap-radio-box" class="basemap-radio-box">
+  <label>
+    <input type="radio" name="basemap-radio" value="carto">
+    <span>CartoDB Positron</span>
+  </label>
+  <label>
+    <input type="radio" name="basemap-radio" value="esri" checked>
+    <span>Esri Satellite</span>
+  </label>
+</div>
 <div class="title-box">SCHISM MapLibre Viewer</div>
 <div class="legend-box" id="legend-box"></div>
 <div class="side-panel">
   <div class="side-panel-title">Layer Options</div>
 
-  <label>
-    <span><b>Base map</b></span>
-    <select id="basemap-select">
-      <option value="esri" selected>Esri Satellite</option>
-      <option value="carto-light">Carto Light</option>
-    </select>
-  </label>
-
-
-  <label><span><b>Variable</b></span><select id="var-select"><option value="temperature">Temperature</option><option value="ssh">Elevation</option><option value="current">Current</option></select></label>
+<label><span><b>Variable</b></span><select id="var-select"><option value="temperature">Temperature</option><option value="ssh">Elevation</option><option value="current">Current</option></select></label>
   <label><span><b>Current overlay</b></span><input id="current-overlay-check" type="checkbox" checked></label>
   <label><span><b>Mesh overlay</b></span><input id="mesh-overlay-check" type="checkbox"></label>
   <label><span><b>Particles</b></span><select id="particle-density-select"><option value="800">Low</option><option value="1600">Mid</option><option value="2800" selected>High</option></select></label>
