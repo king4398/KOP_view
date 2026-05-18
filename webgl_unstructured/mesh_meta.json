@@ -3,6 +3,9 @@
   "node_count": 307583,
   "triangle_count": 580559,
   "index_count": 1741677,
+  "edge_count": 889328,
+  "edge_index_count": 1778656,
+  "mesh_edges_bin": "mesh_edges.bin",
   "invalid_value": -9999.0,
   "bounds": [
     [

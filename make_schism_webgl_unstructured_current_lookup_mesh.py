@@ -1,4 +1,657 @@
-/* SCHISM unstructured WebGL viewer with unstructured current particles. */
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+make_schism_webgl_unstructured_current_lookup.py
+
+Independent GitHub Pages sub-page for SCHISM unstructured-mesh WebGL rendering.
+
+This version keeps the existing WebGL scalar idea, but upgrades Current from
+regular-grid JSON particles to SCHISM unstructured-mesh particles:
+
+  - Temperature/Elevation: node-based scalar Float32 BIN + WebGL triangles
+  - Current: node-based u/v Float32 BIN + spatial lookup index + barycentric particles
+  - Current overlay on Temperature/Elevation: white particles
+  - Current standalone: jet-colored particles
+
+Output:
+  webgl_unstructured/
+    index.html
+    webgl_scalar.js
+    mesh_meta.json
+    mesh_nodes.bin
+    mesh_elems.bin
+    mesh_edges.bin
+    lookup_meta.json
+    lookup_offsets.bin
+    lookup_triangles.bin
+    temp_bin/frame_0000.bin ...
+    ssh_bin/frame_0000.bin ...
+    current_u_bin/frame_0000.bin ...
+    current_v_bin/frame_0000.bin ...
+
+Run:
+  cd /home/nyj/kocean/Validation/schism/avi/KOP_view_upload
+  python3 make_schism_webgl_unstructured_current_lookup.py
+"""
+
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+from typing import List, Optional, Sequence, Tuple
+
+import numpy as np
+from netCDF4 import Dataset, num2date
+
+
+# =============================================================================
+# User settings
+# =============================================================================
+
+REPO_DIR = Path("/home/nyj/kocean/Validation/schism/avi/KOP_view_upload")
+
+SCHISM_DIR = Path(
+    "/home/nyj/kocean/Result/schism/hgrid_test/"
+    "test8v4_Small_clim_watertype_iwind0_khoadepth"
+)
+
+OUT_DIR = REPO_DIR / "webgl_unstructured"
+
+OUT2D_FILE = SCHISM_DIR / "out2d_1.nc"
+TEMP_FILE = SCHISM_DIR / "temperature_1.nc"
+HVELX_FILE = SCHISM_DIR / "horizontalVelX_1.nc"
+HVELY_FILE = SCHISM_DIR / "horizontalVelY_1.nc"
+
+START_IDX = 0
+END_IDX = 24
+STRIDE = 1
+
+# Surface layer for temperature/current(time,node,layer) or similar.
+K_IDX = -1
+
+INVALID_VALUE = np.float32(-9999.0)
+
+TEMP_VMIN = 0.0
+TEMP_VMAX = 32.0
+
+SSH_VMIN = -1.0
+SSH_VMAX = 1.0
+
+CURRENT_VMIN = 0.0
+CURRENT_VMAX = 1.0
+
+# Lookup grid for fast triangle search in browser.
+# 600x600 is usually a good balance for ~580k triangles.
+LOOKUP_NX = 600
+LOOKUP_NY = 600
+
+# If True, lookup generation prints progress every N triangles.
+LOOKUP_PROGRESS_EVERY = 50000
+
+
+# =============================================================================
+# NetCDF helpers
+# =============================================================================
+
+def _find_var(ds: Dataset, names: Sequence[str], contains: Optional[Sequence[str]] = None):
+    for name in names:
+        if name in ds.variables:
+            return ds.variables[name]
+
+    if contains:
+        lowers = [c.lower() for c in contains]
+        for name, var in ds.variables.items():
+            low = name.lower()
+            if all(c in low for c in lowers):
+                return var
+
+    raise KeyError(f"Could not find variable. Tried names={names}, contains={contains}")
+
+
+def find_node_xy(ds: Dataset) -> Tuple[np.ndarray, np.ndarray]:
+    xvar = _find_var(
+        ds,
+        ["SCHISM_hgrid_node_x", "node_x", "lon", "longitude", "x"],
+        contains=["node", "x"],
+    )
+    yvar = _find_var(
+        ds,
+        ["SCHISM_hgrid_node_y", "node_y", "lat", "latitude", "y"],
+        contains=["node", "y"],
+    )
+
+    lon = np.asarray(xvar[:], dtype=np.float64)
+    lat = np.asarray(yvar[:], dtype=np.float64)
+
+    if lon.ndim != 1 or lat.ndim != 1:
+        raise ValueError(f"Expected 1D lon/lat arrays, got {lon.shape}, {lat.shape}")
+    if lon.size != lat.size:
+        raise ValueError(f"lon/lat length mismatch: {lon.size}, {lat.size}")
+
+    return lon, lat
+
+
+def find_face_nodes(ds: Dataset) -> np.ndarray:
+    candidates = [
+        "SCHISM_hgrid_face_nodes",
+        "SCHISM_hgrid_face_node",
+        "face_nodes",
+        "element",
+        "ele",
+        "nv",
+    ]
+
+    for name in candidates:
+        if name in ds.variables:
+            arr = np.asarray(ds.variables[name][:])
+            break
+    else:
+        arr = None
+        for name, var in ds.variables.items():
+            low = name.lower()
+            if ("face" in low or "elem" in low or low == "nv") and len(var.dimensions) == 2:
+                arr = np.asarray(var[:])
+                break
+        if arr is None:
+            raise KeyError("Could not find SCHISM face node connectivity variable")
+
+    if np.ma.isMaskedArray(arr):
+        arr = arr.filled(0)
+
+    arr = np.asarray(arr)
+    if arr.ndim != 2:
+        raise ValueError(f"Expected 2D face_nodes, got {arr.shape}")
+
+    # Some files store as (max_nodes, n_faces), transpose to (n_faces, max_nodes).
+    if arr.shape[0] in (3, 4) and arr.shape[1] > arr.shape[0]:
+        arr = arr.T
+
+    arr = arr.astype(np.int64)
+
+    positive = arr[arr > 0]
+    if positive.size == 0:
+        raise ValueError("face_nodes has no positive node indices")
+
+    if positive.min() == 1:
+        print("Detected face_nodes start_index: 1")
+        arr = np.where(arr > 0, arr - 1, -1)
+    else:
+        print("Detected face_nodes start_index: 0")
+        arr = np.where(arr >= 0, arr, -1)
+
+    return arr
+
+
+def triangulate_faces(face_nodes: np.ndarray, node_count: int) -> np.ndarray:
+    triangles: List[Tuple[int, int, int]] = []
+
+    for row in face_nodes:
+        nodes = [int(v) for v in row if int(v) >= 0]
+        if len(nodes) < 3:
+            continue
+
+        if any(v < 0 or v >= node_count for v in nodes):
+            continue
+
+        if len(nodes) == 3:
+            triangles.append((nodes[0], nodes[1], nodes[2]))
+        elif len(nodes) == 4:
+            triangles.append((nodes[0], nodes[1], nodes[2]))
+            triangles.append((nodes[0], nodes[2], nodes[3]))
+        else:
+            for k in range(1, len(nodes) - 1):
+                triangles.append((nodes[0], nodes[k], nodes[k + 1]))
+
+    tri = np.asarray(triangles, dtype=np.uint32)
+    if tri.ndim != 2 or tri.shape[1] != 3:
+        raise ValueError(f"Invalid triangle array: {tri.shape}")
+
+    return tri
+
+
+def read_time_labels(ds: Dataset, frame_indices: Sequence[int]) -> List[str]:
+    if "time" not in ds.variables:
+        return [f"frame {i}" for i in frame_indices]
+
+    tvar = ds.variables["time"]
+    vals = np.asarray(tvar[:])
+
+    labels = []
+    units = getattr(tvar, "units", None)
+    calendar = getattr(tvar, "calendar", "standard")
+
+    for i in frame_indices:
+        if i < 0 or i >= len(vals):
+            labels.append(f"frame {i}")
+            continue
+
+        if units:
+            try:
+                dt = num2date(vals[i], units=units, calendar=calendar)
+                labels.append(dt.strftime("%Y-%m-%d %H:%M:%S"))
+                continue
+            except Exception:
+                pass
+
+        labels.append(str(vals[i]))
+
+    return labels
+
+
+def infer_time_dim_index(var) -> Optional[int]:
+    dims = [d.lower() for d in var.dimensions]
+    for k, d in enumerate(dims):
+        if "time" in d:
+            return k
+    return 0 if len(var.shape) >= 1 else None
+
+
+def read_node_scalar(
+    var,
+    time_index: int,
+    node_count: int,
+    layer_index: Optional[int] = None,
+    invalid_value: float = float(INVALID_VALUE),
+) -> np.ndarray:
+    """Read one time slice and return a node_count Float32 vector."""
+    nd = len(var.shape)
+
+    if nd == 1:
+        arr = np.asarray(var[:])
+    else:
+        time_dim = infer_time_dim_index(var)
+        key = [slice(None)] * nd
+        if time_dim is not None:
+            key[time_dim] = time_index
+        arr = np.asarray(var[tuple(key)])
+
+    if np.ma.isMaskedArray(arr):
+        arr = arr.filled(np.nan)
+
+    arr = np.asarray(arr)
+
+    if arr.ndim == 1:
+        out = arr
+    elif arr.ndim == 2:
+        matches = [k for k, n in enumerate(arr.shape) if int(n) == int(node_count)]
+        if not matches:
+            raise ValueError(f"Cannot find node axis after time slicing: shape={arr.shape}")
+        node_axis = matches[0]
+        layer_axis = 1 - node_axis
+        li = layer_index if layer_index is not None else K_IDX
+        out = np.take(arr, li, axis=layer_axis)
+    else:
+        cur = arr
+        while cur.ndim > 1:
+            matches = [k for k, n in enumerate(cur.shape) if int(n) == int(node_count)]
+            if not matches:
+                raise ValueError(f"Cannot reduce variable {var.name}; current shape={cur.shape}")
+            node_axis = matches[0]
+            other_axes = [k for k in range(cur.ndim) if k != node_axis]
+            if not other_axes:
+                break
+            take_axis = other_axes[-1]
+            li = layer_index if layer_index is not None else K_IDX
+            cur = np.take(cur, li, axis=take_axis)
+        out = cur
+
+    out = np.asarray(out, dtype=np.float32).reshape(-1)
+    if out.size != node_count:
+        raise ValueError(f"Scalar size mismatch for {var.name}: {out.size} != {node_count}")
+
+    bad = ~np.isfinite(out)
+    if bad.any():
+        out = out.copy()
+        out[bad] = invalid_value
+
+    return out.astype(np.float32, copy=False)
+
+
+def write_float32_bin(path: Path, arr: np.ndarray) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    np.asarray(arr, dtype="<f4").tofile(path)
+
+
+def write_uint32_bin(path: Path, arr: np.ndarray) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    np.asarray(arr, dtype="<u4").tofile(path)
+
+
+
+def build_mesh_edges(triangles: np.ndarray, out_dir: Path) -> dict:
+    """Build unique edge index buffer for high-quality mesh overlay in WebGL."""
+    tri = np.asarray(triangles, dtype=np.uint32)
+    edges = np.empty((tri.shape[0] * 3, 2), dtype=np.uint32)
+    edges[0::3, 0] = tri[:, 0]
+    edges[0::3, 1] = tri[:, 1]
+    edges[1::3, 0] = tri[:, 1]
+    edges[1::3, 1] = tri[:, 2]
+    edges[2::3, 0] = tri[:, 2]
+    edges[2::3, 1] = tri[:, 0]
+    edges.sort(axis=1)
+    edges = np.unique(edges, axis=0)
+    edge_indices = edges.reshape(-1).astype(np.uint32, copy=False)
+    write_uint32_bin(out_dir / "mesh_edges.bin", edge_indices)
+
+    meta = {
+        "edges_bin": "mesh_edges.bin",
+        "edge_count": int(edges.shape[0]),
+        "edge_index_count": int(edge_indices.size),
+    }
+    print("mesh_edge_count:", meta["edge_count"])
+    print("mesh_edge_index_count:", meta["edge_index_count"])
+    return meta
+
+
+# =============================================================================
+# Lookup index generation
+# =============================================================================
+
+def build_triangle_lookup(
+    lon: np.ndarray,
+    lat: np.ndarray,
+    triangles: np.ndarray,
+    out_dir: Path,
+    nx: int = LOOKUP_NX,
+    ny: int = LOOKUP_NY,
+) -> dict:
+    """Build regular spatial lookup grid mapping cells to candidate triangle IDs."""
+    lon_min = float(np.nanmin(lon))
+    lon_max = float(np.nanmax(lon))
+    lat_min = float(np.nanmin(lat))
+    lat_max = float(np.nanmax(lat))
+
+    if not np.isfinite([lon_min, lon_max, lat_min, lat_max]).all():
+        raise ValueError("Invalid lon/lat bounds for lookup index")
+    if lon_max <= lon_min or lat_max <= lat_min:
+        raise ValueError("Degenerate lookup bounds")
+
+    cell_count = nx * ny
+    buckets: List[List[int]] = [[] for _ in range(cell_count)]
+
+    dx = (lon_max - lon_min) / nx
+    dy = (lat_max - lat_min) / ny
+
+    print(f"Building triangle lookup index: {nx} x {ny} cells")
+
+    for ti, (a, b, c) in enumerate(triangles.astype(np.int64)):
+        xs = lon[[a, b, c]]
+        ys = lat[[a, b, c]]
+
+        if not (np.isfinite(xs).all() and np.isfinite(ys).all()):
+            continue
+
+        x0 = float(xs.min())
+        x1 = float(xs.max())
+        y0 = float(ys.min())
+        y1 = float(ys.max())
+
+        ix0 = int(np.floor((x0 - lon_min) / dx))
+        ix1 = int(np.floor((x1 - lon_min) / dx))
+        iy0 = int(np.floor((y0 - lat_min) / dy))
+        iy1 = int(np.floor((y1 - lat_min) / dy))
+
+        ix0 = max(0, min(nx - 1, ix0))
+        ix1 = max(0, min(nx - 1, ix1))
+        iy0 = max(0, min(ny - 1, iy0))
+        iy1 = max(0, min(ny - 1, iy1))
+
+        for iy in range(iy0, iy1 + 1):
+            base = iy * nx
+            for ix in range(ix0, ix1 + 1):
+                buckets[base + ix].append(int(ti))
+
+        if LOOKUP_PROGRESS_EVERY and ti > 0 and ti % LOOKUP_PROGRESS_EVERY == 0:
+            print(f"  lookup triangles processed: {ti:,}/{triangles.shape[0]:,}")
+
+    offsets = np.empty(cell_count + 1, dtype=np.uint32)
+    offsets[0] = 0
+    total = 0
+    max_bucket = 0
+    non_empty = 0
+
+    for i, bucket in enumerate(buckets):
+        n = len(bucket)
+        total += n
+        max_bucket = max(max_bucket, n)
+        if n:
+            non_empty += 1
+        offsets[i + 1] = total
+
+    tri_indices = np.empty(total, dtype=np.uint32)
+    pos = 0
+    for bucket in buckets:
+        n = len(bucket)
+        if n:
+            tri_indices[pos:pos + n] = np.asarray(bucket, dtype=np.uint32)
+            pos += n
+
+    write_uint32_bin(out_dir / "lookup_offsets.bin", offsets)
+    write_uint32_bin(out_dir / "lookup_triangles.bin", tri_indices)
+
+    avg_non_empty = float(total / non_empty) if non_empty else 0.0
+
+    meta = {
+        "nx": int(nx),
+        "ny": int(ny),
+        "lon_min": lon_min,
+        "lon_max": lon_max,
+        "lat_min": lat_min,
+        "lat_max": lat_max,
+        "cell_count": int(cell_count),
+        "offset_count": int(offsets.size),
+        "candidate_count": int(tri_indices.size),
+        "non_empty_cells": int(non_empty),
+        "max_candidates_per_cell": int(max_bucket),
+        "avg_candidates_non_empty_cell": avg_non_empty,
+        "offsets_bin": "lookup_offsets.bin",
+        "triangles_bin": "lookup_triangles.bin",
+    }
+
+    (out_dir / "lookup_meta.json").write_text(
+        json.dumps(meta, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    print("Lookup candidate_count:", f"{tri_indices.size:,}")
+    print("Lookup non_empty_cells:", f"{non_empty:,}/{cell_count:,}")
+    print("Lookup max_candidates_per_cell:", max_bucket)
+    print("Lookup avg_candidates_non_empty_cell:", f"{avg_non_empty:.2f}")
+
+    return meta
+
+
+# =============================================================================
+# Web files
+# =============================================================================
+
+INDEX_HTML = r'''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SCHISM WebGL Unstructured Viewer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+html, body, #map {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+#map { background: #111; }
+
+#gl-canvas,
+#current-canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+}
+
+#gl-canvas { z-index: 700; }
+#current-canvas { z-index: 12000; }
+
+.title-box {
+    position: fixed;
+    left: 14px;
+    bottom: 86px;
+    z-index: 50000;
+    background: rgba(255,255,255,0.95);
+    padding: 8px 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+}
+
+.legend-box {
+    position: fixed;
+    right: 14px;
+    bottom: 86px;
+    z-index: 50000;
+    background: rgba(255,255,255,0.95);
+    padding: 10px 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    font-family: Arial, sans-serif;
+    min-width: 230px;
+}
+
+.control-box {
+    position: fixed;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    z-index: 60000;
+    background: rgba(255,255,255,0.96);
+    padding: 10px 14px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    font-family: Arial, sans-serif;
+    min-width: 720px;
+}
+
+.side-panel {
+    position: fixed;
+    right: 14px;
+    top: 72px;
+    z-index: 55000;
+    width: 255px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(15, 18, 24, 0.84);
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.38);
+}
+
+.side-panel-title {
+    font-weight: bold;
+    font-size: 15px;
+    margin-bottom: 9px;
+}
+
+.side-panel label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 8px 0;
+}
+
+.side-panel select {
+    width: 135px;
+    max-width: 135px;
+    padding: 4px 6px;
+}
+
+.side-panel input[type="checkbox"] { transform: scale(1.12); }
+
+.status-line {
+    font-size: 11px;
+    opacity: 0.80;
+    margin-top: 8px;
+    line-height: 1.35;
+}
+
+button, select, input { font-family: Arial, sans-serif; }
+</style>
+</head>
+
+<body>
+<div id="map"></div>
+
+<div class="title-box">SCHISM WebGL Viewer</div>
+<div class="legend-box" id="legend-box"></div>
+
+<div class="side-panel">
+  <div class="side-panel-title">Layer Options</div>
+
+  <label>
+    <span><b>Variable</b></span>
+    <select id="var-select">
+      <option value="temperature">Temperature</option>
+      <option value="ssh">Elevation</option>
+      <option value="current">Current</option>
+    </select>
+  </label>
+
+  <label>
+    <span><b>Current overlay</b></span>
+    <input id="current-overlay-check" type="checkbox">
+  </label>
+
+  <label>
+    <span><b>Mesh overlay</b></span>
+    <input id="mesh-overlay-check" type="checkbox">
+  </label>
+
+  <label>
+    <span><b>Particles</b></span>
+    <select id="particle-density-select">
+      <option value="800">Low</option>
+      <option value="1600">Mid</option>
+      <option value="2800" selected>High</option>
+    </select>
+  </label>
+
+  <div class="status-line" id="status-line">Loading...</div>
+</div>
+
+<div class="control-box">
+  <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    <button id="play-btn" style="padding:5px 12px; cursor:pointer;">Play</button>
+
+    <input id="frame-slider" type="range" min="0" max="0" value="0" step="1" style="width:330px;">
+
+    <select id="speed-select" style="padding:5px 8px;">
+      <option value="1">1x</option>
+      <option value="2">2x</option>
+      <option value="3">3x</option>
+    </select>
+
+    <label><b>Opacity</b></label>
+    <input id="opacity-slider" type="range" min="0.1" max="1.0" value="0.82" step="0.05" style="width:110px;">
+
+    <span id="time-label" style="font-size:13px; min-width:180px; display:inline-block;"></span>
+  </div>
+</div>
+
+<script src="webgl_scalar.js?v=20260518_unstructured_current_01"></script>
+</body>
+</html>
+'''
+
+
+WEBGL_SCALAR_JS = r'''/* SCHISM unstructured WebGL viewer with unstructured current particles. */
 
 "use strict";
 
@@ -939,3 +1592,156 @@ boot().catch(err => {
     setStatus("ERROR: " + err.message);
     alert(err.message);
 });
+'''
+
+
+def main() -> None:
+    print("=== SCHISM WebGL unstructured generator with unstructured current ===")
+    print("REPO_DIR:", REPO_DIR)
+    print("SCHISM_DIR:", SCHISM_DIR)
+    print("OUT_DIR:", OUT_DIR)
+
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    (OUT_DIR / "temp_bin").mkdir(parents=True, exist_ok=True)
+    (OUT_DIR / "ssh_bin").mkdir(parents=True, exist_ok=True)
+    (OUT_DIR / "current_u_bin").mkdir(parents=True, exist_ok=True)
+    (OUT_DIR / "current_v_bin").mkdir(parents=True, exist_ok=True)
+
+    for path in [OUT2D_FILE, TEMP_FILE, HVELX_FILE, HVELY_FILE]:
+        if not path.exists():
+            raise FileNotFoundError(path)
+
+    print("Reading mesh from:", OUT2D_FILE)
+    with Dataset(OUT2D_FILE) as ds2d:
+        lon, lat = find_node_xy(ds2d)
+        face_nodes = find_face_nodes(ds2d)
+        triangles = triangulate_faces(face_nodes, lon.size)
+
+        node_count = int(lon.size)
+        triangle_count = int(triangles.shape[0])
+        index_count = int(triangles.size)
+
+        print("node_count:", node_count)
+        print("triangle_count:", triangle_count)
+        print("index_count:", index_count)
+
+        if "time" in ds2d.dimensions:
+            max_time = ds2d.dimensions["time"].size
+            frame_indices = [i for i in range(START_IDX, END_IDX, STRIDE) if i < max_time]
+        else:
+            frame_indices = list(range(START_IDX, END_IDX, STRIDE))
+
+        labels = read_time_labels(ds2d, frame_indices)
+        elev_var = _find_var(ds2d, ["elevation", "elev", "zeta"], contains=["elev"])
+
+        print("Writing mesh_nodes.bin and mesh_elems.bin")
+        nodes = np.empty(node_count * 2, dtype=np.float32)
+        nodes[0::2] = lon.astype(np.float32)
+        nodes[1::2] = lat.astype(np.float32)
+
+        write_float32_bin(OUT_DIR / "mesh_nodes.bin", nodes)
+        write_uint32_bin(OUT_DIR / "mesh_elems.bin", triangles.reshape(-1))
+        edge_meta = build_mesh_edges(triangles, OUT_DIR)
+
+        lookup_meta = build_triangle_lookup(lon, lat, triangles, OUT_DIR, LOOKUP_NX, LOOKUP_NY)
+
+        print("Writing SSH bin frames")
+        for out_i, src_i in enumerate(frame_indices):
+            vals = read_node_scalar(elev_var, src_i, node_count, layer_index=None)
+            write_float32_bin(OUT_DIR / "ssh_bin" / f"frame_{out_i:04d}.bin", vals)
+            print(f"  ssh frame {out_i:04d} <- time {src_i}")
+
+    print("Reading temperature from:", TEMP_FILE)
+    with Dataset(TEMP_FILE) as dst:
+        temp_var = _find_var(dst, ["temperature", "temp"], contains=["temp"])
+        print("Writing temperature bin frames")
+        for out_i, src_i in enumerate(frame_indices):
+            vals = read_node_scalar(temp_var, src_i, node_count, layer_index=K_IDX)
+            write_float32_bin(OUT_DIR / "temp_bin" / f"frame_{out_i:04d}.bin", vals)
+            print(f"  temp frame {out_i:04d} <- time {src_i}")
+
+    print("Reading current from:", HVELX_FILE, HVELY_FILE)
+    with Dataset(HVELX_FILE) as dsx, Dataset(HVELY_FILE) as dsy:
+        ux_var = _find_var(dsx, ["horizontalVelX", "hvel_x", "u", "uvel"], contains=["vel", "x"])
+        vy_var = _find_var(dsy, ["horizontalVelY", "hvel_y", "v", "vvel"], contains=["vel", "y"])
+
+        print("Writing unstructured current u/v bin frames")
+        for out_i, src_i in enumerate(frame_indices):
+            u = read_node_scalar(ux_var, src_i, node_count, layer_index=K_IDX)
+            v = read_node_scalar(vy_var, src_i, node_count, layer_index=K_IDX)
+
+            bad = (
+                ~np.isfinite(u) | ~np.isfinite(v) |
+                (u <= float(INVALID_VALUE) + 1.0) |
+                (v <= float(INVALID_VALUE) + 1.0)
+            )
+            if bad.any():
+                u = u.copy()
+                v = v.copy()
+                u[bad] = INVALID_VALUE
+                v[bad] = INVALID_VALUE
+
+            write_float32_bin(OUT_DIR / "current_u_bin" / f"frame_{out_i:04d}.bin", u)
+            write_float32_bin(OUT_DIR / "current_v_bin" / f"frame_{out_i:04d}.bin", v)
+            print(f"  current frame {out_i:04d} <- time {src_i}")
+
+    meta = {
+        "format": "schism-unstructured-webgl-v2-current-lookup",
+        "node_count": node_count,
+        "triangle_count": triangle_count,
+        "index_count": index_count,
+        "edge_count": edge_meta["edge_count"],
+        "edge_index_count": edge_meta["edge_index_count"],
+        "mesh_edges_bin": edge_meta["edges_bin"],
+        "invalid_value": float(INVALID_VALUE),
+        "bounds": [
+            [float(np.nanmin(lat)), float(np.nanmin(lon))],
+            [float(np.nanmax(lat)), float(np.nanmax(lon))],
+        ],
+        "frames": [
+            {
+                "i": int(k),
+                "source_time_index": int(src_i),
+                "label": str(label),
+                "temp_bin": f"temp_bin/frame_{k:04d}.bin",
+                "ssh_bin": f"ssh_bin/frame_{k:04d}.bin",
+                "current_u_bin": f"current_u_bin/frame_{k:04d}.bin",
+                "current_v_bin": f"current_v_bin/frame_{k:04d}.bin",
+            }
+            for k, (src_i, label) in enumerate(zip(frame_indices, labels))
+        ],
+        "variables": {
+            "temperature": {"vmin": TEMP_VMIN, "vmax": TEMP_VMAX, "cmap": "jet", "units": "degC"},
+            "ssh": {"vmin": SSH_VMIN, "vmax": SSH_VMAX, "cmap": "rdbu", "units": "m"},
+            "current": {"vmin": CURRENT_VMIN, "vmax": CURRENT_VMAX, "cmap": "jet", "units": "m/s"},
+        },
+        "lookup": lookup_meta,
+    }
+
+    (OUT_DIR / "mesh_meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    (OUT_DIR / "index.html").write_text(INDEX_HTML, encoding="utf-8")
+    (OUT_DIR / "webgl_scalar.js").write_text(WEBGL_SCALAR_JS, encoding="utf-8")
+
+    print("Wrote:", OUT_DIR / "index.html")
+    print("Wrote:", OUT_DIR / "webgl_scalar.js")
+    print("Wrote:", OUT_DIR / "mesh_meta.json")
+    print("Wrote:", OUT_DIR / "lookup_meta.json")
+    print("Wrote:", OUT_DIR / "mesh_edges.bin")
+
+    total_size = 0
+    for root, _, files in os.walk(OUT_DIR):
+        for f in files:
+            total_size += (Path(root) / f).stat().st_size
+    print(f"Output size: {total_size / 1024 / 1024:.2f} MB")
+
+    print("\nNext:")
+    print(f"  cd {REPO_DIR}")
+    print("  git add webgl_unstructured make_schism_webgl_unstructured_current_lookup.py")
+    print('  git commit -m "Add unstructured current WebGL particles"')
+    print("  git push origin main")
+    print("\nOpen:")
+    print("  https://king4398.github.io/KOP_view/webgl_unstructured/")
+
+
+if __name__ == "__main__":
+    main()
