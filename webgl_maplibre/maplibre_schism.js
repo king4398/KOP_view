@@ -301,6 +301,111 @@ function projectParticlePoint(lon, lat) {
     return map.project([lon, lat]);
 }
 
+
+let particleSnapshotCanvas = null;
+let particleSnapshotCtx = null;
+let particleSnapshotActive = false;
+
+function ensureParticleSnapshotCanvas() {
+    if (!map) return null;
+
+    if (particleSnapshotCanvas) return particleSnapshotCanvas;
+
+    const container = map.getContainer();
+
+    particleSnapshotCanvas = document.createElement("canvas");
+    particleSnapshotCanvas.id = "particle-snapshot-canvas";
+    particleSnapshotCanvas.style.position = "absolute";
+    particleSnapshotCanvas.style.left = "0";
+    particleSnapshotCanvas.style.top = "0";
+    particleSnapshotCanvas.style.width = "100%";
+    particleSnapshotCanvas.style.height = "100%";
+    particleSnapshotCanvas.style.pointerEvents = "none";
+    particleSnapshotCanvas.style.zIndex = "21";
+    particleSnapshotCanvas.style.display = "none";
+    particleSnapshotCanvas.style.transform = "none";
+
+    container.appendChild(particleSnapshotCanvas);
+    particleSnapshotCtx = particleSnapshotCanvas.getContext("2d");
+
+    return particleSnapshotCanvas;
+}
+
+function resizeParticleSnapshotCanvas() {
+    if (!map || !particleSnapshotCanvas || !particleSnapshotCtx) return;
+
+    const rect = map.getContainer().getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    particleSnapshotCanvas.width = Math.max(1, Math.round(rect.width * dpr));
+    particleSnapshotCanvas.height = Math.max(1, Math.round(rect.height * dpr));
+    particleSnapshotCanvas.style.width = Math.round(rect.width) + "px";
+    particleSnapshotCanvas.style.height = Math.round(rect.height) + "px";
+    particleSnapshotCanvas.style.left = "0";
+    particleSnapshotCanvas.style.top = "0";
+    particleSnapshotCanvas.style.transform = "none";
+
+    particleSnapshotCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function pauseParticlesOnly() {
+    particleRunning = false;
+
+    if (particleAnimId !== null) {
+        cancelAnimationFrame(particleAnimId);
+        particleAnimId = null;
+    }
+}
+
+function captureParticleSnapshotForMove() {
+    if (!particleCanvas || !map) return;
+
+    ensureParticleSnapshotCanvas();
+    resizeParticleSnapshotCanvas();
+
+    const rect = map.getContainer().getBoundingClientRect();
+
+    particleSnapshotCtx.clearRect(0, 0, rect.width, rect.height);
+
+    try {
+        particleSnapshotCtx.drawImage(particleCanvas, 0, 0, rect.width, rect.height);
+    } catch (e) {
+        console.warn("[particle snapshot] drawImage failed", e);
+        return;
+    }
+
+    particleSnapshotCanvas.style.display = "block";
+    particleSnapshotCanvas.style.visibility = "visible";
+
+    particleSnapshotActive = true;
+
+    // Stop real particle calculation and hide the live canvas.
+    // Snapshot stays fixed on screen during drag/zoom.
+    pauseParticlesOnly();
+
+    particleCanvas.style.visibility = "hidden";
+}
+
+function releaseParticleSnapshotAfterMove() {
+    particleSnapshotActive = false;
+
+    if (particleSnapshotCanvas) {
+        particleSnapshotCanvas.style.display = "none";
+    }
+
+    if (particleCanvas) {
+        particleCanvas.style.visibility = "visible";
+    }
+
+    resizeParticleCanvas();
+    clearCurrentCanvas();
+    resetParticles();
+
+    if (shouldDrawCurrentParticles()) {
+        startParticles();
+    }
+}
+
 function startParticles(){ if(particleAnimId!==null) cancelAnimationFrame(particleAnimId); particleRunning=true; resetParticles(); function step(){ if(!particleRunning||!shouldDrawCurrentParticles()){ particleAnimId=requestAnimationFrame(step); return; } const rect=map.getContainer().getBoundingClientRect(), width=rect.width, height=rect.height; particleCtx.globalCompositeOperation="destination-in"; particleCtx.fillStyle="rgba(0,0,0,0.92)"; particleCtx.fillRect(0,0,width,height); particleCtx.globalCompositeOperation="source-over"; particleCtx.lineWidth=1.2; for(const p of particles){ if(!p||p.age>p.maxAge){resetParticle(p);continue;} const vec=vectorAt(p.lon,p.lat); if(!vec){resetParticle(p);continue;} const oldPoint = projectParticlePoint(p.lon, p.lat); const latRad=p.lat*Math.PI/180; let coslat=Math.cos(latRad); if(Math.abs(coslat)<1e-6) coslat=1e-6; const dt=CONFIG.flowScale*speed; const newLon=p.lon+(vec.u*dt)/coslat, newLat=p.lat+vec.v*dt; if(!vectorAt(newLon,newLat)){resetParticle(p);continue;} p.lon=newLon; p.lat=newLat; p.age++; const newPoint = projectParticlePoint(p.lon, p.lat); if(newPoint.x<-50||newPoint.x>width+50||newPoint.y<-50||newPoint.y>height+50){resetParticle(p);continue;} particleCtx.strokeStyle=currentParticleColor(vec.speed); particleCtx.beginPath(); particleCtx.moveTo(oldPoint.x,oldPoint.y); particleCtx.lineTo(newPoint.x,newPoint.y); particleCtx.stroke(); } particleAnimId=requestAnimationFrame(step); } particleAnimId=requestAnimationFrame(step); }
 function stopParticles(){ particleRunning=false; if(particleAnimId!==null){ cancelAnimationFrame(particleAnimId); particleAnimId=null; } clearCurrentCanvas(); }
 function setupEvents(){ els.currentOverlay.checked=true; els.currentOverlay.dataset.userTouched=""; els.currentOverlay.addEventListener("change",()=>{els.currentOverlay.dataset.userTouched="1"; updateCurrentOverlayAvailability(); setFrame(currentFrame);}); els.meshOverlay.addEventListener("change",()=>map.triggerRepaint()); els.varSelect.addEventListener("change",e=>{currentVar=e.target.value; updateCurrentOverlayAvailability(); updateLegend(); setFrame(currentFrame); map.triggerRepaint();}); els.playBtn.addEventListener("click",()=>{ if(timer===null){els.playBtn.textContent="Pause"; startTimer();} else {els.playBtn.textContent="Play"; clearInterval(timer); timer=null;} }); els.frameSlider.addEventListener("input",e=>setFrame(e.target.value)); els.speedSelect.addEventListener("change",e=>{ speed=parseFloat(e.target.value); if(timer!==null) startTimer(); }); els.opacitySlider.addEventListener("input",()=>map.triggerRepaint()); els.densitySelect.addEventListener("change",e=>{ particleCount=parseInt(e.target.value); resetParticles(); clearCurrentCanvas(); }); map.on("moveend",()=>resetParticles());
@@ -475,6 +580,6 @@ function setBaseMap(name) {
 
 
 
-// KOP_PARTICLE_FREEZE_REAL2_APPLIED
 
-// KOP_PARTICLE_FIXED_CANVAS_SCREEN_OVERLAY
+
+// KOP_PARTICLE_SNAPSHOT_DURING_MOVE
