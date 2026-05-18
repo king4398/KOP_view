@@ -40,6 +40,16 @@ button, select, input { font-family:Arial,sans-serif; }
 <div class="legend-box" id="legend-box"></div>
 <div class="side-panel">
   <div class="side-panel-title">Layer Options</div>
+
+  <label>
+    <span><b>Base map</b></span>
+    <select id="basemap-select">
+      <option value="esri" selected>Esri Satellite</option>
+      <option value="carto-light">Carto Light</option>
+    </select>
+  </label>
+
+
   <label><span><b>Variable</b></span><select id="var-select"><option value="temperature">Temperature</option><option value="ssh">Elevation</option><option value="current">Current</option></select></label>
   <label><span><b>Current overlay</b></span><input id="current-overlay-check" type="checkbox" checked></label>
   <label><span><b>Mesh overlay</b></span><input id="mesh-overlay-check" type="checkbox"></label>

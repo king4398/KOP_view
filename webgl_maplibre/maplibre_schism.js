@@ -14,6 +14,7 @@ const CONFIG = {
 };
 
 const els = {
+    basemapSelect: document.getElementById("basemap-select"),
   varSelect: document.getElementById("var-select"), playBtn: document.getElementById("play-btn"),
   frameSlider: document.getElementById("frame-slider"), speedSelect: document.getElementById("speed-select"),
   opacitySlider: document.getElementById("opacity-slider"), densitySelect: document.getElementById("particle-density-select"),
@@ -89,7 +90,72 @@ function resetParticles(){ particles=[]; if(!currentU||!currentV) return; for(le
 function startParticles(){ if(particleAnimId!==null) cancelAnimationFrame(particleAnimId); particleRunning=true; resetParticles(); function step(){ if(!particleRunning||!shouldDrawCurrentParticles()){ particleAnimId=requestAnimationFrame(step); return; } const canvas=map.getCanvas(), width=canvas.clientWidth, height=canvas.clientHeight; particleCtx.globalCompositeOperation="destination-in"; particleCtx.fillStyle="rgba(0,0,0,0.92)"; particleCtx.fillRect(0,0,width,height); particleCtx.globalCompositeOperation="source-over"; particleCtx.lineWidth=1.2; for(const p of particles){ if(!p||p.age>p.maxAge){resetParticle(p);continue;} const vec=vectorAt(p.lon,p.lat); if(!vec){resetParticle(p);continue;} const oldPoint=map.project([p.lon,p.lat]); const latRad=p.lat*Math.PI/180; let coslat=Math.cos(latRad); if(Math.abs(coslat)<1e-6) coslat=1e-6; const dt=CONFIG.flowScale*speed; const newLon=p.lon+(vec.u*dt)/coslat, newLat=p.lat+vec.v*dt; if(!vectorAt(newLon,newLat)){resetParticle(p);continue;} p.lon=newLon; p.lat=newLat; p.age++; const newPoint=map.project([p.lon,p.lat]); if(newPoint.x<-50||newPoint.x>width+50||newPoint.y<-50||newPoint.y>height+50){resetParticle(p);continue;} particleCtx.strokeStyle=currentParticleColor(vec.speed); particleCtx.beginPath(); particleCtx.moveTo(oldPoint.x,oldPoint.y); particleCtx.lineTo(newPoint.x,newPoint.y); particleCtx.stroke(); } particleAnimId=requestAnimationFrame(step); } particleAnimId=requestAnimationFrame(step); }
 function stopParticles(){ particleRunning=false; if(particleAnimId!==null){ cancelAnimationFrame(particleAnimId); particleAnimId=null; } clearCurrentCanvas(); }
 function setupEvents(){ els.currentOverlay.checked=true; els.currentOverlay.dataset.userTouched=""; els.currentOverlay.addEventListener("change",()=>{els.currentOverlay.dataset.userTouched="1"; updateCurrentOverlayAvailability(); setFrame(currentFrame);}); els.meshOverlay.addEventListener("change",()=>map.triggerRepaint()); els.varSelect.addEventListener("change",e=>{currentVar=e.target.value; updateCurrentOverlayAvailability(); updateLegend(); setFrame(currentFrame); map.triggerRepaint();}); els.playBtn.addEventListener("click",()=>{ if(timer===null){els.playBtn.textContent="Pause"; startTimer();} else {els.playBtn.textContent="Play"; clearInterval(timer); timer=null;} }); els.frameSlider.addEventListener("input",e=>setFrame(e.target.value)); els.speedSelect.addEventListener("change",e=>{ speed=parseFloat(e.target.value); if(timer!==null) startTimer(); }); els.opacitySlider.addEventListener("input",()=>map.triggerRepaint()); els.densitySelect.addEventListener("change",e=>{ particleCount=parseInt(e.target.value); resetParticles(); clearCurrentCanvas(); }); map.on("moveend",()=>resetParticles()); map.on("zoomend",()=>{ resizeParticleCanvas(); resetParticles(); }); }
-function makeMapStyle(){ return {version:8, sources:{"esri-satellite":{type:"raster",tiles:["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],tileSize:256,attribution:"Tiles Esri"}}, layers:[{id:"esri-satellite-layer",type:"raster",source:"esri-satellite"}]}; }
+
+function makeMapStyle() {
+    return {
+        version: 8,
+        sources: {
+            "esri-satellite": {
+                type: "raster",
+                tiles: [
+                    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                ],
+                tileSize: 256,
+                attribution: "Tiles © Esri"
+            },
+            "carto-light": {
+                type: "raster",
+                tiles: [
+                    "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+                    "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+                    "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+                    "https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
+                ],
+                tileSize: 256,
+                attribution: "© OpenStreetMap contributors © CARTO"
+            }
+        },
+        layers: [
+            {
+                id: "basemap-esri",
+                type: "raster",
+                source: "esri-satellite",
+                layout: { visibility: "visible" }
+            },
+            {
+                id: "basemap-carto-light",
+                type: "raster",
+                source: "carto-light",
+                layout: { visibility: "none" }
+            }
+        ]
+    };
+}
 function initMap(){ const b=meta.bounds; const south=b[0][0], west=b[0][1], north=b[1][0], east=b[1][1]; map=new maplibregl.Map({container:"map",style:makeMapStyle(),center:[(west+east)/2,(south+north)/2],zoom:7,minZoom:3,maxZoom:14,dragRotate:false,pitchWithRotate:false,renderWorldCopies:false,attributionControl:true}); map.addControl(new maplibregl.NavigationControl({visualizePitch:false}),"top-left"); map.fitBounds([[west,south],[east,north]],{padding:20,duration:0}); }
 async function boot(){ setStatus("Loading metadata..."); meta=await fetchJson(CONFIG.metaUrl); lookupMeta=await fetchJson(CONFIG.lookupMetaUrl); els.frameSlider.max=frameCount()-1; setStatus("Loading mesh and lookup..."); [nodesLonLat,elems,meshEdges,lookupOffsets,lookupTriangles]=await Promise.all([fetchFloat32(CONFIG.nodesUrl,meta.node_count*2),fetchUint32(CONFIG.elemsUrl,meta.index_count),fetchUint32(CONFIG.edgesUrl),fetchUint32(CONFIG.lookupOffsetsUrl),fetchUint32(CONFIG.lookupTrianglesUrl)]); initMap(); map.on("load",async()=>{ setStatus("Preparing WebGL layer..."); buildMercatorNodes(); initParticleCanvas(); map.addLayer(makeSchismLayer()); setupEvents(); updateCurrentOverlayAvailability(); updateLegend(); await setFrame(0); setStatus(`Ready: ${meta.node_count.toLocaleString()} nodes, ${meta.triangle_count.toLocaleString()} triangles`); }); }
 boot().catch(err=>{ console.error(err); setStatus("ERROR: "+err.message); alert(err.message); });
+
+
+
+function setBaseMap(name) {
+    if (!map) return;
+
+    const ids = {
+        "esri": "basemap-esri",
+        "carto-light": "basemap-carto-light"
+    };
+
+    for (const key of Object.keys(ids)) {
+        const layerId = ids[key];
+        if (!map.getLayer(layerId)) continue;
+
+        map.setLayoutProperty(
+            layerId,
+            "visibility",
+            key === name ? "visible" : "none"
+        );
+    }
+
+    map.triggerRepaint();
+}
+
