@@ -175,7 +175,8 @@ function resetParticle(p){ const ll=randomValidPoint(); if(ll){p.lon=ll.lon;p.la
 function resetParticles(){ particles=[]; if(!currentU||!currentV) return; for(let i=0;i<particleCount;i++){ const p={}; resetParticle(p); particles.push(p); } }
 function startParticles(){ if(particleAnimId!==null) cancelAnimationFrame(particleAnimId); particleRunning=true; resetParticles(); function step(){ if(!particleRunning||!shouldDrawCurrentParticles()){ particleAnimId=requestAnimationFrame(step); return; } const canvas=map.getCanvas(), width=canvas.clientWidth, height=canvas.clientHeight; particleCtx.globalCompositeOperation="destination-in"; particleCtx.fillStyle="rgba(0,0,0,0.92)"; particleCtx.fillRect(0,0,width,height); particleCtx.globalCompositeOperation="source-over"; particleCtx.lineWidth=1.2; for(const p of particles){ if(!p||p.age>p.maxAge){resetParticle(p);continue;} const vec=vectorAt(p.lon,p.lat); if(!vec){resetParticle(p);continue;} const oldPoint=map.project([p.lon,p.lat]); const latRad=p.lat*Math.PI/180; let coslat=Math.cos(latRad); if(Math.abs(coslat)<1e-6) coslat=1e-6; const dt=CONFIG.flowScale*speed; const newLon=p.lon+(vec.u*dt)/coslat, newLat=p.lat+vec.v*dt; if(!vectorAt(newLon,newLat)){resetParticle(p);continue;} p.lon=newLon; p.lat=newLat; p.age++; const newPoint=map.project([p.lon,p.lat]); if(newPoint.x<-50||newPoint.x>width+50||newPoint.y<-50||newPoint.y>height+50){resetParticle(p);continue;} particleCtx.strokeStyle=currentParticleColor(vec.speed); particleCtx.beginPath(); particleCtx.moveTo(oldPoint.x,oldPoint.y); particleCtx.lineTo(newPoint.x,newPoint.y); particleCtx.stroke(); } particleAnimId=requestAnimationFrame(step); } particleAnimId=requestAnimationFrame(step); }
 function stopParticles(){ particleRunning=false; if(particleAnimId!==null){ cancelAnimationFrame(particleAnimId); particleAnimId=null; } clearCurrentCanvas(); }
-function setupEvents(){ els.currentOverlay.checked=true; els.currentOverlay.dataset.userTouched=""; els.currentOverlay.addEventListener("change",()=>{els.currentOverlay.dataset.userTouched="1"; updateCurrentOverlayAvailability(); setFrame(currentFrame);}); els.meshOverlay.addEventListener("change",()=>map.triggerRepaint()); els.varSelect.addEventListener("change",e=>{currentVar=e.target.value; updateCurrentOverlayAvailability(); updateLegend(); setFrame(currentFrame); map.triggerRepaint();}); els.playBtn.addEventListener("click",()=>{ if(timer===null){els.playBtn.textContent="Pause"; startTimer();} else {els.playBtn.textContent="Play"; clearInterval(timer); timer=null;} }); els.frameSlider.addEventListener("input",e=>setFrame(e.target.value)); els.speedSelect.addEventListener("change",e=>{ speed=parseFloat(e.target.value); if(timer!==null) startTimer(); }); els.opacitySlider.addEventListener("input",()=>map.triggerRepaint()); els.densitySelect.addEventListener("change",e=>{ particleCount=parseInt(e.target.value); resetParticles(); clearCurrentCanvas(); }); map.on("moveend",()=>resetParticles()); map.on("zoomend",()=>{ resizeParticleCanvas(); resetParticles(); }); }
+function setupEvents(){ els.currentOverlay.checked=true; els.currentOverlay.dataset.userTouched=""; els.currentOverlay.addEventListener("change",()=>{els.currentOverlay.dataset.userTouched="1"; updateCurrentOverlayAvailability(); setFrame(currentFrame);}); els.meshOverlay.addEventListener("change",()=>map.triggerRepaint()); els.varSelect.addEventListener("change",e=>{currentVar=e.target.value; updateCurrentOverlayAvailability(); updateLegend(); setFrame(currentFrame); map.triggerRepaint();}); els.playBtn.addEventListener("click",()=>{ if(timer===null){els.playBtn.textContent="Pause"; startTimer();} else {els.playBtn.textContent="Play"; clearInterval(timer); timer=null;} }); els.frameSlider.addEventListener("input",e=>setFrame(e.target.value)); els.speedSelect.addEventListener("change",e=>{ speed=parseFloat(e.target.value); if(timer!==null) startTimer(); }); els.opacitySlider.addEventListener("input",()=>map.triggerRepaint()); els.densitySelect.addEventListener("change",e=>{ particleCount=parseInt(e.target.value); resetParticles(); clearCurrentCanvas(); }); map.on("moveend",()=>resetParticles());
+}
 
 
 function makeMapStyle() {
@@ -335,7 +336,6 @@ function setBaseMap(name) {
 
 // KOP_MESH_SOFT_GRAY_ALPHA_010
 
-// KOP_PARTICLE_GRAY_WHITE_210
 
 // KOP_SAFE_TUNE_MESH016_FLOW0063_GRAYPARTICLE_RDBU_LEGEND
 
@@ -345,4 +345,5 @@ function setBaseMap(name) {
 
 // KOP_ELEVATION_SIMPLE_BWR_PARTICLE238
 
-// KOP_PARTICLE_DRAG_FIX_HIDE_DURING_MOVE
+
+// KOP_PARTICLE_FREEZE_PROJECTION_DURING_MOVE
