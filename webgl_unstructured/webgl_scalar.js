@@ -56,6 +56,12 @@ let meshEdges = null;
 let lookupOffsets = null;
 let lookupTriangles = null;
 
+// Leaflet-fixed screen coordinates.
+// This is the important part: use Leaflet's own current pixel coordinates,
+// not a separate WebMercator calculation inside the shader.
+let screenCoords = null;
+let meshNodeBuffer = null;
+
 let currentU = null;
 let currentV = null;
 let currentCache = new Map();
@@ -259,35 +265,17 @@ function makeProgram(glctx, vsSource, fsSource) {
 const MAP_VERTEX_SHADER = `#version 300 es
 precision highp float;
 
-layout(location = 0) in vec2 a_lonlat;
+layout(location = 0) in vec2 a_screen;
 layout(location = 1) in float a_value;
 
-uniform float u_zoom;
-uniform vec2 u_pixelOrigin;
 uniform vec2 u_mapSize;
 
 out float v_value;
 
-const float PI = 3.141592653589793;
-
-vec2 lonLatToWorldPixel(vec2 lonlat, float zoom) {
-    float scale = 256.0 * exp2(zoom);
-    float lon = lonlat.x;
-    float lat = clamp(lonlat.y, -85.05112878, 85.05112878);
-    float x = (lon + 180.0) / 360.0 * scale;
-    float latRad = radians(lat);
-    float siny = clamp(sin(latRad), -0.9999, 0.9999);
-    float y = (0.5 - log((1.0 + siny) / (1.0 - siny)) / (4.0 * PI)) * scale;
-    return vec2(x, y);
-}
-
 void main() {
-    vec2 world = lonLatToWorldPixel(a_lonlat, u_zoom);
-    vec2 p = world - u_pixelOrigin;
-
     vec2 clip;
-    clip.x = p.x / u_mapSize.x * 2.0 - 1.0;
-    clip.y = 1.0 - p.y / u_mapSize.y * 2.0;
+    clip.x = a_screen.x / u_mapSize.x * 2.0 - 1.0;
+    clip.y = 1.0 - a_screen.y / u_mapSize.y * 2.0;
 
     gl_Position = vec4(clip, 0.0, 1.0);
     v_value = a_value;
@@ -348,32 +336,14 @@ void main() {
 const MESH_VERTEX_SHADER = `#version 300 es
 precision highp float;
 
-layout(location = 0) in vec2 a_lonlat;
+layout(location = 0) in vec2 a_screen;
 
-uniform float u_zoom;
-uniform vec2 u_pixelOrigin;
 uniform vec2 u_mapSize;
 
-const float PI = 3.141592653589793;
-
-vec2 lonLatToWorldPixel(vec2 lonlat, float zoom) {
-    float scale = 256.0 * exp2(zoom);
-    float lon = lonlat.x;
-    float lat = clamp(lonlat.y, -85.05112878, 85.05112878);
-    float x = (lon + 180.0) / 360.0 * scale;
-    float latRad = radians(lat);
-    float siny = clamp(sin(latRad), -0.9999, 0.9999);
-    float y = (0.5 - log((1.0 + siny) / (1.0 - siny)) / (4.0 * PI)) * scale;
-    return vec2(x, y);
-}
-
 void main() {
-    vec2 world = lonLatToWorldPixel(a_lonlat, u_zoom);
-    vec2 p = world - u_pixelOrigin;
-
     vec2 clip;
-    clip.x = p.x / u_mapSize.x * 2.0 - 1.0;
-    clip.y = 1.0 - p.y / u_mapSize.y * 2.0;
+    clip.x = a_screen.x / u_mapSize.x * 2.0 - 1.0;
+    clip.y = 1.0 - a_screen.y / u_mapSize.y * 2.0;
 
     gl_Position = vec4(clip, 0.0, 1.0);
 }
@@ -423,6 +393,7 @@ function initMap() {
 
     map.on("move zoom resize zoomend moveend", () => {
         resizeCanvases();
+        updateScreenCoordinates();
         renderScalar();
         drawMeshOverlay();
         resetParticles();
@@ -430,6 +401,7 @@ function initMap() {
 
     window.addEventListener("resize", () => {
         resizeCanvases();
+        updateScreenCoordinates();
         renderScalar();
         drawMeshOverlay();
         resetParticles();
@@ -520,6 +492,34 @@ function resizeCanvases() {
     }
 }
 
+
+function updateScreenCoordinates() {
+    if (!map || !nodes || !screenCoords) return;
+
+    const n = nodes.length / 2;
+
+    for (let i = 0; i < n; i++) {
+        const lon = nodes[i * 2];
+        const lat = nodes[i * 2 + 1];
+
+        const pt = map.latLngToContainerPoint([lat, lon]);
+
+        screenCoords[i * 2] = pt.x;
+        screenCoords[i * 2 + 1] = pt.y;
+    }
+
+    if (gl && nodeBuffer) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, nodeBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, screenCoords, gl.DYNAMIC_DRAW);
+    }
+
+    if (meshGl && meshNodeBuffer) {
+        meshGl.bindBuffer(meshGl.ARRAY_BUFFER, meshNodeBuffer);
+        meshGl.bufferData(meshGl.ARRAY_BUFFER, screenCoords, meshGl.DYNAMIC_DRAW);
+    }
+}
+
+
 function initWebGL() {
     scalarProgram = makeProgram(gl, MAP_VERTEX_SHADER, SCALAR_FRAGMENT_SHADER);
 
@@ -535,9 +535,12 @@ function initWebGL() {
     vao = gl.createVertexArray();
     gl.bindVertexArray(vao);
 
+    screenCoords = new Float32Array(nodes.length);
+    updateScreenCoordinates();
+
     nodeBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, nodeBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, nodes, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, screenCoords, gl.DYNAMIC_DRAW);
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
 
@@ -563,9 +566,9 @@ function initWebGL() {
     meshVao = meshGl.createVertexArray();
     meshGl.bindVertexArray(meshVao);
 
-    const meshNodeBuffer = meshGl.createBuffer();
+    meshNodeBuffer = meshGl.createBuffer();
     meshGl.bindBuffer(meshGl.ARRAY_BUFFER, meshNodeBuffer);
-    meshGl.bufferData(meshGl.ARRAY_BUFFER, nodes, meshGl.STATIC_DRAW);
+    meshGl.bufferData(meshGl.ARRAY_BUFFER, screenCoords, meshGl.DYNAMIC_DRAW);
     meshGl.enableVertexAttribArray(0);
     meshGl.vertexAttribPointer(0, 2, meshGl.FLOAT, false, 0, 0);
 
@@ -577,16 +580,19 @@ function initWebGL() {
 }
 
 function setMapUniforms(glctx, program, zoomLoc, originLoc, sizeLoc) {
-    const origin = map.getPixelOrigin();
     const size = map.getSize();
 
-    glctx.uniform1f(zoomLoc, map.getZoom());
-    glctx.uniform2f(originLoc, origin.x, origin.y);
-    glctx.uniform2f(sizeLoc, size.x, size.y);
+    // Screen-coordinate shader only needs map size.
+    // zoom/origin uniforms are intentionally unused now.
+    if (sizeLoc) {
+        glctx.uniform2f(sizeLoc, size.x, size.y);
+    }
 }
 
 function renderScalar() {
     if (!gl || !scalarProgram) return;
+
+    updateScreenCoordinates();
 
     if (currentVar === "current") {
         glCanvas.style.display = "none";
@@ -624,6 +630,8 @@ function renderScalar() {
 
 function drawMeshOverlay() {
     if (!meshOverlayCheck || !meshCanvas || !meshGl || !meshProgram) return;
+
+    updateScreenCoordinates();
 
     if (!meshOverlayCheck.checked) {
         meshCanvas.style.display = "none";
