@@ -111,6 +111,11 @@ let meshOverlayCheck = document.getElementById("mesh-overlay-check");
 // Canvases are positioned in overlay panes using Leaflet layer coordinates.
 let canvasTopLeft = null;
 
+// Base view for smooth Leaflet-style zoom animation.
+let zoomBaseCenter = null;
+let zoomBaseZoom = null;
+let zoomBasePosition = null;
+
 // Ghost canvas used during zoom to avoid black flicker.
 // It temporarily displays the last rendered view while real WebGL/tile layers update.
 let zoomGhostCanvas = null;
@@ -405,22 +410,63 @@ function resetCanvasTransforms() {
     for (const c of getLayerCanvases()) {
         if (!c) continue;
         c.style.transform = "";
-        c.style.transformOrigin = "";
+        c.style.transformOrigin = "0 0";
     }
 }
 
 function applyCanvasMapTransform() {
-    // Disabled.
-    // Leaflet pane/mapPane transform handles pan/zoom naturally.
+    // Disabled: using applyLeafletRendererZoom instead.
 }
 
 
 
 function applyCanvasZoomAnimation() {
-    // Disabled.
-    // Leaflet pane/mapPane transform handles pan/zoom naturally.
+    // Disabled: using applyLeafletRendererZoom instead.
 }
 
+
+
+function rememberZoomAnimationBase() {
+    if (!map || !glCanvas) return;
+
+    zoomBaseCenter = map.getCenter();
+    zoomBaseZoom = map.getZoom();
+
+    // All overlay canvases are positioned at the same top-left.
+    // Use Leaflet's stored DOM position as base.
+    const pos = L.DomUtil.getPosition(glCanvas);
+    zoomBasePosition = pos ? pos.clone ? pos.clone() : L.point(pos.x, pos.y) : L.point(0, 0);
+}
+
+function applyLeafletRendererZoom(e) {
+    if (!map || !zoomBaseCenter || zoomBaseZoom === null || !zoomBasePosition) return;
+
+    // This follows Leaflet Renderer._updateTransform logic.
+    // It makes our canvas scale exactly like Leaflet's own Canvas/SVG layers.
+    const scale = map.getZoomScale(e.zoom, zoomBaseZoom);
+    const viewHalf = map.getSize().multiplyBy(0.5);
+
+    const currentCenterPoint = map.project(zoomBaseCenter, e.zoom);
+    const destCenterPoint = map.project(e.center, e.zoom);
+    const centerOffset = destCenterPoint.subtract(currentCenterPoint);
+
+    const topLeftOffset = viewHalf
+        .multiplyBy(-scale)
+        .add(zoomBasePosition)
+        .add(viewHalf)
+        .subtract(centerOffset);
+
+    for (const c of getLayerCanvases()) {
+        if (!c) continue;
+        c.style.transformOrigin = "0 0";
+
+        if (L.DomUtil.setTransform) {
+            L.DomUtil.setTransform(c, topLeftOffset, scale);
+        } else {
+            c.style.transform = `translate(${topLeftOffset.x}px, ${topLeftOffset.y}px) scale(${scale})`;
+        }
+    }
+}
 
 function renderViewportLayers(includeMesh) {
     resetCanvasTransforms();
@@ -434,7 +480,11 @@ function renderViewportLayers(includeMesh) {
         drawMeshOverlay();
     }
 
-    rememberExactRenderView();
+    if (typeof rememberExactRenderView === "function") {
+        rememberExactRenderView();
+    }
+
+    rememberZoomAnimationBase();
 }
 
 function scheduleViewportRedraw(force=false) {
@@ -534,23 +584,19 @@ function initMap() {
 
     map.on("move", () => {
         // Leaflet panes move canvases naturally during pan.
-        // Do not redraw or manually transform here.
     });
 
     map.on("zoomstart", () => {
         mapInteracting = true;
+        rememberZoomAnimationBase();
 
-        // Keep the last rendered canvas visible and let Leaflet scale the pane.
-        // Pause particles only to avoid drawing into a zooming canvas.
         if (typeof pauseParticlesNoClear === "function") {
             pauseParticlesNoClear();
         }
     });
 
-    map.on("zoomanim", () => {
-        // Important:
-        // Do nothing. Leaflet's own mapPane transform scales the canvas
-        // exactly like the map tiles.
+    map.on("zoomanim", (e) => {
+        applyLeafletRendererZoom(e);
     });
 
     map.on("resize", () => {
@@ -569,7 +615,6 @@ function initMap() {
         mapInteracting = false;
         coordsDirty = true;
 
-        // After Leaflet finishes pan/zoom, redraw exactly once using new coordinates.
         renderViewportLayers(true);
         resetParticles();
 
@@ -630,13 +675,11 @@ function resizeZoomGhostCanvas() {
 }
 
 function showZoomGhost() {
-    // Disabled.
-    // Leaflet pane/mapPane transform handles pan/zoom naturally.
+    // Disabled: using applyLeafletRendererZoom instead.
 }
 
 function hideZoomGhostSoon() {
-    // Disabled.
-    // Leaflet pane/mapPane transform handles pan/zoom naturally.
+    // Disabled: using applyLeafletRendererZoom instead.
 }
 
 function initCanvases() {
