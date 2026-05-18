@@ -87,6 +87,12 @@ let mapInteracting = false;
 let lastLiveRedrawMs = 0;
 const LIVE_REDRAW_INTERVAL_MS = 80;
 
+// During Leaflet pan/zoom, do not constantly recompute 300k node screen coordinates.
+// Instead, transform the already-rendered canvases so they visually follow the map.
+// On moveend/zoomend, redraw exactly.
+let renderPixelOrigin = null;
+let renderZoom = null;
+
 const varSelect = document.getElementById("var-select");
 const playBtn = document.getElementById("play-btn");
 const frameSlider = document.getElementById("frame-slider");
@@ -370,7 +376,53 @@ void main() {
 `;
 
 
+
+function getLayerCanvases() {
+    return [glCanvas, currentCanvas, meshCanvas].filter(Boolean);
+}
+
+function rememberExactRenderView() {
+    if (!map) return;
+
+    const o = map.getPixelOrigin();
+    renderPixelOrigin = { x: o.x, y: o.y };
+    renderZoom = map.getZoom();
+}
+
+function resetCanvasTransforms() {
+    for (const c of getLayerCanvases()) {
+        c.style.transform = "";
+        c.style.transformOrigin = "0 0";
+    }
+}
+
+function applyCanvasMapTransform() {
+    if (!map || !renderPixelOrigin || renderZoom === null) return;
+
+    const o = map.getPixelOrigin();
+    const z = map.getZoom();
+
+    const scale = Math.pow(2, z - renderZoom);
+
+    // Old screen = world(renderZoom) - renderPixelOrigin
+    // New screen = world(z) - currentPixelOrigin
+    // world(z) = scale * world(renderZoom)
+    // Therefore:
+    // New screen = scale * Old screen + (scale * renderPixelOrigin - currentPixelOrigin)
+    const tx = scale * renderPixelOrigin.x - o.x;
+    const ty = scale * renderPixelOrigin.y - o.y;
+
+    const tr = `translate(${tx}px, ${ty}px) scale(${scale})`;
+
+    for (const c of getLayerCanvases()) {
+        c.style.transformOrigin = "0 0";
+        c.style.transform = tr;
+    }
+}
+
 function renderViewportLayers(includeMesh) {
+    resetCanvasTransforms();
+
     resizeCanvases();
     updateScreenCoordinates();
     renderScalar();
@@ -378,12 +430,20 @@ function renderViewportLayers(includeMesh) {
     if (includeMesh) {
         drawMeshOverlay();
     }
+
+    rememberExactRenderView();
 }
 
 function scheduleViewportRedraw(force=false) {
     const now = performance.now();
 
+    if (mapInteracting && !force) {
+        applyCanvasMapTransform();
+        return;
+    }
+
     if (!force && now - lastLiveRedrawMs < LIVE_REDRAW_INTERVAL_MS) {
+        applyCanvasMapTransform();
         return;
     }
 
@@ -397,11 +457,8 @@ function scheduleViewportRedraw(force=false) {
     requestAnimationFrame(() => {
         renderScheduled = false;
 
-        // Mesh overlay is very expensive while panning/zooming.
-        // Hide it during interaction and redraw it exactly once at the end.
-        if (mapInteracting && meshCanvas && meshOverlayCheck && meshOverlayCheck.checked) {
-            meshCanvas.style.display = "none";
-            renderViewportLayers(false);
+        if (mapInteracting) {
+            applyCanvasMapTransform();
         } else {
             renderViewportLayers(true);
         }
@@ -442,13 +499,17 @@ function initMap() {
     map.on("movestart zoomstart", () => {
         mapInteracting = true;
 
-        if (meshCanvas && meshOverlayCheck && meshOverlayCheck.checked) {
-            meshCanvas.style.display = "none";
+        if (!renderPixelOrigin) {
+            rememberExactRenderView();
         }
     });
 
-    map.on("move zoom resize", () => {
-        scheduleViewportRedraw(false);
+    map.on("move zoom", () => {
+        applyCanvasMapTransform();
+    });
+
+    map.on("resize", () => {
+        scheduleViewportRedraw(true);
     });
 
     map.on("moveend zoomend", () => {
@@ -858,6 +919,7 @@ async function setFrame(i) {
 
     setStatus(`${currentVar} frame ${currentFrame + 1}/${n}`);
     drawMeshOverlay();
+    rememberExactRenderView();
 }
 
 function startTimer() {
