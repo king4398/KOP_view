@@ -173,7 +173,60 @@ function vectorAt(lon,lat){ if(!currentU||!currentV||!lookupOffsets||!lookupTria
 function randomValidPoint(){ const g=getLookupBounds(); let west=g.lonMin,east=g.lonMax,south=g.latMin,north=g.latMax; if(map){ const b=map.getBounds(); west=Math.max(west,b.getWest()); east=Math.min(east,b.getEast()); south=Math.max(south,b.getSouth()); north=Math.min(north,b.getNorth()); } if(!(west<east&&south<north)){ west=g.lonMin; east=g.lonMax; south=g.latMin; north=g.latMax; } for(let i=0;i<800;i++){ const lon=west+Math.random()*(east-west), lat=south+Math.random()*(north-south); if(vectorAt(lon,lat)) return {lon,lat}; } return null; }
 function resetParticle(p){ const ll=randomValidPoint(); if(ll){p.lon=ll.lon;p.lat=ll.lat;} else {p.lon=meta.bounds[0][1];p.lat=meta.bounds[0][0];} p.age=Math.floor(Math.random()*100); p.maxAge=80+Math.floor(Math.random()*80); }
 function resetParticles(){ particles=[]; if(!currentU||!currentV) return; for(let i=0;i<particleCount;i++){ const p={}; resetParticle(p); particles.push(p); } }
-function startParticles(){ if(particleAnimId!==null) cancelAnimationFrame(particleAnimId); particleRunning=true; resetParticles(); function step(){ if(!particleRunning||!shouldDrawCurrentParticles()){ particleAnimId=requestAnimationFrame(step); return; } const canvas=map.getCanvas(), width=canvas.clientWidth, height=canvas.clientHeight; particleCtx.globalCompositeOperation="destination-in"; particleCtx.fillStyle="rgba(0,0,0,0.92)"; particleCtx.fillRect(0,0,width,height); particleCtx.globalCompositeOperation="source-over"; particleCtx.lineWidth=1.2; for(const p of particles){ if(!p||p.age>p.maxAge){resetParticle(p);continue;} const vec=vectorAt(p.lon,p.lat); if(!vec){resetParticle(p);continue;} const oldPoint=map.project([p.lon,p.lat]); const latRad=p.lat*Math.PI/180; let coslat=Math.cos(latRad); if(Math.abs(coslat)<1e-6) coslat=1e-6; const dt=CONFIG.flowScale*speed; const newLon=p.lon+(vec.u*dt)/coslat, newLat=p.lat+vec.v*dt; if(!vectorAt(newLon,newLat)){resetParticle(p);continue;} p.lon=newLon; p.lat=newLat; p.age++; const newPoint=map.project([p.lon,p.lat]); if(newPoint.x<-50||newPoint.x>width+50||newPoint.y<-50||newPoint.y>height+50){resetParticle(p);continue;} particleCtx.strokeStyle=currentParticleColor(vec.speed); particleCtx.beginPath(); particleCtx.moveTo(oldPoint.x,oldPoint.y); particleCtx.lineTo(newPoint.x,newPoint.y); particleCtx.stroke(); } particleAnimId=requestAnimationFrame(step); } particleAnimId=requestAnimationFrame(step); }
+
+let frozenParticleView = null;
+
+
+function freezeParticleProjection() {
+    if (!map) return;
+
+    const c = map.getCenter();
+    const centerMerc = maplibregl.MercatorCoordinate.fromLngLat({
+        lng: c.lng,
+        lat: c.lat
+    });
+
+    const canvas = map.getCanvas();
+
+    frozenParticleView = {
+        centerX: centerMerc.x,
+        centerY: centerMerc.y,
+        zoom: map.getZoom(),
+        width: canvas.clientWidth,
+        height: canvas.clientHeight,
+        worldSize: 512.0 * Math.pow(2.0, map.getZoom())
+    };
+}
+
+function unfreezeParticleProjectionAndReset() {
+    frozenParticleView = null;
+
+    resizeParticleCanvas();
+    clearCurrentCanvas();
+    resetParticles();
+
+    if (shouldDrawCurrentParticles()) {
+        startParticles();
+    }
+}
+
+function projectParticlePoint(lon, lat) {
+    if (frozenParticleView) {
+        const mc = maplibregl.MercatorCoordinate.fromLngLat({
+            lng: lon,
+            lat: lat
+        });
+
+        return {
+            x: (mc.x - frozenParticleView.centerX) * frozenParticleView.worldSize + frozenParticleView.width * 0.5,
+            y: (mc.y - frozenParticleView.centerY) * frozenParticleView.worldSize + frozenParticleView.height * 0.5
+        };
+    }
+
+    return map.project([lon, lat]);
+}
+
+function startParticles(){ if(particleAnimId!==null) cancelAnimationFrame(particleAnimId); particleRunning=true; resetParticles(); function step(){ if(!particleRunning||!shouldDrawCurrentParticles()){ particleAnimId=requestAnimationFrame(step); return; } const canvas=map.getCanvas(), width=canvas.clientWidth, height=canvas.clientHeight; particleCtx.globalCompositeOperation="destination-in"; particleCtx.fillStyle="rgba(0,0,0,0.92)"; particleCtx.fillRect(0,0,width,height); particleCtx.globalCompositeOperation="source-over"; particleCtx.lineWidth=1.2; for(const p of particles){ if(!p||p.age>p.maxAge){resetParticle(p);continue;} const vec=vectorAt(p.lon,p.lat); if(!vec){resetParticle(p);continue;} const oldPoint = projectParticlePoint(p.lon, p.lat); const latRad=p.lat*Math.PI/180; let coslat=Math.cos(latRad); if(Math.abs(coslat)<1e-6) coslat=1e-6; const dt=CONFIG.flowScale*speed; const newLon=p.lon+(vec.u*dt)/coslat, newLat=p.lat+vec.v*dt; if(!vectorAt(newLon,newLat)){resetParticle(p);continue;} p.lon=newLon; p.lat=newLat; p.age++; const newPoint = projectParticlePoint(p.lon, p.lat); if(newPoint.x<-50||newPoint.x>width+50||newPoint.y<-50||newPoint.y>height+50){resetParticle(p);continue;} particleCtx.strokeStyle=currentParticleColor(vec.speed); particleCtx.beginPath(); particleCtx.moveTo(oldPoint.x,oldPoint.y); particleCtx.lineTo(newPoint.x,newPoint.y); particleCtx.stroke(); } particleAnimId=requestAnimationFrame(step); } particleAnimId=requestAnimationFrame(step); }
 function stopParticles(){ particleRunning=false; if(particleAnimId!==null){ cancelAnimationFrame(particleAnimId); particleAnimId=null; } clearCurrentCanvas(); }
 function setupEvents(){ els.currentOverlay.checked=true; els.currentOverlay.dataset.userTouched=""; els.currentOverlay.addEventListener("change",()=>{els.currentOverlay.dataset.userTouched="1"; updateCurrentOverlayAvailability(); setFrame(currentFrame);}); els.meshOverlay.addEventListener("change",()=>map.triggerRepaint()); els.varSelect.addEventListener("change",e=>{currentVar=e.target.value; updateCurrentOverlayAvailability(); updateLegend(); setFrame(currentFrame); map.triggerRepaint();}); els.playBtn.addEventListener("click",()=>{ if(timer===null){els.playBtn.textContent="Pause"; startTimer();} else {els.playBtn.textContent="Play"; clearInterval(timer); timer=null;} }); els.frameSlider.addEventListener("input",e=>setFrame(e.target.value)); els.speedSelect.addEventListener("change",e=>{ speed=parseFloat(e.target.value); if(timer!==null) startTimer(); }); els.opacitySlider.addEventListener("input",()=>map.triggerRepaint()); els.densitySelect.addEventListener("change",e=>{ particleCount=parseInt(e.target.value); resetParticles(); clearCurrentCanvas(); }); map.on("moveend",()=>resetParticles());
 }
@@ -346,4 +399,5 @@ function setBaseMap(name) {
 // KOP_ELEVATION_SIMPLE_BWR_PARTICLE238
 
 
-// KOP_PARTICLE_FREEZE_PROJECTION_DURING_MOVE
+
+// KOP_PARTICLE_FREEZE_REAL2_APPLIED
