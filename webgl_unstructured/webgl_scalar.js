@@ -939,3 +939,370 @@ boot().catch(err => {
     setStatus("ERROR: " + err.message);
     alert(err.message);
 });
+
+
+// KOP_HARD_FIX_START
+(function () {
+    "use strict";
+
+    let kopMeshCanvas = null;
+    let kopMeshGl = null;
+    let kopMeshProgram = null;
+    let kopMeshPosBuffer = null;
+    let kopMeshIndexBuffer = null;
+    let kopMeshNodes = null;
+    let kopMeshEdges = null;
+    let kopMeshScreenXY = null;
+    let kopMeshReady = false;
+    let kopMeshLoading = false;
+
+    function kopGet(id) {
+        return document.getElementById(id);
+    }
+
+    function kopAddMeshOverlayControl() {
+        if (kopGet("mesh-overlay-check")) return;
+
+        const panel = document.querySelector(".side-panel");
+        if (!panel) return;
+
+        const row = document.createElement("label");
+        row.innerHTML = `
+          <span><b>Mesh overlay</b></span>
+          <input id="mesh-overlay-check" type="checkbox">
+        `;
+
+        panel.appendChild(row);
+
+        const chk = kopGet("mesh-overlay-check");
+        chk.addEventListener("change", function () {
+            kopUpdateMeshOverlay();
+        });
+    }
+
+    function kopCompileShader(gl, type, src) {
+        const sh = gl.createShader(type);
+        gl.shaderSource(sh, src);
+        gl.compileShader(sh);
+
+        if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+            throw new Error(gl.getShaderInfoLog(sh));
+        }
+
+        return sh;
+    }
+
+    function kopCreateMeshProgram(gl) {
+        const vs = `#version 300 es
+        precision highp float;
+
+        layout(location = 0) in vec2 a_screen;
+        uniform vec2 u_mapSize;
+
+        void main() {
+            vec2 clip;
+            clip.x = a_screen.x / u_mapSize.x * 2.0 - 1.0;
+            clip.y = 1.0 - a_screen.y / u_mapSize.y * 2.0;
+            gl_Position = vec4(clip, 0.0, 1.0);
+        }
+        `;
+
+        const fs = `#version 300 es
+        precision highp float;
+
+        uniform vec4 u_color;
+        out vec4 outColor;
+
+        void main() {
+            outColor = u_color;
+        }
+        `;
+
+        const prog = gl.createProgram();
+        gl.attachShader(prog, kopCompileShader(gl, gl.VERTEX_SHADER, vs));
+        gl.attachShader(prog, kopCompileShader(gl, gl.FRAGMENT_SHADER, fs));
+        gl.linkProgram(prog);
+
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+            throw new Error(gl.getProgramInfoLog(prog));
+        }
+
+        return prog;
+    }
+
+    function kopEnsureMeshCanvas() {
+        if (kopMeshCanvas) return true;
+        if (typeof map === "undefined" || !map) return false;
+
+        const container = map.getContainer();
+        if (!container) return false;
+
+        if (getComputedStyle(container).position === "static") {
+            container.style.position = "relative";
+        }
+
+        kopMeshCanvas = document.createElement("canvas");
+        kopMeshCanvas.id = "kop-mesh-overlay-canvas";
+        kopMeshCanvas.style.position = "absolute";
+        kopMeshCanvas.style.left = "0";
+        kopMeshCanvas.style.top = "0";
+        kopMeshCanvas.style.width = "100%";
+        kopMeshCanvas.style.height = "100%";
+        kopMeshCanvas.style.pointerEvents = "none";
+        kopMeshCanvas.style.zIndex = "50000";
+        kopMeshCanvas.style.display = "none";
+
+        container.appendChild(kopMeshCanvas);
+
+        kopMeshGl = kopMeshCanvas.getContext("webgl2", {
+            alpha: true,
+            antialias: true,
+            premultipliedAlpha: false
+        });
+
+        if (!kopMeshGl) {
+            console.error("[KOP mesh overlay] WebGL2 unavailable");
+            return false;
+        }
+
+        kopMeshProgram = kopCreateMeshProgram(kopMeshGl);
+        kopMeshPosBuffer = kopMeshGl.createBuffer();
+        kopMeshIndexBuffer = kopMeshGl.createBuffer();
+
+        map.on("move zoom resize zoomend moveend", function () {
+            kopDrawMeshOverlay();
+        });
+
+        window.addEventListener("resize", function () {
+            kopDrawMeshOverlay();
+        });
+
+        return true;
+    }
+
+    function kopResizeMeshCanvas() {
+        if (!kopMeshCanvas || typeof map === "undefined" || !map) return;
+
+        const size = map.getSize();
+        const dpr = window.devicePixelRatio || 1;
+
+        kopMeshCanvas.width = Math.max(1, Math.round(size.x * dpr));
+        kopMeshCanvas.height = Math.max(1, Math.round(size.y * dpr));
+        kopMeshCanvas.style.width = size.x + "px";
+        kopMeshCanvas.style.height = size.y + "px";
+
+        kopMeshGl.viewport(0, 0, kopMeshCanvas.width, kopMeshCanvas.height);
+    }
+
+    function kopBuildEdgesFromElems(elems) {
+        // fallback only when mesh_edges.bin is absent
+        const out = new Uint32Array(elems.length * 2);
+        let k = 0;
+
+        for (let i = 0; i < elems.length; i += 3) {
+            const a = elems[i];
+            const b = elems[i + 1];
+            const c = elems[i + 2];
+
+            out[k++] = a; out[k++] = b;
+            out[k++] = b; out[k++] = c;
+            out[k++] = c; out[k++] = a;
+        }
+
+        return out.subarray(0, k);
+    }
+
+    async function kopLoadMeshOverlayData() {
+        if (kopMeshReady || kopMeshLoading) return;
+        kopMeshLoading = true;
+
+        try {
+            const nodeResp = await fetch("mesh_nodes.bin", { cache: "force-cache" });
+            if (!nodeResp.ok) throw new Error("mesh_nodes.bin " + nodeResp.status);
+            kopMeshNodes = new Float32Array(await nodeResp.arrayBuffer());
+
+            let edgeResp = await fetch("mesh_edges.bin", { cache: "force-cache" });
+
+            if (edgeResp.ok) {
+                kopMeshEdges = new Uint32Array(await edgeResp.arrayBuffer());
+            } else {
+                console.warn("[KOP mesh overlay] mesh_edges.bin not found. Fallback to mesh_elems.bin.");
+                const elemResp = await fetch("mesh_elems.bin", { cache: "force-cache" });
+                if (!elemResp.ok) throw new Error("mesh_elems.bin " + elemResp.status);
+                const elems = new Uint32Array(await elemResp.arrayBuffer());
+                kopMeshEdges = kopBuildEdgesFromElems(elems);
+            }
+
+            kopMeshScreenXY = new Float32Array(kopMeshNodes.length);
+
+            kopMeshReady = true;
+            kopMeshLoading = false;
+
+            console.log("[KOP mesh overlay] ready nodes:", kopMeshNodes.length / 2, "edge indices:", kopMeshEdges.length);
+
+            kopDrawMeshOverlay();
+        } catch (err) {
+            kopMeshLoading = false;
+            console.error("[KOP mesh overlay] failed:", err);
+        }
+    }
+
+    function kopUpdateMeshScreenXY() {
+        if (!kopMeshNodes || !kopMeshScreenXY || typeof map === "undefined" || !map) return;
+
+        const n = kopMeshNodes.length / 2;
+
+        for (let i = 0; i < n; i++) {
+            const lon = kopMeshNodes[i * 2];
+            const lat = kopMeshNodes[i * 2 + 1];
+            const pt = map.latLngToContainerPoint([lat, lon]);
+
+            kopMeshScreenXY[i * 2] = pt.x;
+            kopMeshScreenXY[i * 2 + 1] = pt.y;
+        }
+    }
+
+    function kopDrawMeshOverlay() {
+        const chk = kopGet("mesh-overlay-check");
+
+        if (!chk || !chk.checked) {
+            if (kopMeshCanvas && kopMeshGl) {
+                kopMeshCanvas.style.display = "none";
+                kopMeshGl.clearColor(0, 0, 0, 0);
+                kopMeshGl.clear(kopMeshGl.COLOR_BUFFER_BIT);
+            }
+            return;
+        }
+
+        if (!kopEnsureMeshCanvas()) return;
+
+        kopMeshCanvas.style.display = "block";
+
+        if (!kopMeshReady) {
+            kopLoadMeshOverlayData();
+            return;
+        }
+
+        kopResizeMeshCanvas();
+        kopUpdateMeshScreenXY();
+
+        const gl = kopMeshGl;
+        const size = map.getSize();
+
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        gl.useProgram(kopMeshProgram);
+
+        const uMapSize = gl.getUniformLocation(kopMeshProgram, "u_mapSize");
+        const uColor = gl.getUniformLocation(kopMeshProgram, "u_color");
+
+        gl.uniform2f(uMapSize, size.x, size.y);
+
+        // mesh overlay must be visible above scalar/current layers
+        gl.uniform4f(uColor, 1.0, 1.0, 1.0, 0.88);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, kopMeshPosBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, kopMeshScreenXY, gl.DYNAMIC_DRAW);
+
+        gl.enableVertexAttribArray(0);
+        gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, kopMeshIndexBuffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, kopMeshEdges, gl.STATIC_DRAW);
+
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+        gl.lineWidth(1.0);
+        gl.drawElements(gl.LINES, kopMeshEdges.length, gl.UNSIGNED_INT, 0);
+    }
+
+    async function kopForceCurrentStandalone() {
+        const sel = kopGet("var-select");
+        if (!sel || sel.value !== "current") return;
+
+        try {
+            if (typeof currentVar !== "undefined") currentVar = "current";
+
+            if (typeof currentOverlayCheck !== "undefined" && currentOverlayCheck) {
+                currentOverlayCheck.checked = false;
+                currentOverlayCheck.disabled = true;
+            }
+
+            if (typeof glCanvas !== "undefined" && glCanvas) {
+                glCanvas.style.display = "none";
+            }
+
+            if (typeof updateLegend === "function") updateLegend();
+            if (typeof updateCurrentOverlayAvailability === "function") updateCurrentOverlayAvailability();
+
+            const f = typeof currentFrame !== "undefined" ? currentFrame : 0;
+
+            if (typeof loadCurrentFrame === "function") {
+                await loadCurrentFrame(f);
+            }
+
+            if (typeof clearCurrentCanvas === "function") clearCurrentCanvas();
+
+            if (typeof startParticles === "function") {
+                startParticles();
+            }
+
+            if (typeof setStatus === "function") {
+                setStatus("Current frame " + (f + 1));
+            }
+
+            console.log("[KOP current fix] forced current standalone frame", f);
+        } catch (err) {
+            console.error("[KOP current fix] failed:", err);
+        }
+    }
+
+    function kopInstallHardFix() {
+        kopAddMeshOverlayControl();
+
+        const sel = kopGet("var-select");
+        if (sel && !sel.dataset.kopHardCurrentHooked) {
+            sel.dataset.kopHardCurrentHooked = "1";
+            sel.addEventListener("change", function () {
+                setTimeout(kopForceCurrentStandalone, 80);
+                setTimeout(kopUpdateMeshOverlay, 120);
+            }, true);
+        }
+
+        const slider = kopGet("frame-slider");
+        if (slider && !slider.dataset.kopHardCurrentHooked) {
+            slider.dataset.kopHardCurrentHooked = "1";
+            slider.addEventListener("input", function () {
+                setTimeout(kopForceCurrentStandalone, 80);
+            }, true);
+        }
+
+        if (typeof currentCanvas !== "undefined" && currentCanvas) {
+            currentCanvas.style.zIndex = "12000";
+        }
+
+        if (typeof glCanvas !== "undefined" && glCanvas) {
+            glCanvas.style.zIndex = "700";
+        }
+
+        setTimeout(kopForceCurrentStandalone, 300);
+        setTimeout(kopUpdateMeshOverlay, 500);
+    }
+
+    function kopUpdateMeshOverlay() {
+        kopDrawMeshOverlay();
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", kopInstallHardFix);
+    } else {
+        kopInstallHardFix();
+    }
+
+    window.KOP_FORCE_CURRENT_STANDALONE = kopForceCurrentStandalone;
+    window.KOP_DRAW_MESH_OVERLAY = kopDrawMeshOverlay;
+})();
+// KOP_HARD_FIX_END
+
