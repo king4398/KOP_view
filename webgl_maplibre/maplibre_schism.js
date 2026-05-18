@@ -1,6 +1,6 @@
 "use strict";
 
-const DATA_ROOT = "../webgl_unstructured/";
+const DATA_ROOT = "data/";
 const CONFIG = {
   metaUrl: DATA_ROOT + "mesh_meta.json",
   nodesUrl: DATA_ROOT + "mesh_nodes.bin",
