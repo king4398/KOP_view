@@ -78,6 +78,15 @@ let particles = [];
 let particleAnimId = null;
 let particleRunning = false;
 
+// Viewport redraw optimization.
+// Reprojecting 300k+ nodes on every Leaflet move/zoom event is expensive.
+// We throttle live redraws and force a final accurate redraw on moveend/zoomend.
+let coordsDirty = true;
+let renderScheduled = false;
+let mapInteracting = false;
+let lastLiveRedrawMs = 0;
+const LIVE_REDRAW_INTERVAL_MS = 80;
+
 const varSelect = document.getElementById("var-select");
 const playBtn = document.getElementById("play-btn");
 const frameSlider = document.getElementById("frame-slider");
@@ -360,6 +369,45 @@ void main() {
 }
 `;
 
+
+function renderViewportLayers(includeMesh) {
+    resizeCanvases();
+    updateScreenCoordinates();
+    renderScalar();
+
+    if (includeMesh) {
+        drawMeshOverlay();
+    }
+}
+
+function scheduleViewportRedraw(force=false) {
+    const now = performance.now();
+
+    if (!force && now - lastLiveRedrawMs < LIVE_REDRAW_INTERVAL_MS) {
+        return;
+    }
+
+    lastLiveRedrawMs = now;
+    coordsDirty = true;
+
+    if (renderScheduled) return;
+
+    renderScheduled = true;
+
+    requestAnimationFrame(() => {
+        renderScheduled = false;
+
+        // Mesh overlay is very expensive while panning/zooming.
+        // Hide it during interaction and redraw it exactly once at the end.
+        if (mapInteracting && meshCanvas && meshOverlayCheck && meshOverlayCheck.checked) {
+            meshCanvas.style.display = "none";
+            renderViewportLayers(false);
+        } else {
+            renderViewportLayers(true);
+        }
+    });
+}
+
 function initMap() {
     const bounds = meta.bounds;
 
@@ -391,19 +439,31 @@ function initMap() {
 
     map.fitBounds(bounds);
 
-    map.on("move zoom resize zoomend moveend", () => {
-        resizeCanvases();
-        updateScreenCoordinates();
-        renderScalar();
-        drawMeshOverlay();
+    map.on("movestart zoomstart", () => {
+        mapInteracting = true;
+
+        if (meshCanvas && meshOverlayCheck && meshOverlayCheck.checked) {
+            meshCanvas.style.display = "none";
+        }
+    });
+
+    map.on("move zoom resize", () => {
+        scheduleViewportRedraw(false);
+    });
+
+    map.on("moveend zoomend", () => {
+        mapInteracting = false;
+        coordsDirty = true;
+
+        renderViewportLayers(true);
         resetParticles();
     });
 
     window.addEventListener("resize", () => {
-        resizeCanvases();
-        updateScreenCoordinates();
-        renderScalar();
-        drawMeshOverlay();
+        mapInteracting = false;
+        coordsDirty = true;
+
+        renderViewportLayers(true);
         resetParticles();
     });
 }
@@ -495,6 +555,7 @@ function resizeCanvases() {
 
 function updateScreenCoordinates() {
     if (!map || !nodes || !screenCoords) return;
+    if (!coordsDirty) return;
 
     const n = nodes.length / 2;
 
@@ -517,6 +578,8 @@ function updateScreenCoordinates() {
         meshGl.bindBuffer(meshGl.ARRAY_BUFFER, meshNodeBuffer);
         meshGl.bufferData(meshGl.ARRAY_BUFFER, screenCoords, meshGl.DYNAMIC_DRAW);
     }
+
+    coordsDirty = false;
 }
 
 
@@ -1119,7 +1182,9 @@ function setupEvents() {
 
     if (meshOverlayCheck) {
         meshOverlayCheck.addEventListener("change", () => {
-            drawMeshOverlay();
+            mapInteracting = false;
+            coordsDirty = true;
+            renderViewportLayers(true);
         });
     }
 
@@ -1151,8 +1216,8 @@ function setupEvents() {
     });
 
     opacitySlider.addEventListener("input", () => {
-        renderScalar();
-        drawMeshOverlay();
+        coordsDirty = true;
+        scheduleViewportRedraw(true);
     });
 
     particleDensitySelect.addEventListener("change", e => {
