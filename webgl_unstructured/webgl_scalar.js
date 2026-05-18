@@ -502,6 +502,13 @@ function initMap() {
             (bounds[0][1] + bounds[1][1]) / 2.0
         ],
         zoom: 7,
+
+        // Reduce zoom sensitivity.
+        // Larger wheelPxPerZoomLevel = slower wheel zoom.
+        zoomSnap: 0.25,
+        zoomDelta: 0.5,
+        wheelPxPerZoomLevel: 180,
+        wheelDebounceTime: 80,
         preferCanvas: true
     });
 
