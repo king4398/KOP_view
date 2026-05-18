@@ -397,11 +397,10 @@ function getLayerCanvases() {
     return [glCanvas, currentCanvas, meshCanvas].filter(Boolean);
 }
 
+
 function rememberExactRenderView() {
     if (!map) return;
 
-    const o = map.getPixelOrigin();
-    renderPixelOrigin = { x: o.x, y: o.y };
     renderZoom = map.getZoom();
     renderLatLngBounds = map.getBounds();
 }
@@ -438,32 +437,49 @@ function rememberZoomAnimationBase() {
     zoomBasePosition = pos ? pos.clone ? pos.clone() : L.point(pos.x, pos.y) : L.point(0, 0);
 }
 
+
 function applyLeafletRendererZoom(e) {
-    if (!map || !zoomBaseCenter || zoomBaseZoom === null || !zoomBasePosition) return;
+    if (!map) return;
 
-    // This follows Leaflet Renderer._updateTransform logic.
-    // It makes our canvas scale exactly like Leaflet's own Canvas/SVG layers.
-    const scale = map.getZoomScale(e.zoom, zoomBaseZoom);
-    const viewHalf = map.getSize().multiplyBy(0.5);
+    /*
+      Treat the currently rendered WebGL canvases as if they are one Leaflet
+      ImageOverlay covering the current viewport.
 
-    const currentCenterPoint = map.project(zoomBaseCenter, e.zoom);
-    const destCenterPoint = map.project(e.center, e.zoom);
-    const centerOffset = destCenterPoint.subtract(currentCenterPoint);
+      Important:
+      - Do not recompute 300k nodes during zoom.
+      - Do not invent a separate zoom anchor.
+      - Use Leaflet's own _latLngBoundsToNewLayerBounds when available.
+    */
 
-    const topLeftOffset = viewHalf
-        .multiplyBy(-scale)
-        .add(zoomBasePosition)
-        .add(viewHalf)
-        .subtract(centerOffset);
+    const bounds = renderLatLngBounds || map.getBounds();
+    const zoom0 = (renderZoom !== null && renderZoom !== undefined) ? renderZoom : map.getZoom();
+
+    let scale;
+    try {
+        scale = map.getZoomScale(e.zoom, zoom0);
+    } catch (err) {
+        scale = map.getZoomScale(e.zoom);
+    }
+
+    let topLeft;
+
+    if (map._latLngBoundsToNewLayerBounds) {
+        topLeft = map._latLngBoundsToNewLayerBounds(bounds, e.zoom, e.center).min;
+    } else if (map._latLngToNewLayerPoint) {
+        topLeft = map._latLngToNewLayerPoint(bounds.getNorthWest(), e.zoom, e.center);
+    } else {
+        topLeft = map.latLngToLayerPoint(bounds.getNorthWest());
+    }
 
     for (const c of getLayerCanvases()) {
         if (!c) continue;
+
         c.style.transformOrigin = "0 0";
 
-        if (L.DomUtil.setTransform) {
-            L.DomUtil.setTransform(c, topLeftOffset, scale);
+        if (window.L && L.DomUtil && L.DomUtil.setTransform) {
+            L.DomUtil.setTransform(c, topLeft, scale);
         } else {
-            c.style.transform = `translate(${topLeftOffset.x}px, ${topLeftOffset.y}px) scale(${scale})`;
+            c.style.transform = `translate(${topLeft.x}px, ${topLeft.y}px) scale(${scale})`;
         }
     }
 }
@@ -588,6 +604,7 @@ function initMap() {
 
     map.on("zoomstart", () => {
         mapInteracting = true;
+        rememberExactRenderView();
         rememberZoomAnimationBase();
 
         if (typeof pauseParticlesNoClear === "function") {
