@@ -410,41 +410,8 @@ function applyCanvasMapTransform() {
 
 
 function applyCanvasZoomAnimation(e) {
-    if (!map || !renderLatLngBounds) return;
-
-    // During Leaflet zoom animation, treat the already-rendered canvas
-    // like an image overlay covering the last exact render bounds.
-    // This prevents the layer from drifting to a wrong place during zoom.
-    const nw = renderLatLngBounds.getNorthWest();
-    const se = renderLatLngBounds.getSouthEast();
-
-    let topLeft;
-    let bottomRight;
-
-    if (map._latLngToNewLayerPoint) {
-        topLeft = map._latLngToNewLayerPoint(nw, e.zoom, e.center);
-        bottomRight = map._latLngToNewLayerPoint(se, e.zoom, e.center);
-    } else {
-        topLeft = map.latLngToLayerPoint(nw);
-        bottomRight = map.latLngToLayerPoint(se);
-    }
-
-    const width = Math.max(1, bottomRight.x - topLeft.x);
-    const height = Math.max(1, bottomRight.y - topLeft.y);
-
-    for (const c of getLayerCanvases()) {
-        c.style.transform = "";
-        c.style.transformOrigin = "0 0";
-        c.style.width = width + "px";
-        c.style.height = height + "px";
-
-        if (window.L && L.DomUtil) {
-            L.DomUtil.setPosition(c, topLeft);
-        } else {
-            c.style.left = topLeft.x + "px";
-            c.style.top = topLeft.y + "px";
-        }
-    }
+    // Disabled intentionally.
+    // We do not animate WebGL canvas during zoom; we redraw exactly on zoomend.
 }
 
 function renderViewportLayers(includeMesh) {
@@ -503,12 +470,23 @@ function initMap() {
         ],
         zoom: 7,
 
+        // Disable animated zoom to prevent WebGL layer drift/nausea during zoom.
+        zoomAnimation: false,
+        markerZoomAnimation: false,
+        fadeAnimation: false,
+
+        // Softer zoom sensitivity.
+        zoomSnap: 0.25,
+        zoomDelta: 0.5,
+        wheelPxPerZoomLevel: 220,
+        wheelDebounceTime: 90,
+
         // Reduce zoom sensitivity.
         // Larger wheelPxPerZoomLevel = slower wheel zoom.
         zoomSnap: 0.25,
         zoomDelta: 0.5,
-        wheelPxPerZoomLevel: 180,
-        wheelDebounceTime: 80,
+        wheelPxPerZoomLevel: 220,
+        wheelDebounceTime: 90,
         preferCanvas: true
     });
 
@@ -540,16 +518,21 @@ function initMap() {
     map.on("zoomstart", () => {
         mapInteracting = true;
         rememberExactRenderView();
+
+        // Avoid particle/mesh smear during zoom.
+        if (typeof stopParticles === "function") stopParticles();
+
+        if (meshCanvas && meshOverlayCheck && meshOverlayCheck.checked) {
+            meshCanvas.style.display = "none";
+        }
     });
 
     map.on("move", () => {
-        // Leaflet panes move the canvases during pan.
+        // Leaflet panes move canvases naturally during pan.
         // No heavy redraw here.
     });
 
-    map.on("zoomanim", (e) => {
-        applyCanvasZoomAnimation(e);
-    });
+    // zoomanim disabled: exact redraw happens on zoomend.
 
     map.on("resize", () => {
         mapInteracting = false;
@@ -565,6 +548,10 @@ function initMap() {
 
         renderViewportLayers(true);
         resetParticles();
+
+        if (shouldDrawCurrentParticles()) {
+            startParticles();
+        }
     });
 
     window.addEventListener("resize", () => {
