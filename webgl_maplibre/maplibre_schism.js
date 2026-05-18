@@ -163,3 +163,83 @@ function setBaseMap(name) {
     console.log("[basemap] switched to", name);
 }
 
+
+// KOP_FORCE_BASEMAP_SWITCH_START
+(function () {
+    "use strict";
+
+    function forceSetBaseMap(name) {
+        if (typeof map === "undefined" || !map) {
+            console.warn("[basemap] map is not ready");
+            return;
+        }
+
+        const cartoIds = [
+            "basemap-carto",
+            "basemap-carto-light",
+            "basemap-carto-positron",
+            "carto-light-layer",
+            "carto-positron-layer"
+        ];
+
+        const esriIds = [
+            "basemap-esri",
+            "basemap-esri-satellite",
+            "esri-satellite-layer",
+            "basemap-esri-layer"
+        ];
+
+        function setVisible(layerId, visible) {
+            if (!map.getLayer(layerId)) return;
+
+            map.setLayoutProperty(layerId, "visibility", visible ? "visible" : "none");
+
+            try {
+                map.setPaintProperty(layerId, "raster-opacity", visible ? 1.0 : 0.0);
+            } catch (e) {}
+
+            console.log("[basemap]", layerId, visible ? "visible" : "none");
+        }
+
+        const useCarto = name === "carto";
+        const useEsri = name === "esri";
+
+        cartoIds.forEach(id => setVisible(id, useCarto));
+        esriIds.forEach(id => setVisible(id, useEsri));
+
+        try {
+            if (map.getLayer("schism-custom-layer")) {
+                map.moveLayer("schism-custom-layer");
+            }
+        } catch (e) {}
+
+        map.triggerRepaint();
+        console.log("[basemap] switched:", name);
+    }
+
+    window.setBaseMap = forceSetBaseMap;
+
+    function installBasemapRadios() {
+        document.querySelectorAll('input[name="basemap-radio"]').forEach(radio => {
+            if (radio.dataset.kopBasemapHooked) return;
+            radio.dataset.kopBasemapHooked = "1";
+
+            radio.addEventListener("change", e => {
+                if (e.target.checked) {
+                    window.setBaseMap(e.target.value);
+                }
+            });
+        });
+
+        console.log("[basemap] radio switch installed");
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () => {
+            setTimeout(installBasemapRadios, 800);
+        });
+    } else {
+        setTimeout(installBasemapRadios, 800);
+    }
+})();
+// KOP_FORCE_BASEMAP_SWITCH_END
