@@ -76,7 +76,35 @@ function startTimer(){ if(timer!==null) clearInterval(timer); timer=setInterval(
 function initParticleCanvas(){ const container=map.getCanvasContainer(); particleCanvas=document.createElement("canvas"); particleCanvas.id="particle-canvas"; container.appendChild(particleCanvas); particleCtx=particleCanvas.getContext("2d"); resizeParticleCanvas(); window.addEventListener("resize",resizeParticleCanvas); map.on("resize",resizeParticleCanvas); }
 function resizeParticleCanvas(){ if(!map||!particleCanvas||!particleCtx) return; const c=map.getCanvas(), w=c.clientWidth, h=c.clientHeight, dpr=window.devicePixelRatio||1; particleCanvas.width=Math.max(1,Math.round(w*dpr)); particleCanvas.height=Math.max(1,Math.round(h*dpr)); particleCanvas.style.width=w+"px"; particleCanvas.style.height=h+"px"; particleCtx.setTransform(dpr,0,0,dpr,0,0); clearCurrentCanvas(); }
 function clearCurrentCanvas(){ if(!particleCtx||!map) return; const c=map.getCanvas(); particleCtx.clearRect(0,0,c.clientWidth,c.clientHeight); }
-function speedToColor(s,vmin,vmax){ let t=(s-vmin)/(vmax-vmin); if(!Number.isFinite(t)) t=0; t=Math.max(0,Math.min(1,t)); const four=4*t; const r=Math.round(255*Math.max(0,Math.min(1,Math.min(four-1.5,-four+4.5)))); const g=Math.round(255*Math.max(0,Math.min(1,Math.min(four-0.5,-four+3.5)))); const b=Math.round(255*Math.max(0,Math.min(1,Math.min(four+0.5,-four+2.5)))); return `rgba(${r},${g},${b},0.92)`; }
+
+function speedToColor(s, vmin, vmax) {
+    let t = (s - vmin) / (vmax - vmin);
+    if (!Number.isFinite(t)) t = 0;
+    t = Math.max(0, Math.min(1, t));
+
+    const stops = [
+        [0.18995, 0.07176, 0.23217],
+        [0.25107, 0.25237, 0.63374],
+        [0.27628, 0.60412, 0.96756],
+        [0.20400, 0.77900, 0.42300],
+        [0.99300, 0.90600, 0.14400],
+        [0.97600, 0.45100, 0.08000],
+        [0.70600, 0.01600, 0.15000]
+    ];
+
+    const x = t * (stops.length - 1);
+    const i = Math.min(stops.length - 2, Math.max(0, Math.floor(x)));
+    const f = x - i;
+
+    const a = stops[i];
+    const b = stops[i + 1];
+
+    const r = Math.round(255 * (a[0] * (1 - f) + b[0] * f));
+    const g = Math.round(255 * (a[1] * (1 - f) + b[1] * f));
+    const bb = Math.round(255 * (a[2] * (1 - f) + b[2] * f));
+
+    return `rgba(${r},${g},${bb},0.92)`;
+}
 function currentSpeedRange(){ return {vmin:Number(meta.current_vmin??0), vmax:Number(meta.current_vmax??1)}; }
 function currentParticleColor(spd){ if(currentVar==="current"){ const r=currentSpeedRange(); return speedToColor(spd,r.vmin,r.vmax); } return CONFIG.overlayParticleColor; }
 function getLookupBounds(){ const lm=lookupMeta||{}; return {nx:Number(lm.nx??lm.lookup_nx), ny:Number(lm.ny??lm.lookup_ny), lonMin:Number(lm.lon_min??meta.bounds[0][1]), lonMax:Number(lm.lon_max??meta.bounds[1][1]), latMin:Number(lm.lat_min??meta.bounds[0][0]), latMax:Number(lm.lat_max??meta.bounds[1][0])}; }
