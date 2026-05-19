@@ -69,7 +69,7 @@ button, select, input { font-family:Arial,sans-serif; }
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    pointer-events: none;
+    pointer-events: auto;
     max-width: 150px !important;
 }
 
@@ -140,17 +140,39 @@ button, select, input { font-family:Arial,sans-serif; }
       <option value="0.75">0.75x</option>
       <option value="1" selected>1x</option>
       <option value="2">2x</option>
-      <option value="3">3x</option>
     </select>
   <label><b>Opacity</b></label><input id="opacity-slider" type="range" min="0.1" max="1.0" value="0.82" step="0.05" style="width:110px;">
   <span id="time-label" style="font-size:13px; min-width:180px; display:inline-block;"></span>
 </div></div>
-<script src="maplibre_schism.js?v=temp_title_nosurface01"></script>
+<script src="maplibre_schism.js?v=remove3x_ust21click01"></script>
 
   <div id="ust21-logo-overlay">
     <div id="ust21-logo-title">UST21 수치예보팀</div>
+    <div id="made-by-nyj" style="display:none; margin:0 0 8px 2px; padding:4px 10px; font-size:13px; font-weight:700; color:#ffffff; background:rgba(0,0,0,0.55); border-radius:8px; text-shadow:0 1px 2px rgba(0,0,0,0.35);">made by nyj</div>
     <img id="ust21-logo-img" src="assets/ust21.png" alt="UST21 logo" width="120">
   </div>
+
+
+<script>
+(function(){
+  function setupUst21Click(){
+    const title = document.getElementById("ust21-logo-title");
+    const made = document.getElementById("made-by-nyj");
+    if(!title || !made || title.dataset.clickReady === "1") return;
+    title.dataset.clickReady = "1";
+    title.addEventListener("click", function(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+      made.style.display = (made.style.display === "none" || made.style.display === "") ? "block" : "none";
+    });
+  }
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", setupUst21Click);
+  } else {
+    setupUst21Click();
+  }
+})();
+</script>
 
 </body>
 </html>
