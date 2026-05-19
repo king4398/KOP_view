@@ -92,15 +92,49 @@ function fmtLegendNumber(x, digits=1){
 }
 
 function updateLegend(){
-  if(!els.legendBox || !meta) return;
+  if(!els.legendBox || !meta || !meta.variables) return;
+
   if(currentVar==="temperature"){
-    const v=meta.variables.temperature;
-    els.legendBox.innerHTML=`<div style="font-weight:bold; margin-bottom:6px;">Surface Temperature [degC]</div><div style="width:220px; height:16px; background:linear-gradient(to right, #0d2ef2, #0d9eff, #1ac76b, #ebe038, #f28c1a, #d11f14); border:1px solid #666;"></div><div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;"><span>${v.vmin}</span><span>${((v.vmin+v.vmax)/2).toFixed(1)}</span><span>${v.vmax}</span></div>`;
+    const v = meta.variables.temperature;
+    els.legendBox.innerHTML = `
+      <div class="legend-title">Surface Temperature [degC]</div>
+      <div class="legend-gradient"></div>
+      <div class="legend-ticks">
+        <span>${fmtLegendNumber(v.vmin)}</span>
+        <span>${fmtLegendNumber((v.vmin+v.vmax)/2)}</span>
+        <span>${fmtLegendNumber(v.vmax)}</span>
+      </div>
+    `;
+  } else if(currentVar==="salinity"){
+    const v = meta.variables.salinity || {vmin:28, vmax:35};
+    els.legendBox.innerHTML = `
+      <div class="legend-title">Salinity [psu]</div>
+      <div class="legend-gradient"></div>
+      <div class="legend-ticks">
+        <span>${fmtLegendNumber(v.vmin)}</span>
+        <span>${fmtLegendNumber((v.vmin+v.vmax)/2)}</span>
+        <span>${fmtLegendNumber(v.vmax)}</span>
+      </div>
+    `;
   } else if(currentVar==="ssh"){
-    const v=meta.variables.ssh;
-    els.legendBox.innerHTML=`<div style="font-weight:bold; margin-bottom:6px;">Elevation [m]</div><div style="width:220px; height:16px; background:linear-gradient(to right, #0d2ef2, #f7f7f4, #d11f14); border:1px solid #666;"></div><div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;"><span>${v.vmin}</span><span>${((v.vmin+v.vmax)/2).toFixed(2)}</span><span>${v.vmax}</span></div>`;
+    const v = meta.variables.ssh;
+    els.legendBox.innerHTML = `
+      <div class="legend-title">Elevation [m]</div>
+      <div class="legend-gradient"></div>
+      <div class="legend-ticks">
+        <span>${fmtLegendNumber(v.vmin,2)}</span>
+        <span>${fmtLegendNumber((v.vmin+v.vmax)/2,2)}</span>
+        <span>${fmtLegendNumber(v.vmax,2)}</span>
+      </div>
+    `;
   } else {
-    els.legendBox.innerHTML=`<div style="font-weight:bold; margin-bottom:6px;">Current Speed [m/s]</div><div style="width:220px; height:16px; background:linear-gradient(to right, #0d2ef2, #0d9eff, #1ac76b, #ebe038, #f28c1a, #d11f14); border:1px solid #666;"></div><div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;"><span>0</span><span>0.5</span><span>1.0</span></div>`;
+    els.legendBox.innerHTML = `
+      <div class="legend-title">Current Speed [m/s]</div>
+      <div class="legend-gradient current-gradient"></div>
+      <div class="legend-ticks">
+        <span>0</span><span>0.5</span><span>1</span>
+      </div>
+    `;
   }
 }
 
@@ -621,7 +655,7 @@ function makeMapStyle() {
     };
 }
 function initMap(){ const b=meta.bounds; const south=b[0][0], west=b[0][1], north=b[1][0], east=b[1][1]; map=new maplibregl.Map({container:"map",style:makeMapStyle(),center:[(west+east)/2,(south+north)/2],zoom:7,minZoom:3,maxZoom:14,dragRotate:false,pitchWithRotate:false,renderWorldCopies:false,attributionControl:true}); map.addControl(new maplibregl.NavigationControl({visualizePitch:false}),"top-left"); map.fitBounds([[west,south],[east,north]],{padding:20,duration:0}); }
-async function boot(){ setStatus("Loading metadata..."); meta=await fetchJson(CONFIG.metaUrl); lookupMeta=await fetchJson(CONFIG.lookupMetaUrl); els.frameSlider.max=frameCount()-1; setStatus("Loading mesh and lookup..."); [nodesLonLat,elems,meshEdges,lookupOffsets,lookupTriangles]=await Promise.all([fetchFloat32(CONFIG.nodesUrl,meta.node_count*2),fetchUint32(CONFIG.elemsUrl,meta.index_count),fetchUint32(CONFIG.edgesUrl),fetchUint32(CONFIG.lookupOffsetsUrl),fetchUint32(CONFIG.lookupTrianglesUrl)]); initMap(); map.on("load",async()=>{ setStatus("Preparing WebGL layer..."); buildMercatorNodes(); initParticleCanvas(); map.addLayer(makeSchismLayer()); setupEvents(); updateCurrentOverlayAvailability(); updateLegend(); await setFrame(0); setStatus(`Ready: ${meta.node_count.toLocaleString()} nodes, ${meta.triangle_count.toLocaleString()} triangles`); }); }
+async function boot(){ setStatus("Loading metadata..."); meta=await fetchJson(CONFIG.metaUrl); meta.variables=meta.variables||{}; meta.variables.salinity=meta.variables.salinity||{name:"Salinity",units:"psu",vmin:28,vmax:35}; meta.variables.salinity.vmin=28; meta.variables.salinity.vmax=35; lookupMeta=await fetchJson(CONFIG.lookupMetaUrl); els.frameSlider.max=frameCount()-1; setStatus("Loading mesh and lookup..."); [nodesLonLat,elems,meshEdges,lookupOffsets,lookupTriangles]=await Promise.all([fetchFloat32(CONFIG.nodesUrl,meta.node_count*2),fetchUint32(CONFIG.elemsUrl,meta.index_count),fetchUint32(CONFIG.edgesUrl),fetchUint32(CONFIG.lookupOffsetsUrl),fetchUint32(CONFIG.lookupTrianglesUrl)]); initMap(); map.on("load",async()=>{ setStatus("Preparing WebGL layer..."); buildMercatorNodes(); initParticleCanvas(); map.addLayer(makeSchismLayer()); setupEvents(); updateCurrentOverlayAvailability(); updateLegend(); await setFrame(0); setStatus(`Ready: ${meta.node_count.toLocaleString()} nodes, ${meta.triangle_count.toLocaleString()} triangles`); }); }
 boot().catch(err=>{ console.error(err); setStatus("ERROR: "+err.message); alert(err.message); });
 
 
@@ -786,49 +820,9 @@ function setBaseMap(name) {
 
 // KOP_PARTICLE_SPEED_INDEPENDENT_FROM_PLAYBACK_01
 
-
-function setupMadeByNyj(){
-  const team = document.getElementById("ust21-team");
-  const made = document.getElementById("made-by-nyj");
-  if(team && made && !team.dataset.madeByNyjReady){
-    team.dataset.madeByNyjReady = "1";
-    team.style.cursor = "pointer";
-    team.addEventListener("click", () => {
-      made.style.display = made.style.display === "none" ? "inline" : "none";
-    });
-  }
-}
-
-
-setTimeout(setupMadeByNyj, 0);
-// KOP_SETUP_MADE_BY_NYJ_CALL
-
 // KOP_JULY7_SALINITY_01
 
 
-function setupMadeByNyjStrong(){
-  const made = document.getElementById("made-by-nyj");
-  if(!made) return;
+// KOP_SALINITY_META_RANGE_28_35
 
-  const candidates = Array.from(document.querySelectorAll("body *")).filter(el => {
-    const txt = (el.textContent || "").trim();
-    return txt.includes("UST21 수치예보팀") || el.id === "ust21-logo-img" || el.src?.includes("ust21.png");
-  });
-
-  candidates.forEach(el => {
-    if(el.dataset.madeByNyjStrongReady) return;
-    el.dataset.madeByNyjStrongReady = "1";
-    el.style.cursor = "pointer";
-    el.addEventListener("click", (ev) => {
-      ev.preventDefault();
-      ev.stopPropagation();
-      made.style.display = made.style.display === "none" ? "block" : "none";
-    });
-  });
-}
-
-setTimeout(setupMadeByNyjStrong, 300);
-setTimeout(setupMadeByNyjStrong, 1000);
-setTimeout(setupMadeByNyjStrong, 2000);
-// KOP_UST21_CLICK_FIX_01
-
+// KOP_SALINITY_LEGEND_CLEANUP_01
