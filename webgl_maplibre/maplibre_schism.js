@@ -109,7 +109,7 @@ function updateLegend(){
 
   if(currentVar==="temperature"){
     const v = meta.variables.temperature || {vmin:0, vmax:32};
-    box("Surface Temperature [degC]", jetGrad,
+    box("Temperature [degC]", jetGrad,
         fmtLegendNumber(v.vmin),
         fmtLegendNumber((v.vmin+v.vmax)/2),
         fmtLegendNumber(v.vmax));
@@ -822,3 +822,5 @@ function setBaseMap(name) {
 // KOP_FORCE_SALINITY_28_35_META
 
 // KOP_LEGEND_FORCEFIX_02
+
+// KOP_LEGEND_TEMPERATURE_TITLE_NO_SURFACE_01
