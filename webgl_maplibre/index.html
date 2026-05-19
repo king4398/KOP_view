@@ -105,6 +105,155 @@ button, select, input { font-family:Arial,sans-serif; }
     display: block;
     filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
 }
+
+/* ===== Mobile layout ===== */
+@media (max-width: 768px) {
+  .title-box {
+    left: 8px !important;
+    top: 8px !important;
+    padding: 5px 8px !important;
+    font-size: 12px !important;
+    max-width: calc(100vw - 150px) !important;
+    white-space: nowrap !important;
+  }
+
+  .basemap-radio-box {
+    right: 8px !important;
+    top: 8px !important;
+    padding: 5px 7px !important;
+    font-size: 12px !important;
+  }
+
+  .side-panel {
+    left: 8px !important;
+    right: auto !important;
+    top: 48px !important;
+    width: calc(100vw - 16px) !important;
+    box-sizing: border-box !important;
+    padding: 7px 9px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    background: rgba(15,18,24,0.78) !important;
+  }
+
+  .side-panel-title {
+    font-size: 13px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .side-panel label {
+    margin: 4px 0 !important;
+  }
+
+  .side-panel select {
+    width: 120px !important;
+    max-width: 120px !important;
+    padding: 3px 5px !important;
+    font-size: 12px !important;
+  }
+
+  .status-line {
+    display: none !important;
+  }
+
+  .legend-box {
+    right: 8px !important;
+    bottom: 118px !important;
+    min-width: 150px !important;
+    width: 150px !important;
+    padding: 7px 8px !important;
+    font-size: 11px !important;
+  }
+
+  .legend-title {
+    font-size: 11px !important;
+  }
+
+  .control-box {
+    left: 8px !important;
+    right: 8px !important;
+    bottom: 8px !important;
+    transform: none !important;
+    min-width: 0 !important;
+    width: calc(100vw - 16px) !important;
+    box-sizing: border-box !important;
+    padding: 7px 8px !important;
+    border-radius: 8px !important;
+  }
+
+  .control-box > div {
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+  }
+
+  #play-btn {
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+  }
+
+  #frame-slider {
+    width: calc(100vw - 150px) !important;
+    min-width: 150px !important;
+    flex: 1 1 auto !important;
+  }
+
+  #speed-select {
+    padding: 4px 5px !important;
+    font-size: 12px !important;
+  }
+
+  #opacity-slider {
+    width: 80px !important;
+  }
+
+  #time-label {
+    min-width: 0 !important;
+    width: 100% !important;
+    font-size: 12px !important;
+  }
+
+  #ust21-logo-overlay {
+    left: 8px !important;
+    bottom: 92px !important;
+    max-width: 90px !important;
+  }
+
+  #ust21-logo-title {
+    font-size: 11px !important;
+    padding: 3px 6px !important;
+    margin-bottom: 4px !important;
+  }
+
+  #ust21-logo-img {
+    width: 78px !important;
+    max-width: 78px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .side-panel {
+    top: 44px !important;
+  }
+
+  .legend-box {
+    bottom: 126px !important;
+    width: 135px !important;
+    min-width: 135px !important;
+  }
+
+  #frame-slider {
+    width: calc(100vw - 135px) !important;
+  }
+
+  .control-box label {
+    font-size: 11px !important;
+  }
+
+  #opacity-slider {
+    width: 65px !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -144,7 +293,7 @@ button, select, input { font-family:Arial,sans-serif; }
   <label><b>Opacity</b></label><input id="opacity-slider" type="range" min="0.1" max="1.0" value="0.82" step="0.05" style="width:110px;">
   <span id="time-label" style="font-size:13px; min-width:180px; display:inline-block;"></span>
 </div></div>
-<script src="maplibre_schism.js?v=revert_current_mesh_canvas01"></script>
+<script src="maplibre_schism.js?v=mobile_ui_fix01"></script>
 
   <div id="ust21-logo-overlay">
     <div id="ust21-logo-title">UST21 수치예보팀</div>
