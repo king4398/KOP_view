@@ -39,7 +39,7 @@ function variableMeta(v){ if(v==="temperature") return meta.variables.temperatur
 function currentOverlayEnabled(){ return els.currentOverlay && els.currentOverlay.checked && (currentVar==="temperature" || currentVar==="ssh"); }
 function shouldDrawCurrentParticles(){ return currentVar==="current" || currentOverlayEnabled(); }
 function updateCurrentOverlayAvailability(){ if(!els.currentOverlay) return; if(currentVar==="current"){ els.currentOverlay.checked=false; els.currentOverlay.disabled=true; } else { els.currentOverlay.disabled=false; if(!els.currentOverlay.dataset.userTouched) els.currentOverlay.checked=true; } }
-async function fetchJson(url){ const r=await fetch(url,{cache:"force-cache"}); if(!r.ok) throw new Error(`${url}: ${r.status}`); return await r.json(); }
+async function fetchJson(url){ const sep = url.includes("?") ? "&" : "?"; const r=await fetch(url + sep + "v=july_meta_nostore_01", {cache:"no-store"}); if(!r.ok) throw new Error(`${url}: ${r.status}`); return await r.json(); }
 async function fetchArrayBuffer(url){ const r=await fetch(url,{cache:"force-cache"}); if(!r.ok) throw new Error(`${url}: ${r.status}`); return await r.arrayBuffer(); }
 async function fetchFloat32(url,n=null){ const a=new Float32Array(await fetchArrayBuffer(url)); if(n!==null && a.length!==n) throw new Error(`${url}: ${a.length} != ${n}`); return a; }
 async function fetchUint32(url,n=null){ const a=new Uint32Array(await fetchArrayBuffer(url)); if(n!==null && a.length!==n) throw new Error(`${url}: ${a.length} != ${n}`); return a; }
@@ -773,3 +773,5 @@ function setBaseMap(name) {
 // KOP_FIX_JULY15_META_FLOAT16_CURRENT_01
 
 // KOP_FORCE_REPLACE_FLOAT16_FUNC_02
+
+// KOP_META_JSON_NOSTORE_JULY_01
