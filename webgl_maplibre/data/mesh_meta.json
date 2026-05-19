@@ -270,5 +270,20 @@
     "avg_candidates_non_empty_cell": 11.124730320407426,
     "offsets_bin": "lookup_offsets.bin",
     "triangles_bin": "lookup_triangles.bin"
+  },
+  "frame_count": 360,
+  "frames_per_day": 24,
+  "storage_dtype": "float16",
+  "selected_window": {
+    "mode": "fixed_july_2023_spring_tide",
+    "year": 2023,
+    "start_day": 191,
+    "end_day": 205,
+    "center_day": 198,
+    "start_date": "2023-07-10",
+    "end_date": "2023-07-24",
+    "center_date": "2023-07-17",
+    "window_days": 15,
+    "basis": "July 2023 new moon spring tide"
   }
 }

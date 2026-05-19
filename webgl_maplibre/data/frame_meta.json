@@ -1,0 +1,4334 @@
+{
+  "storage": "float16",
+  "year": 2023,
+  "frame_count": 360,
+  "frames_per_day": 24,
+  "start_day": 191,
+  "end_day": 205,
+  "center_day": 198,
+  "start_date": "2023-07-10",
+  "end_date": "2023-07-24",
+  "center_date": "2023-07-17",
+  "frames": [
+    {
+      "frame": 0,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 0,
+      "files": {
+        "temperature": "temp_bin/frame_0000.bin",
+        "ssh": "ssh_bin/frame_0000.bin",
+        "current_u": "current_u_bin/frame_0000.bin",
+        "current_v": "current_v_bin/frame_0000.bin"
+      }
+    },
+    {
+      "frame": 1,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 1,
+      "files": {
+        "temperature": "temp_bin/frame_0001.bin",
+        "ssh": "ssh_bin/frame_0001.bin",
+        "current_u": "current_u_bin/frame_0001.bin",
+        "current_v": "current_v_bin/frame_0001.bin"
+      }
+    },
+    {
+      "frame": 2,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 2,
+      "files": {
+        "temperature": "temp_bin/frame_0002.bin",
+        "ssh": "ssh_bin/frame_0002.bin",
+        "current_u": "current_u_bin/frame_0002.bin",
+        "current_v": "current_v_bin/frame_0002.bin"
+      }
+    },
+    {
+      "frame": 3,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 3,
+      "files": {
+        "temperature": "temp_bin/frame_0003.bin",
+        "ssh": "ssh_bin/frame_0003.bin",
+        "current_u": "current_u_bin/frame_0003.bin",
+        "current_v": "current_v_bin/frame_0003.bin"
+      }
+    },
+    {
+      "frame": 4,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 4,
+      "files": {
+        "temperature": "temp_bin/frame_0004.bin",
+        "ssh": "ssh_bin/frame_0004.bin",
+        "current_u": "current_u_bin/frame_0004.bin",
+        "current_v": "current_v_bin/frame_0004.bin"
+      }
+    },
+    {
+      "frame": 5,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 5,
+      "files": {
+        "temperature": "temp_bin/frame_0005.bin",
+        "ssh": "ssh_bin/frame_0005.bin",
+        "current_u": "current_u_bin/frame_0005.bin",
+        "current_v": "current_v_bin/frame_0005.bin"
+      }
+    },
+    {
+      "frame": 6,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 6,
+      "files": {
+        "temperature": "temp_bin/frame_0006.bin",
+        "ssh": "ssh_bin/frame_0006.bin",
+        "current_u": "current_u_bin/frame_0006.bin",
+        "current_v": "current_v_bin/frame_0006.bin"
+      }
+    },
+    {
+      "frame": 7,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 7,
+      "files": {
+        "temperature": "temp_bin/frame_0007.bin",
+        "ssh": "ssh_bin/frame_0007.bin",
+        "current_u": "current_u_bin/frame_0007.bin",
+        "current_v": "current_v_bin/frame_0007.bin"
+      }
+    },
+    {
+      "frame": 8,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 8,
+      "files": {
+        "temperature": "temp_bin/frame_0008.bin",
+        "ssh": "ssh_bin/frame_0008.bin",
+        "current_u": "current_u_bin/frame_0008.bin",
+        "current_v": "current_v_bin/frame_0008.bin"
+      }
+    },
+    {
+      "frame": 9,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 9,
+      "files": {
+        "temperature": "temp_bin/frame_0009.bin",
+        "ssh": "ssh_bin/frame_0009.bin",
+        "current_u": "current_u_bin/frame_0009.bin",
+        "current_v": "current_v_bin/frame_0009.bin"
+      }
+    },
+    {
+      "frame": 10,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 10,
+      "files": {
+        "temperature": "temp_bin/frame_0010.bin",
+        "ssh": "ssh_bin/frame_0010.bin",
+        "current_u": "current_u_bin/frame_0010.bin",
+        "current_v": "current_v_bin/frame_0010.bin"
+      }
+    },
+    {
+      "frame": 11,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 11,
+      "files": {
+        "temperature": "temp_bin/frame_0011.bin",
+        "ssh": "ssh_bin/frame_0011.bin",
+        "current_u": "current_u_bin/frame_0011.bin",
+        "current_v": "current_v_bin/frame_0011.bin"
+      }
+    },
+    {
+      "frame": 12,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 12,
+      "files": {
+        "temperature": "temp_bin/frame_0012.bin",
+        "ssh": "ssh_bin/frame_0012.bin",
+        "current_u": "current_u_bin/frame_0012.bin",
+        "current_v": "current_v_bin/frame_0012.bin"
+      }
+    },
+    {
+      "frame": 13,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 13,
+      "files": {
+        "temperature": "temp_bin/frame_0013.bin",
+        "ssh": "ssh_bin/frame_0013.bin",
+        "current_u": "current_u_bin/frame_0013.bin",
+        "current_v": "current_v_bin/frame_0013.bin"
+      }
+    },
+    {
+      "frame": 14,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 14,
+      "files": {
+        "temperature": "temp_bin/frame_0014.bin",
+        "ssh": "ssh_bin/frame_0014.bin",
+        "current_u": "current_u_bin/frame_0014.bin",
+        "current_v": "current_v_bin/frame_0014.bin"
+      }
+    },
+    {
+      "frame": 15,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 15,
+      "files": {
+        "temperature": "temp_bin/frame_0015.bin",
+        "ssh": "ssh_bin/frame_0015.bin",
+        "current_u": "current_u_bin/frame_0015.bin",
+        "current_v": "current_v_bin/frame_0015.bin"
+      }
+    },
+    {
+      "frame": 16,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 16,
+      "files": {
+        "temperature": "temp_bin/frame_0016.bin",
+        "ssh": "ssh_bin/frame_0016.bin",
+        "current_u": "current_u_bin/frame_0016.bin",
+        "current_v": "current_v_bin/frame_0016.bin"
+      }
+    },
+    {
+      "frame": 17,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 17,
+      "files": {
+        "temperature": "temp_bin/frame_0017.bin",
+        "ssh": "ssh_bin/frame_0017.bin",
+        "current_u": "current_u_bin/frame_0017.bin",
+        "current_v": "current_v_bin/frame_0017.bin"
+      }
+    },
+    {
+      "frame": 18,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 18,
+      "files": {
+        "temperature": "temp_bin/frame_0018.bin",
+        "ssh": "ssh_bin/frame_0018.bin",
+        "current_u": "current_u_bin/frame_0018.bin",
+        "current_v": "current_v_bin/frame_0018.bin"
+      }
+    },
+    {
+      "frame": 19,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 19,
+      "files": {
+        "temperature": "temp_bin/frame_0019.bin",
+        "ssh": "ssh_bin/frame_0019.bin",
+        "current_u": "current_u_bin/frame_0019.bin",
+        "current_v": "current_v_bin/frame_0019.bin"
+      }
+    },
+    {
+      "frame": 20,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 20,
+      "files": {
+        "temperature": "temp_bin/frame_0020.bin",
+        "ssh": "ssh_bin/frame_0020.bin",
+        "current_u": "current_u_bin/frame_0020.bin",
+        "current_v": "current_v_bin/frame_0020.bin"
+      }
+    },
+    {
+      "frame": 21,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 21,
+      "files": {
+        "temperature": "temp_bin/frame_0021.bin",
+        "ssh": "ssh_bin/frame_0021.bin",
+        "current_u": "current_u_bin/frame_0021.bin",
+        "current_v": "current_v_bin/frame_0021.bin"
+      }
+    },
+    {
+      "frame": 22,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 22,
+      "files": {
+        "temperature": "temp_bin/frame_0022.bin",
+        "ssh": "ssh_bin/frame_0022.bin",
+        "current_u": "current_u_bin/frame_0022.bin",
+        "current_v": "current_v_bin/frame_0022.bin"
+      }
+    },
+    {
+      "frame": 23,
+      "day": 191,
+      "date": "2023-07-10",
+      "hour_index": 23,
+      "files": {
+        "temperature": "temp_bin/frame_0023.bin",
+        "ssh": "ssh_bin/frame_0023.bin",
+        "current_u": "current_u_bin/frame_0023.bin",
+        "current_v": "current_v_bin/frame_0023.bin"
+      }
+    },
+    {
+      "frame": 24,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 0,
+      "files": {
+        "temperature": "temp_bin/frame_0024.bin",
+        "ssh": "ssh_bin/frame_0024.bin",
+        "current_u": "current_u_bin/frame_0024.bin",
+        "current_v": "current_v_bin/frame_0024.bin"
+      }
+    },
+    {
+      "frame": 25,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 1,
+      "files": {
+        "temperature": "temp_bin/frame_0025.bin",
+        "ssh": "ssh_bin/frame_0025.bin",
+        "current_u": "current_u_bin/frame_0025.bin",
+        "current_v": "current_v_bin/frame_0025.bin"
+      }
+    },
+    {
+      "frame": 26,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 2,
+      "files": {
+        "temperature": "temp_bin/frame_0026.bin",
+        "ssh": "ssh_bin/frame_0026.bin",
+        "current_u": "current_u_bin/frame_0026.bin",
+        "current_v": "current_v_bin/frame_0026.bin"
+      }
+    },
+    {
+      "frame": 27,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 3,
+      "files": {
+        "temperature": "temp_bin/frame_0027.bin",
+        "ssh": "ssh_bin/frame_0027.bin",
+        "current_u": "current_u_bin/frame_0027.bin",
+        "current_v": "current_v_bin/frame_0027.bin"
+      }
+    },
+    {
+      "frame": 28,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 4,
+      "files": {
+        "temperature": "temp_bin/frame_0028.bin",
+        "ssh": "ssh_bin/frame_0028.bin",
+        "current_u": "current_u_bin/frame_0028.bin",
+        "current_v": "current_v_bin/frame_0028.bin"
+      }
+    },
+    {
+      "frame": 29,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 5,
+      "files": {
+        "temperature": "temp_bin/frame_0029.bin",
+        "ssh": "ssh_bin/frame_0029.bin",
+        "current_u": "current_u_bin/frame_0029.bin",
+        "current_v": "current_v_bin/frame_0029.bin"
+      }
+    },
+    {
+      "frame": 30,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 6,
+      "files": {
+        "temperature": "temp_bin/frame_0030.bin",
+        "ssh": "ssh_bin/frame_0030.bin",
+        "current_u": "current_u_bin/frame_0030.bin",
+        "current_v": "current_v_bin/frame_0030.bin"
+      }
+    },
+    {
+      "frame": 31,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 7,
+      "files": {
+        "temperature": "temp_bin/frame_0031.bin",
+        "ssh": "ssh_bin/frame_0031.bin",
+        "current_u": "current_u_bin/frame_0031.bin",
+        "current_v": "current_v_bin/frame_0031.bin"
+      }
+    },
+    {
+      "frame": 32,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 8,
+      "files": {
+        "temperature": "temp_bin/frame_0032.bin",
+        "ssh": "ssh_bin/frame_0032.bin",
+        "current_u": "current_u_bin/frame_0032.bin",
+        "current_v": "current_v_bin/frame_0032.bin"
+      }
+    },
+    {
+      "frame": 33,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 9,
+      "files": {
+        "temperature": "temp_bin/frame_0033.bin",
+        "ssh": "ssh_bin/frame_0033.bin",
+        "current_u": "current_u_bin/frame_0033.bin",
+        "current_v": "current_v_bin/frame_0033.bin"
+      }
+    },
+    {
+      "frame": 34,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 10,
+      "files": {
+        "temperature": "temp_bin/frame_0034.bin",
+        "ssh": "ssh_bin/frame_0034.bin",
+        "current_u": "current_u_bin/frame_0034.bin",
+        "current_v": "current_v_bin/frame_0034.bin"
+      }
+    },
+    {
+      "frame": 35,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 11,
+      "files": {
+        "temperature": "temp_bin/frame_0035.bin",
+        "ssh": "ssh_bin/frame_0035.bin",
+        "current_u": "current_u_bin/frame_0035.bin",
+        "current_v": "current_v_bin/frame_0035.bin"
+      }
+    },
+    {
+      "frame": 36,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 12,
+      "files": {
+        "temperature": "temp_bin/frame_0036.bin",
+        "ssh": "ssh_bin/frame_0036.bin",
+        "current_u": "current_u_bin/frame_0036.bin",
+        "current_v": "current_v_bin/frame_0036.bin"
+      }
+    },
+    {
+      "frame": 37,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 13,
+      "files": {
+        "temperature": "temp_bin/frame_0037.bin",
+        "ssh": "ssh_bin/frame_0037.bin",
+        "current_u": "current_u_bin/frame_0037.bin",
+        "current_v": "current_v_bin/frame_0037.bin"
+      }
+    },
+    {
+      "frame": 38,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 14,
+      "files": {
+        "temperature": "temp_bin/frame_0038.bin",
+        "ssh": "ssh_bin/frame_0038.bin",
+        "current_u": "current_u_bin/frame_0038.bin",
+        "current_v": "current_v_bin/frame_0038.bin"
+      }
+    },
+    {
+      "frame": 39,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 15,
+      "files": {
+        "temperature": "temp_bin/frame_0039.bin",
+        "ssh": "ssh_bin/frame_0039.bin",
+        "current_u": "current_u_bin/frame_0039.bin",
+        "current_v": "current_v_bin/frame_0039.bin"
+      }
+    },
+    {
+      "frame": 40,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 16,
+      "files": {
+        "temperature": "temp_bin/frame_0040.bin",
+        "ssh": "ssh_bin/frame_0040.bin",
+        "current_u": "current_u_bin/frame_0040.bin",
+        "current_v": "current_v_bin/frame_0040.bin"
+      }
+    },
+    {
+      "frame": 41,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 17,
+      "files": {
+        "temperature": "temp_bin/frame_0041.bin",
+        "ssh": "ssh_bin/frame_0041.bin",
+        "current_u": "current_u_bin/frame_0041.bin",
+        "current_v": "current_v_bin/frame_0041.bin"
+      }
+    },
+    {
+      "frame": 42,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 18,
+      "files": {
+        "temperature": "temp_bin/frame_0042.bin",
+        "ssh": "ssh_bin/frame_0042.bin",
+        "current_u": "current_u_bin/frame_0042.bin",
+        "current_v": "current_v_bin/frame_0042.bin"
+      }
+    },
+    {
+      "frame": 43,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 19,
+      "files": {
+        "temperature": "temp_bin/frame_0043.bin",
+        "ssh": "ssh_bin/frame_0043.bin",
+        "current_u": "current_u_bin/frame_0043.bin",
+        "current_v": "current_v_bin/frame_0043.bin"
+      }
+    },
+    {
+      "frame": 44,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 20,
+      "files": {
+        "temperature": "temp_bin/frame_0044.bin",
+        "ssh": "ssh_bin/frame_0044.bin",
+        "current_u": "current_u_bin/frame_0044.bin",
+        "current_v": "current_v_bin/frame_0044.bin"
+      }
+    },
+    {
+      "frame": 45,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 21,
+      "files": {
+        "temperature": "temp_bin/frame_0045.bin",
+        "ssh": "ssh_bin/frame_0045.bin",
+        "current_u": "current_u_bin/frame_0045.bin",
+        "current_v": "current_v_bin/frame_0045.bin"
+      }
+    },
+    {
+      "frame": 46,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 22,
+      "files": {
+        "temperature": "temp_bin/frame_0046.bin",
+        "ssh": "ssh_bin/frame_0046.bin",
+        "current_u": "current_u_bin/frame_0046.bin",
+        "current_v": "current_v_bin/frame_0046.bin"
+      }
+    },
+    {
+      "frame": 47,
+      "day": 192,
+      "date": "2023-07-11",
+      "hour_index": 23,
+      "files": {
+        "temperature": "temp_bin/frame_0047.bin",
+        "ssh": "ssh_bin/frame_0047.bin",
+        "current_u": "current_u_bin/frame_0047.bin",
+        "current_v": "current_v_bin/frame_0047.bin"
+      }
+    },
+    {
+      "frame": 48,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 0,
+      "files": {
+        "temperature": "temp_bin/frame_0048.bin",
+        "ssh": "ssh_bin/frame_0048.bin",
+        "current_u": "current_u_bin/frame_0048.bin",
+        "current_v": "current_v_bin/frame_0048.bin"
+      }
+    },
+    {
+      "frame": 49,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 1,
+      "files": {
+        "temperature": "temp_bin/frame_0049.bin",
+        "ssh": "ssh_bin/frame_0049.bin",
+        "current_u": "current_u_bin/frame_0049.bin",
+        "current_v": "current_v_bin/frame_0049.bin"
+      }
+    },
+    {
+      "frame": 50,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 2,
+      "files": {
+        "temperature": "temp_bin/frame_0050.bin",
+        "ssh": "ssh_bin/frame_0050.bin",
+        "current_u": "current_u_bin/frame_0050.bin",
+        "current_v": "current_v_bin/frame_0050.bin"
+      }
+    },
+    {
+      "frame": 51,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 3,
+      "files": {
+        "temperature": "temp_bin/frame_0051.bin",
+        "ssh": "ssh_bin/frame_0051.bin",
+        "current_u": "current_u_bin/frame_0051.bin",
+        "current_v": "current_v_bin/frame_0051.bin"
+      }
+    },
+    {
+      "frame": 52,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 4,
+      "files": {
+        "temperature": "temp_bin/frame_0052.bin",
+        "ssh": "ssh_bin/frame_0052.bin",
+        "current_u": "current_u_bin/frame_0052.bin",
+        "current_v": "current_v_bin/frame_0052.bin"
+      }
+    },
+    {
+      "frame": 53,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 5,
+      "files": {
+        "temperature": "temp_bin/frame_0053.bin",
+        "ssh": "ssh_bin/frame_0053.bin",
+        "current_u": "current_u_bin/frame_0053.bin",
+        "current_v": "current_v_bin/frame_0053.bin"
+      }
+    },
+    {
+      "frame": 54,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 6,
+      "files": {
+        "temperature": "temp_bin/frame_0054.bin",
+        "ssh": "ssh_bin/frame_0054.bin",
+        "current_u": "current_u_bin/frame_0054.bin",
+        "current_v": "current_v_bin/frame_0054.bin"
+      }
+    },
+    {
+      "frame": 55,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 7,
+      "files": {
+        "temperature": "temp_bin/frame_0055.bin",
+        "ssh": "ssh_bin/frame_0055.bin",
+        "current_u": "current_u_bin/frame_0055.bin",
+        "current_v": "current_v_bin/frame_0055.bin"
+      }
+    },
+    {
+      "frame": 56,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 8,
+      "files": {
+        "temperature": "temp_bin/frame_0056.bin",
+        "ssh": "ssh_bin/frame_0056.bin",
+        "current_u": "current_u_bin/frame_0056.bin",
+        "current_v": "current_v_bin/frame_0056.bin"
+      }
+    },
+    {
+      "frame": 57,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 9,
+      "files": {
+        "temperature": "temp_bin/frame_0057.bin",
+        "ssh": "ssh_bin/frame_0057.bin",
+        "current_u": "current_u_bin/frame_0057.bin",
+        "current_v": "current_v_bin/frame_0057.bin"
+      }
+    },
+    {
+      "frame": 58,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 10,
+      "files": {
+        "temperature": "temp_bin/frame_0058.bin",
+        "ssh": "ssh_bin/frame_0058.bin",
+        "current_u": "current_u_bin/frame_0058.bin",
+        "current_v": "current_v_bin/frame_0058.bin"
+      }
+    },
+    {
+      "frame": 59,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 11,
+      "files": {
+        "temperature": "temp_bin/frame_0059.bin",
+        "ssh": "ssh_bin/frame_0059.bin",
+        "current_u": "current_u_bin/frame_0059.bin",
+        "current_v": "current_v_bin/frame_0059.bin"
+      }
+    },
+    {
+      "frame": 60,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 12,
+      "files": {
+        "temperature": "temp_bin/frame_0060.bin",
+        "ssh": "ssh_bin/frame_0060.bin",
+        "current_u": "current_u_bin/frame_0060.bin",
+        "current_v": "current_v_bin/frame_0060.bin"
+      }
+    },
+    {
+      "frame": 61,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 13,
+      "files": {
+        "temperature": "temp_bin/frame_0061.bin",
+        "ssh": "ssh_bin/frame_0061.bin",
+        "current_u": "current_u_bin/frame_0061.bin",
+        "current_v": "current_v_bin/frame_0061.bin"
+      }
+    },
+    {
+      "frame": 62,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 14,
+      "files": {
+        "temperature": "temp_bin/frame_0062.bin",
+        "ssh": "ssh_bin/frame_0062.bin",
+        "current_u": "current_u_bin/frame_0062.bin",
+        "current_v": "current_v_bin/frame_0062.bin"
+      }
+    },
+    {
+      "frame": 63,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 15,
+      "files": {
+        "temperature": "temp_bin/frame_0063.bin",
+        "ssh": "ssh_bin/frame_0063.bin",
+        "current_u": "current_u_bin/frame_0063.bin",
+        "current_v": "current_v_bin/frame_0063.bin"
+      }
+    },
+    {
+      "frame": 64,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 16,
+      "files": {
+        "temperature": "temp_bin/frame_0064.bin",
+        "ssh": "ssh_bin/frame_0064.bin",
+        "current_u": "current_u_bin/frame_0064.bin",
+        "current_v": "current_v_bin/frame_0064.bin"
+      }
+    },
+    {
+      "frame": 65,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 17,
+      "files": {
+        "temperature": "temp_bin/frame_0065.bin",
+        "ssh": "ssh_bin/frame_0065.bin",
+        "current_u": "current_u_bin/frame_0065.bin",
+        "current_v": "current_v_bin/frame_0065.bin"
+      }
+    },
+    {
+      "frame": 66,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 18,
+      "files": {
+        "temperature": "temp_bin/frame_0066.bin",
+        "ssh": "ssh_bin/frame_0066.bin",
+        "current_u": "current_u_bin/frame_0066.bin",
+        "current_v": "current_v_bin/frame_0066.bin"
+      }
+    },
+    {
+      "frame": 67,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 19,
+      "files": {
+        "temperature": "temp_bin/frame_0067.bin",
+        "ssh": "ssh_bin/frame_0067.bin",
+        "current_u": "current_u_bin/frame_0067.bin",
+        "current_v": "current_v_bin/frame_0067.bin"
+      }
+    },
+    {
+      "frame": 68,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 20,
+      "files": {
+        "temperature": "temp_bin/frame_0068.bin",
+        "ssh": "ssh_bin/frame_0068.bin",
+        "current_u": "current_u_bin/frame_0068.bin",
+        "current_v": "current_v_bin/frame_0068.bin"
+      }
+    },
+    {
+      "frame": 69,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 21,
+      "files": {
+        "temperature": "temp_bin/frame_0069.bin",
+        "ssh": "ssh_bin/frame_0069.bin",
+        "current_u": "current_u_bin/frame_0069.bin",
+        "current_v": "current_v_bin/frame_0069.bin"
+      }
+    },
+    {
+      "frame": 70,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 22,
+      "files": {
+        "temperature": "temp_bin/frame_0070.bin",
+        "ssh": "ssh_bin/frame_0070.bin",
+        "current_u": "current_u_bin/frame_0070.bin",
+        "current_v": "current_v_bin/frame_0070.bin"
+      }
+    },
+    {
+      "frame": 71,
+      "day": 193,
+      "date": "2023-07-12",
+      "hour_index": 23,
+      "files": {
+        "temperature": "temp_bin/frame_0071.bin",
+        "ssh": "ssh_bin/frame_0071.bin",
+        "current_u": "current_u_bin/frame_0071.bin",
+        "current_v": "current_v_bin/frame_0071.bin"
+      }
+    },
+    {
+      "frame": 72,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 0,
+      "files": {
+        "temperature": "temp_bin/frame_0072.bin",
+        "ssh": "ssh_bin/frame_0072.bin",
+        "current_u": "current_u_bin/frame_0072.bin",
+        "current_v": "current_v_bin/frame_0072.bin"
+      }
+    },
+    {
+      "frame": 73,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 1,
+      "files": {
+        "temperature": "temp_bin/frame_0073.bin",
+        "ssh": "ssh_bin/frame_0073.bin",
+        "current_u": "current_u_bin/frame_0073.bin",
+        "current_v": "current_v_bin/frame_0073.bin"
+      }
+    },
+    {
+      "frame": 74,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 2,
+      "files": {
+        "temperature": "temp_bin/frame_0074.bin",
+        "ssh": "ssh_bin/frame_0074.bin",
+        "current_u": "current_u_bin/frame_0074.bin",
+        "current_v": "current_v_bin/frame_0074.bin"
+      }
+    },
+    {
+      "frame": 75,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 3,
+      "files": {
+        "temperature": "temp_bin/frame_0075.bin",
+        "ssh": "ssh_bin/frame_0075.bin",
+        "current_u": "current_u_bin/frame_0075.bin",
+        "current_v": "current_v_bin/frame_0075.bin"
+      }
+    },
+    {
+      "frame": 76,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 4,
+      "files": {
+        "temperature": "temp_bin/frame_0076.bin",
+        "ssh": "ssh_bin/frame_0076.bin",
+        "current_u": "current_u_bin/frame_0076.bin",
+        "current_v": "current_v_bin/frame_0076.bin"
+      }
+    },
+    {
+      "frame": 77,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 5,
+      "files": {
+        "temperature": "temp_bin/frame_0077.bin",
+        "ssh": "ssh_bin/frame_0077.bin",
+        "current_u": "current_u_bin/frame_0077.bin",
+        "current_v": "current_v_bin/frame_0077.bin"
+      }
+    },
+    {
+      "frame": 78,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 6,
+      "files": {
+        "temperature": "temp_bin/frame_0078.bin",
+        "ssh": "ssh_bin/frame_0078.bin",
+        "current_u": "current_u_bin/frame_0078.bin",
+        "current_v": "current_v_bin/frame_0078.bin"
+      }
+    },
+    {
+      "frame": 79,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 7,
+      "files": {
+        "temperature": "temp_bin/frame_0079.bin",
+        "ssh": "ssh_bin/frame_0079.bin",
+        "current_u": "current_u_bin/frame_0079.bin",
+        "current_v": "current_v_bin/frame_0079.bin"
+      }
+    },
+    {
+      "frame": 80,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 8,
+      "files": {
+        "temperature": "temp_bin/frame_0080.bin",
+        "ssh": "ssh_bin/frame_0080.bin",
+        "current_u": "current_u_bin/frame_0080.bin",
+        "current_v": "current_v_bin/frame_0080.bin"
+      }
+    },
+    {
+      "frame": 81,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 9,
+      "files": {
+        "temperature": "temp_bin/frame_0081.bin",
+        "ssh": "ssh_bin/frame_0081.bin",
+        "current_u": "current_u_bin/frame_0081.bin",
+        "current_v": "current_v_bin/frame_0081.bin"
+      }
+    },
+    {
+      "frame": 82,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 10,
+      "files": {
+        "temperature": "temp_bin/frame_0082.bin",
+        "ssh": "ssh_bin/frame_0082.bin",
+        "current_u": "current_u_bin/frame_0082.bin",
+        "current_v": "current_v_bin/frame_0082.bin"
+      }
+    },
+    {
+      "frame": 83,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 11,
+      "files": {
+        "temperature": "temp_bin/frame_0083.bin",
+        "ssh": "ssh_bin/frame_0083.bin",
+        "current_u": "current_u_bin/frame_0083.bin",
+        "current_v": "current_v_bin/frame_0083.bin"
+      }
+    },
+    {
+      "frame": 84,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 12,
+      "files": {
+        "temperature": "temp_bin/frame_0084.bin",
+        "ssh": "ssh_bin/frame_0084.bin",
+        "current_u": "current_u_bin/frame_0084.bin",
+        "current_v": "current_v_bin/frame_0084.bin"
+      }
+    },
+    {
+      "frame": 85,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 13,
+      "files": {
+        "temperature": "temp_bin/frame_0085.bin",
+        "ssh": "ssh_bin/frame_0085.bin",
+        "current_u": "current_u_bin/frame_0085.bin",
+        "current_v": "current_v_bin/frame_0085.bin"
+      }
+    },
+    {
+      "frame": 86,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 14,
+      "files": {
+        "temperature": "temp_bin/frame_0086.bin",
+        "ssh": "ssh_bin/frame_0086.bin",
+        "current_u": "current_u_bin/frame_0086.bin",
+        "current_v": "current_v_bin/frame_0086.bin"
+      }
+    },
+    {
+      "frame": 87,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 15,
+      "files": {
+        "temperature": "temp_bin/frame_0087.bin",
+        "ssh": "ssh_bin/frame_0087.bin",
+        "current_u": "current_u_bin/frame_0087.bin",
+        "current_v": "current_v_bin/frame_0087.bin"
+      }
+    },
+    {
+      "frame": 88,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 16,
+      "files": {
+        "temperature": "temp_bin/frame_0088.bin",
+        "ssh": "ssh_bin/frame_0088.bin",
+        "current_u": "current_u_bin/frame_0088.bin",
+        "current_v": "current_v_bin/frame_0088.bin"
+      }
+    },
+    {
+      "frame": 89,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 17,
+      "files": {
+        "temperature": "temp_bin/frame_0089.bin",
+        "ssh": "ssh_bin/frame_0089.bin",
+        "current_u": "current_u_bin/frame_0089.bin",
+        "current_v": "current_v_bin/frame_0089.bin"
+      }
+    },
+    {
+      "frame": 90,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 18,
+      "files": {
+        "temperature": "temp_bin/frame_0090.bin",
+        "ssh": "ssh_bin/frame_0090.bin",
+        "current_u": "current_u_bin/frame_0090.bin",
+        "current_v": "current_v_bin/frame_0090.bin"
+      }
+    },
+    {
+      "frame": 91,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 19,
+      "files": {
+        "temperature": "temp_bin/frame_0091.bin",
+        "ssh": "ssh_bin/frame_0091.bin",
+        "current_u": "current_u_bin/frame_0091.bin",
+        "current_v": "current_v_bin/frame_0091.bin"
+      }
+    },
+    {
+      "frame": 92,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 20,
+      "files": {
+        "temperature": "temp_bin/frame_0092.bin",
+        "ssh": "ssh_bin/frame_0092.bin",
+        "current_u": "current_u_bin/frame_0092.bin",
+        "current_v": "current_v_bin/frame_0092.bin"
+      }
+    },
+    {
+      "frame": 93,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 21,
+      "files": {
+        "temperature": "temp_bin/frame_0093.bin",
+        "ssh": "ssh_bin/frame_0093.bin",
+        "current_u": "current_u_bin/frame_0093.bin",
+        "current_v": "current_v_bin/frame_0093.bin"
+      }
+    },
+    {
+      "frame": 94,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 22,
+      "files": {
+        "temperature": "temp_bin/frame_0094.bin",
+        "ssh": "ssh_bin/frame_0094.bin",
+        "current_u": "current_u_bin/frame_0094.bin",
+        "current_v": "current_v_bin/frame_0094.bin"
+      }
+    },
+    {
+      "frame": 95,
+      "day": 194,
+      "date": "2023-07-13",
+      "hour_index": 23,
+      "files": {
+        "temperature": "temp_bin/frame_0095.bin",
+        "ssh": "ssh_bin/frame_0095.bin",
+        "current_u": "current_u_bin/frame_0095.bin",
+        "current_v": "current_v_bin/frame_0095.bin"
+      }
+    },
+    {
+      "frame": 96,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 0,
+      "files": {
+        "temperature": "temp_bin/frame_0096.bin",
+        "ssh": "ssh_bin/frame_0096.bin",
+        "current_u": "current_u_bin/frame_0096.bin",
+        "current_v": "current_v_bin/frame_0096.bin"
+      }
+    },
+    {
+      "frame": 97,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 1,
+      "files": {
+        "temperature": "temp_bin/frame_0097.bin",
+        "ssh": "ssh_bin/frame_0097.bin",
+        "current_u": "current_u_bin/frame_0097.bin",
+        "current_v": "current_v_bin/frame_0097.bin"
+      }
+    },
+    {
+      "frame": 98,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 2,
+      "files": {
+        "temperature": "temp_bin/frame_0098.bin",
+        "ssh": "ssh_bin/frame_0098.bin",
+        "current_u": "current_u_bin/frame_0098.bin",
+        "current_v": "current_v_bin/frame_0098.bin"
+      }
+    },
+    {
+      "frame": 99,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 3,
+      "files": {
+        "temperature": "temp_bin/frame_0099.bin",
+        "ssh": "ssh_bin/frame_0099.bin",
+        "current_u": "current_u_bin/frame_0099.bin",
+        "current_v": "current_v_bin/frame_0099.bin"
+      }
+    },
+    {
+      "frame": 100,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 4,
+      "files": {
+        "temperature": "temp_bin/frame_0100.bin",
+        "ssh": "ssh_bin/frame_0100.bin",
+        "current_u": "current_u_bin/frame_0100.bin",
+        "current_v": "current_v_bin/frame_0100.bin"
+      }
+    },
+    {
+      "frame": 101,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 5,
+      "files": {
+        "temperature": "temp_bin/frame_0101.bin",
+        "ssh": "ssh_bin/frame_0101.bin",
+        "current_u": "current_u_bin/frame_0101.bin",
+        "current_v": "current_v_bin/frame_0101.bin"
+      }
+    },
+    {
+      "frame": 102,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 6,
+      "files": {
+        "temperature": "temp_bin/frame_0102.bin",
+        "ssh": "ssh_bin/frame_0102.bin",
+        "current_u": "current_u_bin/frame_0102.bin",
+        "current_v": "current_v_bin/frame_0102.bin"
+      }
+    },
+    {
+      "frame": 103,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 7,
+      "files": {
+        "temperature": "temp_bin/frame_0103.bin",
+        "ssh": "ssh_bin/frame_0103.bin",
+        "current_u": "current_u_bin/frame_0103.bin",
+        "current_v": "current_v_bin/frame_0103.bin"
+      }
+    },
+    {
+      "frame": 104,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 8,
+      "files": {
+        "temperature": "temp_bin/frame_0104.bin",
+        "ssh": "ssh_bin/frame_0104.bin",
+        "current_u": "current_u_bin/frame_0104.bin",
+        "current_v": "current_v_bin/frame_0104.bin"
+      }
+    },
+    {
+      "frame": 105,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 9,
+      "files": {
+        "temperature": "temp_bin/frame_0105.bin",
+        "ssh": "ssh_bin/frame_0105.bin",
+        "current_u": "current_u_bin/frame_0105.bin",
+        "current_v": "current_v_bin/frame_0105.bin"
+      }
+    },
+    {
+      "frame": 106,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 10,
+      "files": {
+        "temperature": "temp_bin/frame_0106.bin",
+        "ssh": "ssh_bin/frame_0106.bin",
+        "current_u": "current_u_bin/frame_0106.bin",
+        "current_v": "current_v_bin/frame_0106.bin"
+      }
+    },
+    {
+      "frame": 107,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 11,
+      "files": {
+        "temperature": "temp_bin/frame_0107.bin",
+        "ssh": "ssh_bin/frame_0107.bin",
+        "current_u": "current_u_bin/frame_0107.bin",
+        "current_v": "current_v_bin/frame_0107.bin"
+      }
+    },
+    {
+      "frame": 108,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 12,
+      "files": {
+        "temperature": "temp_bin/frame_0108.bin",
+        "ssh": "ssh_bin/frame_0108.bin",
+        "current_u": "current_u_bin/frame_0108.bin",
+        "current_v": "current_v_bin/frame_0108.bin"
+      }
+    },
+    {
+      "frame": 109,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 13,
+      "files": {
+        "temperature": "temp_bin/frame_0109.bin",
+        "ssh": "ssh_bin/frame_0109.bin",
+        "current_u": "current_u_bin/frame_0109.bin",
+        "current_v": "current_v_bin/frame_0109.bin"
+      }
+    },
+    {
+      "frame": 110,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 14,
+      "files": {
+        "temperature": "temp_bin/frame_0110.bin",
+        "ssh": "ssh_bin/frame_0110.bin",
+        "current_u": "current_u_bin/frame_0110.bin",
+        "current_v": "current_v_bin/frame_0110.bin"
+      }
+    },
+    {
+      "frame": 111,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 15,
+      "files": {
+        "temperature": "temp_bin/frame_0111.bin",
+        "ssh": "ssh_bin/frame_0111.bin",
+        "current_u": "current_u_bin/frame_0111.bin",
+        "current_v": "current_v_bin/frame_0111.bin"
+      }
+    },
+    {
+      "frame": 112,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 16,
+      "files": {
+        "temperature": "temp_bin/frame_0112.bin",
+        "ssh": "ssh_bin/frame_0112.bin",
+        "current_u": "current_u_bin/frame_0112.bin",
+        "current_v": "current_v_bin/frame_0112.bin"
+      }
+    },
+    {
+      "frame": 113,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 17,
+      "files": {
+        "temperature": "temp_bin/frame_0113.bin",
+        "ssh": "ssh_bin/frame_0113.bin",
+        "current_u": "current_u_bin/frame_0113.bin",
+        "current_v": "current_v_bin/frame_0113.bin"
+      }
+    },
+    {
+      "frame": 114,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 18,
+      "files": {
+        "temperature": "temp_bin/frame_0114.bin",
+        "ssh": "ssh_bin/frame_0114.bin",
+        "current_u": "current_u_bin/frame_0114.bin",
+        "current_v": "current_v_bin/frame_0114.bin"
+      }
+    },
+    {
+      "frame": 115,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 19,
+      "files": {
+        "temperature": "temp_bin/frame_0115.bin",
+        "ssh": "ssh_bin/frame_0115.bin",
+        "current_u": "current_u_bin/frame_0115.bin",
+        "current_v": "current_v_bin/frame_0115.bin"
+      }
+    },
+    {
+      "frame": 116,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 20,
+      "files": {
+        "temperature": "temp_bin/frame_0116.bin",
+        "ssh": "ssh_bin/frame_0116.bin",
+        "current_u": "current_u_bin/frame_0116.bin",
+        "current_v": "current_v_bin/frame_0116.bin"
+      }
+    },
+    {
+      "frame": 117,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 21,
+      "files": {
+        "temperature": "temp_bin/frame_0117.bin",
+        "ssh": "ssh_bin/frame_0117.bin",
+        "current_u": "current_u_bin/frame_0117.bin",
+        "current_v": "current_v_bin/frame_0117.bin"
+      }
+    },
+    {
+      "frame": 118,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 22,
+      "files": {
+        "temperature": "temp_bin/frame_0118.bin",
+        "ssh": "ssh_bin/frame_0118.bin",
+        "current_u": "current_u_bin/frame_0118.bin",
+        "current_v": "current_v_bin/frame_0118.bin"
+      }
+    },
+    {
+      "frame": 119,
+      "day": 195,
+      "date": "2023-07-14",
+      "hour_index": 23,
+      "files": {
+        "temperature": "temp_bin/frame_0119.bin",
+        "ssh": "ssh_bin/frame_0119.bin",
+        "current_u": "current_u_bin/frame_0119.bin",
+        "current_v": "current_v_bin/frame_0119.bin"
+      }
+    },
+    {
+      "frame": 120,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 0,
+      "files": {
+        "temperature": "temp_bin/frame_0120.bin",
+        "ssh": "ssh_bin/frame_0120.bin",
+        "current_u": "current_u_bin/frame_0120.bin",
+        "current_v": "current_v_bin/frame_0120.bin"
+      }
+    },
+    {
+      "frame": 121,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 1,
+      "files": {
+        "temperature": "temp_bin/frame_0121.bin",
+        "ssh": "ssh_bin/frame_0121.bin",
+        "current_u": "current_u_bin/frame_0121.bin",
+        "current_v": "current_v_bin/frame_0121.bin"
+      }
+    },
+    {
+      "frame": 122,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 2,
+      "files": {
+        "temperature": "temp_bin/frame_0122.bin",
+        "ssh": "ssh_bin/frame_0122.bin",
+        "current_u": "current_u_bin/frame_0122.bin",
+        "current_v": "current_v_bin/frame_0122.bin"
+      }
+    },
+    {
+      "frame": 123,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 3,
+      "files": {
+        "temperature": "temp_bin/frame_0123.bin",
+        "ssh": "ssh_bin/frame_0123.bin",
+        "current_u": "current_u_bin/frame_0123.bin",
+        "current_v": "current_v_bin/frame_0123.bin"
+      }
+    },
+    {
+      "frame": 124,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 4,
+      "files": {
+        "temperature": "temp_bin/frame_0124.bin",
+        "ssh": "ssh_bin/frame_0124.bin",
+        "current_u": "current_u_bin/frame_0124.bin",
+        "current_v": "current_v_bin/frame_0124.bin"
+      }
+    },
+    {
+      "frame": 125,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 5,
+      "files": {
+        "temperature": "temp_bin/frame_0125.bin",
+        "ssh": "ssh_bin/frame_0125.bin",
+        "current_u": "current_u_bin/frame_0125.bin",
+        "current_v": "current_v_bin/frame_0125.bin"
+      }
+    },
+    {
+      "frame": 126,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 6,
+      "files": {
+        "temperature": "temp_bin/frame_0126.bin",
+        "ssh": "ssh_bin/frame_0126.bin",
+        "current_u": "current_u_bin/frame_0126.bin",
+        "current_v": "current_v_bin/frame_0126.bin"
+      }
+    },
+    {
+      "frame": 127,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 7,
+      "files": {
+        "temperature": "temp_bin/frame_0127.bin",
+        "ssh": "ssh_bin/frame_0127.bin",
+        "current_u": "current_u_bin/frame_0127.bin",
+        "current_v": "current_v_bin/frame_0127.bin"
+      }
+    },
+    {
+      "frame": 128,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 8,
+      "files": {
+        "temperature": "temp_bin/frame_0128.bin",
+        "ssh": "ssh_bin/frame_0128.bin",
+        "current_u": "current_u_bin/frame_0128.bin",
+        "current_v": "current_v_bin/frame_0128.bin"
+      }
+    },
+    {
+      "frame": 129,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 9,
+      "files": {
+        "temperature": "temp_bin/frame_0129.bin",
+        "ssh": "ssh_bin/frame_0129.bin",
+        "current_u": "current_u_bin/frame_0129.bin",
+        "current_v": "current_v_bin/frame_0129.bin"
+      }
+    },
+    {
+      "frame": 130,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 10,
+      "files": {
+        "temperature": "temp_bin/frame_0130.bin",
+        "ssh": "ssh_bin/frame_0130.bin",
+        "current_u": "current_u_bin/frame_0130.bin",
+        "current_v": "current_v_bin/frame_0130.bin"
+      }
+    },
+    {
+      "frame": 131,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 11,
+      "files": {
+        "temperature": "temp_bin/frame_0131.bin",
+        "ssh": "ssh_bin/frame_0131.bin",
+        "current_u": "current_u_bin/frame_0131.bin",
+        "current_v": "current_v_bin/frame_0131.bin"
+      }
+    },
+    {
+      "frame": 132,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 12,
+      "files": {
+        "temperature": "temp_bin/frame_0132.bin",
+        "ssh": "ssh_bin/frame_0132.bin",
+        "current_u": "current_u_bin/frame_0132.bin",
+        "current_v": "current_v_bin/frame_0132.bin"
+      }
+    },
+    {
+      "frame": 133,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 13,
+      "files": {
+        "temperature": "temp_bin/frame_0133.bin",
+        "ssh": "ssh_bin/frame_0133.bin",
+        "current_u": "current_u_bin/frame_0133.bin",
+        "current_v": "current_v_bin/frame_0133.bin"
+      }
+    },
+    {
+      "frame": 134,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 14,
+      "files": {
+        "temperature": "temp_bin/frame_0134.bin",
+        "ssh": "ssh_bin/frame_0134.bin",
+        "current_u": "current_u_bin/frame_0134.bin",
+        "current_v": "current_v_bin/frame_0134.bin"
+      }
+    },
+    {
+      "frame": 135,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 15,
+      "files": {
+        "temperature": "temp_bin/frame_0135.bin",
+        "ssh": "ssh_bin/frame_0135.bin",
+        "current_u": "current_u_bin/frame_0135.bin",
+        "current_v": "current_v_bin/frame_0135.bin"
+      }
+    },
+    {
+      "frame": 136,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 16,
+      "files": {
+        "temperature": "temp_bin/frame_0136.bin",
+        "ssh": "ssh_bin/frame_0136.bin",
+        "current_u": "current_u_bin/frame_0136.bin",
+        "current_v": "current_v_bin/frame_0136.bin"
+      }
+    },
+    {
+      "frame": 137,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 17,
+      "files": {
+        "temperature": "temp_bin/frame_0137.bin",
+        "ssh": "ssh_bin/frame_0137.bin",
+        "current_u": "current_u_bin/frame_0137.bin",
+        "current_v": "current_v_bin/frame_0137.bin"
+      }
+    },
+    {
+      "frame": 138,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 18,
+      "files": {
+        "temperature": "temp_bin/frame_0138.bin",
+        "ssh": "ssh_bin/frame_0138.bin",
+        "current_u": "current_u_bin/frame_0138.bin",
+        "current_v": "current_v_bin/frame_0138.bin"
+      }
+    },
+    {
+      "frame": 139,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 19,
+      "files": {
+        "temperature": "temp_bin/frame_0139.bin",
+        "ssh": "ssh_bin/frame_0139.bin",
+        "current_u": "current_u_bin/frame_0139.bin",
+        "current_v": "current_v_bin/frame_0139.bin"
+      }
+    },
+    {
+      "frame": 140,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 20,
+      "files": {
+        "temperature": "temp_bin/frame_0140.bin",
+        "ssh": "ssh_bin/frame_0140.bin",
+        "current_u": "current_u_bin/frame_0140.bin",
+        "current_v": "current_v_bin/frame_0140.bin"
+      }
+    },
+    {
+      "frame": 141,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 21,
+      "files": {
+        "temperature": "temp_bin/frame_0141.bin",
+        "ssh": "ssh_bin/frame_0141.bin",
+        "current_u": "current_u_bin/frame_0141.bin",
+        "current_v": "current_v_bin/frame_0141.bin"
+      }
+    },
+    {
+      "frame": 142,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 22,
+      "files": {
+        "temperature": "temp_bin/frame_0142.bin",
+        "ssh": "ssh_bin/frame_0142.bin",
+        "current_u": "current_u_bin/frame_0142.bin",
+        "current_v": "current_v_bin/frame_0142.bin"
+      }
+    },
+    {
+      "frame": 143,
+      "day": 196,
+      "date": "2023-07-15",
+      "hour_index": 23,
+      "files": {
+        "temperature": "temp_bin/frame_0143.bin",
+        "ssh": "ssh_bin/frame_0143.bin",
+        "current_u": "current_u_bin/frame_0143.bin",
+        "current_v": "current_v_bin/frame_0143.bin"
+      }
+    },
+    {
+      "frame": 144,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 0,
+      "files": {
+        "temperature": "temp_bin/frame_0144.bin",
+        "ssh": "ssh_bin/frame_0144.bin",
+        "current_u": "current_u_bin/frame_0144.bin",
+        "current_v": "current_v_bin/frame_0144.bin"
+      }
+    },
+    {
+      "frame": 145,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 1,
+      "files": {
+        "temperature": "temp_bin/frame_0145.bin",
+        "ssh": "ssh_bin/frame_0145.bin",
+        "current_u": "current_u_bin/frame_0145.bin",
+        "current_v": "current_v_bin/frame_0145.bin"
+      }
+    },
+    {
+      "frame": 146,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 2,
+      "files": {
+        "temperature": "temp_bin/frame_0146.bin",
+        "ssh": "ssh_bin/frame_0146.bin",
+        "current_u": "current_u_bin/frame_0146.bin",
+        "current_v": "current_v_bin/frame_0146.bin"
+      }
+    },
+    {
+      "frame": 147,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 3,
+      "files": {
+        "temperature": "temp_bin/frame_0147.bin",
+        "ssh": "ssh_bin/frame_0147.bin",
+        "current_u": "current_u_bin/frame_0147.bin",
+        "current_v": "current_v_bin/frame_0147.bin"
+      }
+    },
+    {
+      "frame": 148,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 4,
+      "files": {
+        "temperature": "temp_bin/frame_0148.bin",
+        "ssh": "ssh_bin/frame_0148.bin",
+        "current_u": "current_u_bin/frame_0148.bin",
+        "current_v": "current_v_bin/frame_0148.bin"
+      }
+    },
+    {
+      "frame": 149,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 5,
+      "files": {
+        "temperature": "temp_bin/frame_0149.bin",
+        "ssh": "ssh_bin/frame_0149.bin",
+        "current_u": "current_u_bin/frame_0149.bin",
+        "current_v": "current_v_bin/frame_0149.bin"
+      }
+    },
+    {
+      "frame": 150,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 6,
+      "files": {
+        "temperature": "temp_bin/frame_0150.bin",
+        "ssh": "ssh_bin/frame_0150.bin",
+        "current_u": "current_u_bin/frame_0150.bin",
+        "current_v": "current_v_bin/frame_0150.bin"
+      }
+    },
+    {
+      "frame": 151,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 7,
+      "files": {
+        "temperature": "temp_bin/frame_0151.bin",
+        "ssh": "ssh_bin/frame_0151.bin",
+        "current_u": "current_u_bin/frame_0151.bin",
+        "current_v": "current_v_bin/frame_0151.bin"
+      }
+    },
+    {
+      "frame": 152,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 8,
+      "files": {
+        "temperature": "temp_bin/frame_0152.bin",
+        "ssh": "ssh_bin/frame_0152.bin",
+        "current_u": "current_u_bin/frame_0152.bin",
+        "current_v": "current_v_bin/frame_0152.bin"
+      }
+    },
+    {
+      "frame": 153,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 9,
+      "files": {
+        "temperature": "temp_bin/frame_0153.bin",
+        "ssh": "ssh_bin/frame_0153.bin",
+        "current_u": "current_u_bin/frame_0153.bin",
+        "current_v": "current_v_bin/frame_0153.bin"
+      }
+    },
+    {
+      "frame": 154,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 10,
+      "files": {
+        "temperature": "temp_bin/frame_0154.bin",
+        "ssh": "ssh_bin/frame_0154.bin",
+        "current_u": "current_u_bin/frame_0154.bin",
+        "current_v": "current_v_bin/frame_0154.bin"
+      }
+    },
+    {
+      "frame": 155,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 11,
+      "files": {
+        "temperature": "temp_bin/frame_0155.bin",
+        "ssh": "ssh_bin/frame_0155.bin",
+        "current_u": "current_u_bin/frame_0155.bin",
+        "current_v": "current_v_bin/frame_0155.bin"
+      }
+    },
+    {
+      "frame": 156,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 12,
+      "files": {
+        "temperature": "temp_bin/frame_0156.bin",
+        "ssh": "ssh_bin/frame_0156.bin",
+        "current_u": "current_u_bin/frame_0156.bin",
+        "current_v": "current_v_bin/frame_0156.bin"
+      }
+    },
+    {
+      "frame": 157,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 13,
+      "files": {
+        "temperature": "temp_bin/frame_0157.bin",
+        "ssh": "ssh_bin/frame_0157.bin",
+        "current_u": "current_u_bin/frame_0157.bin",
+        "current_v": "current_v_bin/frame_0157.bin"
+      }
+    },
+    {
+      "frame": 158,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 14,
+      "files": {
+        "temperature": "temp_bin/frame_0158.bin",
+        "ssh": "ssh_bin/frame_0158.bin",
+        "current_u": "current_u_bin/frame_0158.bin",
+        "current_v": "current_v_bin/frame_0158.bin"
+      }
+    },
+    {
+      "frame": 159,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 15,
+      "files": {
+        "temperature": "temp_bin/frame_0159.bin",
+        "ssh": "ssh_bin/frame_0159.bin",
+        "current_u": "current_u_bin/frame_0159.bin",
+        "current_v": "current_v_bin/frame_0159.bin"
+      }
+    },
+    {
+      "frame": 160,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 16,
+      "files": {
+        "temperature": "temp_bin/frame_0160.bin",
+        "ssh": "ssh_bin/frame_0160.bin",
+        "current_u": "current_u_bin/frame_0160.bin",
+        "current_v": "current_v_bin/frame_0160.bin"
+      }
+    },
+    {
+      "frame": 161,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 17,
+      "files": {
+        "temperature": "temp_bin/frame_0161.bin",
+        "ssh": "ssh_bin/frame_0161.bin",
+        "current_u": "current_u_bin/frame_0161.bin",
+        "current_v": "current_v_bin/frame_0161.bin"
+      }
+    },
+    {
+      "frame": 162,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 18,
+      "files": {
+        "temperature": "temp_bin/frame_0162.bin",
+        "ssh": "ssh_bin/frame_0162.bin",
+        "current_u": "current_u_bin/frame_0162.bin",
+        "current_v": "current_v_bin/frame_0162.bin"
+      }
+    },
+    {
+      "frame": 163,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 19,
+      "files": {
+        "temperature": "temp_bin/frame_0163.bin",
+        "ssh": "ssh_bin/frame_0163.bin",
+        "current_u": "current_u_bin/frame_0163.bin",
+        "current_v": "current_v_bin/frame_0163.bin"
+      }
+    },
+    {
+      "frame": 164,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 20,
+      "files": {
+        "temperature": "temp_bin/frame_0164.bin",
+        "ssh": "ssh_bin/frame_0164.bin",
+        "current_u": "current_u_bin/frame_0164.bin",
+        "current_v": "current_v_bin/frame_0164.bin"
+      }
+    },
+    {
+      "frame": 165,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 21,
+      "files": {
+        "temperature": "temp_bin/frame_0165.bin",
+        "ssh": "ssh_bin/frame_0165.bin",
+        "current_u": "current_u_bin/frame_0165.bin",
+        "current_v": "current_v_bin/frame_0165.bin"
+      }
+    },
+    {
+      "frame": 166,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 22,
+      "files": {
+        "temperature": "temp_bin/frame_0166.bin",
+        "ssh": "ssh_bin/frame_0166.bin",
+        "current_u": "current_u_bin/frame_0166.bin",
+        "current_v": "current_v_bin/frame_0166.bin"
+      }
+    },
+    {
+      "frame": 167,
+      "day": 197,
+      "date": "2023-07-16",
+      "hour_index": 23,
+      "files": {
+        "temperature": "temp_bin/frame_0167.bin",
+        "ssh": "ssh_bin/frame_0167.bin",
+        "current_u": "current_u_bin/frame_0167.bin",
+        "current_v": "current_v_bin/frame_0167.bin"
+      }
+    },
+    {
+      "frame": 168,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 0,
+      "files": {
+        "temperature": "temp_bin/frame_0168.bin",
+        "ssh": "ssh_bin/frame_0168.bin",
+        "current_u": "current_u_bin/frame_0168.bin",
+        "current_v": "current_v_bin/frame_0168.bin"
+      }
+    },
+    {
+      "frame": 169,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 1,
+      "files": {
+        "temperature": "temp_bin/frame_0169.bin",
+        "ssh": "ssh_bin/frame_0169.bin",
+        "current_u": "current_u_bin/frame_0169.bin",
+        "current_v": "current_v_bin/frame_0169.bin"
+      }
+    },
+    {
+      "frame": 170,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 2,
+      "files": {
+        "temperature": "temp_bin/frame_0170.bin",
+        "ssh": "ssh_bin/frame_0170.bin",
+        "current_u": "current_u_bin/frame_0170.bin",
+        "current_v": "current_v_bin/frame_0170.bin"
+      }
+    },
+    {
+      "frame": 171,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 3,
+      "files": {
+        "temperature": "temp_bin/frame_0171.bin",
+        "ssh": "ssh_bin/frame_0171.bin",
+        "current_u": "current_u_bin/frame_0171.bin",
+        "current_v": "current_v_bin/frame_0171.bin"
+      }
+    },
+    {
+      "frame": 172,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 4,
+      "files": {
+        "temperature": "temp_bin/frame_0172.bin",
+        "ssh": "ssh_bin/frame_0172.bin",
+        "current_u": "current_u_bin/frame_0172.bin",
+        "current_v": "current_v_bin/frame_0172.bin"
+      }
+    },
+    {
+      "frame": 173,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 5,
+      "files": {
+        "temperature": "temp_bin/frame_0173.bin",
+        "ssh": "ssh_bin/frame_0173.bin",
+        "current_u": "current_u_bin/frame_0173.bin",
+        "current_v": "current_v_bin/frame_0173.bin"
+      }
+    },
+    {
+      "frame": 174,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 6,
+      "files": {
+        "temperature": "temp_bin/frame_0174.bin",
+        "ssh": "ssh_bin/frame_0174.bin",
+        "current_u": "current_u_bin/frame_0174.bin",
+        "current_v": "current_v_bin/frame_0174.bin"
+      }
+    },
+    {
+      "frame": 175,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 7,
+      "files": {
+        "temperature": "temp_bin/frame_0175.bin",
+        "ssh": "ssh_bin/frame_0175.bin",
+        "current_u": "current_u_bin/frame_0175.bin",
+        "current_v": "current_v_bin/frame_0175.bin"
+      }
+    },
+    {
+      "frame": 176,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 8,
+      "files": {
+        "temperature": "temp_bin/frame_0176.bin",
+        "ssh": "ssh_bin/frame_0176.bin",
+        "current_u": "current_u_bin/frame_0176.bin",
+        "current_v": "current_v_bin/frame_0176.bin"
+      }
+    },
+    {
+      "frame": 177,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 9,
+      "files": {
+        "temperature": "temp_bin/frame_0177.bin",
+        "ssh": "ssh_bin/frame_0177.bin",
+        "current_u": "current_u_bin/frame_0177.bin",
+        "current_v": "current_v_bin/frame_0177.bin"
+      }
+    },
+    {
+      "frame": 178,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 10,
+      "files": {
+        "temperature": "temp_bin/frame_0178.bin",
+        "ssh": "ssh_bin/frame_0178.bin",
+        "current_u": "current_u_bin/frame_0178.bin",
+        "current_v": "current_v_bin/frame_0178.bin"
+      }
+    },
+    {
+      "frame": 179,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 11,
+      "files": {
+        "temperature": "temp_bin/frame_0179.bin",
+        "ssh": "ssh_bin/frame_0179.bin",
+        "current_u": "current_u_bin/frame_0179.bin",
+        "current_v": "current_v_bin/frame_0179.bin"
+      }
+    },
+    {
+      "frame": 180,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 12,
+      "files": {
+        "temperature": "temp_bin/frame_0180.bin",
+        "ssh": "ssh_bin/frame_0180.bin",
+        "current_u": "current_u_bin/frame_0180.bin",
+        "current_v": "current_v_bin/frame_0180.bin"
+      }
+    },
+    {
+      "frame": 181,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 13,
+      "files": {
+        "temperature": "temp_bin/frame_0181.bin",
+        "ssh": "ssh_bin/frame_0181.bin",
+        "current_u": "current_u_bin/frame_0181.bin",
+        "current_v": "current_v_bin/frame_0181.bin"
+      }
+    },
+    {
+      "frame": 182,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 14,
+      "files": {
+        "temperature": "temp_bin/frame_0182.bin",
+        "ssh": "ssh_bin/frame_0182.bin",
+        "current_u": "current_u_bin/frame_0182.bin",
+        "current_v": "current_v_bin/frame_0182.bin"
+      }
+    },
+    {
+      "frame": 183,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 15,
+      "files": {
+        "temperature": "temp_bin/frame_0183.bin",
+        "ssh": "ssh_bin/frame_0183.bin",
+        "current_u": "current_u_bin/frame_0183.bin",
+        "current_v": "current_v_bin/frame_0183.bin"
+      }
+    },
+    {
+      "frame": 184,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 16,
+      "files": {
+        "temperature": "temp_bin/frame_0184.bin",
+        "ssh": "ssh_bin/frame_0184.bin",
+        "current_u": "current_u_bin/frame_0184.bin",
+        "current_v": "current_v_bin/frame_0184.bin"
+      }
+    },
+    {
+      "frame": 185,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 17,
+      "files": {
+        "temperature": "temp_bin/frame_0185.bin",
+        "ssh": "ssh_bin/frame_0185.bin",
+        "current_u": "current_u_bin/frame_0185.bin",
+        "current_v": "current_v_bin/frame_0185.bin"
+      }
+    },
+    {
+      "frame": 186,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 18,
+      "files": {
+        "temperature": "temp_bin/frame_0186.bin",
+        "ssh": "ssh_bin/frame_0186.bin",
+        "current_u": "current_u_bin/frame_0186.bin",
+        "current_v": "current_v_bin/frame_0186.bin"
+      }
+    },
+    {
+      "frame": 187,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 19,
+      "files": {
+        "temperature": "temp_bin/frame_0187.bin",
+        "ssh": "ssh_bin/frame_0187.bin",
+        "current_u": "current_u_bin/frame_0187.bin",
+        "current_v": "current_v_bin/frame_0187.bin"
+      }
+    },
+    {
+      "frame": 188,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 20,
+      "files": {
+        "temperature": "temp_bin/frame_0188.bin",
+        "ssh": "ssh_bin/frame_0188.bin",
+        "current_u": "current_u_bin/frame_0188.bin",
+        "current_v": "current_v_bin/frame_0188.bin"
+      }
+    },
+    {
+      "frame": 189,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 21,
+      "files": {
+        "temperature": "temp_bin/frame_0189.bin",
+        "ssh": "ssh_bin/frame_0189.bin",
+        "current_u": "current_u_bin/frame_0189.bin",
+        "current_v": "current_v_bin/frame_0189.bin"
+      }
+    },
+    {
+      "frame": 190,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 22,
+      "files": {
+        "temperature": "temp_bin/frame_0190.bin",
+        "ssh": "ssh_bin/frame_0190.bin",
+        "current_u": "current_u_bin/frame_0190.bin",
+        "current_v": "current_v_bin/frame_0190.bin"
+      }
+    },
+    {
+      "frame": 191,
+      "day": 198,
+      "date": "2023-07-17",
+      "hour_index": 23,
+      "files": {
+        "temperature": "temp_bin/frame_0191.bin",
+        "ssh": "ssh_bin/frame_0191.bin",
+        "current_u": "current_u_bin/frame_0191.bin",
+        "current_v": "current_v_bin/frame_0191.bin"
+      }
+    },
+    {
+      "frame": 192,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 0,
+      "files": {
+        "temperature": "temp_bin/frame_0192.bin",
+        "ssh": "ssh_bin/frame_0192.bin",
+        "current_u": "current_u_bin/frame_0192.bin",
+        "current_v": "current_v_bin/frame_0192.bin"
+      }
+    },
+    {
+      "frame": 193,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 1,
+      "files": {
+        "temperature": "temp_bin/frame_0193.bin",
+        "ssh": "ssh_bin/frame_0193.bin",
+        "current_u": "current_u_bin/frame_0193.bin",
+        "current_v": "current_v_bin/frame_0193.bin"
+      }
+    },
+    {
+      "frame": 194,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 2,
+      "files": {
+        "temperature": "temp_bin/frame_0194.bin",
+        "ssh": "ssh_bin/frame_0194.bin",
+        "current_u": "current_u_bin/frame_0194.bin",
+        "current_v": "current_v_bin/frame_0194.bin"
+      }
+    },
+    {
+      "frame": 195,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 3,
+      "files": {
+        "temperature": "temp_bin/frame_0195.bin",
+        "ssh": "ssh_bin/frame_0195.bin",
+        "current_u": "current_u_bin/frame_0195.bin",
+        "current_v": "current_v_bin/frame_0195.bin"
+      }
+    },
+    {
+      "frame": 196,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 4,
+      "files": {
+        "temperature": "temp_bin/frame_0196.bin",
+        "ssh": "ssh_bin/frame_0196.bin",
+        "current_u": "current_u_bin/frame_0196.bin",
+        "current_v": "current_v_bin/frame_0196.bin"
+      }
+    },
+    {
+      "frame": 197,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 5,
+      "files": {
+        "temperature": "temp_bin/frame_0197.bin",
+        "ssh": "ssh_bin/frame_0197.bin",
+        "current_u": "current_u_bin/frame_0197.bin",
+        "current_v": "current_v_bin/frame_0197.bin"
+      }
+    },
+    {
+      "frame": 198,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 6,
+      "files": {
+        "temperature": "temp_bin/frame_0198.bin",
+        "ssh": "ssh_bin/frame_0198.bin",
+        "current_u": "current_u_bin/frame_0198.bin",
+        "current_v": "current_v_bin/frame_0198.bin"
+      }
+    },
+    {
+      "frame": 199,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 7,
+      "files": {
+        "temperature": "temp_bin/frame_0199.bin",
+        "ssh": "ssh_bin/frame_0199.bin",
+        "current_u": "current_u_bin/frame_0199.bin",
+        "current_v": "current_v_bin/frame_0199.bin"
+      }
+    },
+    {
+      "frame": 200,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 8,
+      "files": {
+        "temperature": "temp_bin/frame_0200.bin",
+        "ssh": "ssh_bin/frame_0200.bin",
+        "current_u": "current_u_bin/frame_0200.bin",
+        "current_v": "current_v_bin/frame_0200.bin"
+      }
+    },
+    {
+      "frame": 201,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 9,
+      "files": {
+        "temperature": "temp_bin/frame_0201.bin",
+        "ssh": "ssh_bin/frame_0201.bin",
+        "current_u": "current_u_bin/frame_0201.bin",
+        "current_v": "current_v_bin/frame_0201.bin"
+      }
+    },
+    {
+      "frame": 202,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 10,
+      "files": {
+        "temperature": "temp_bin/frame_0202.bin",
+        "ssh": "ssh_bin/frame_0202.bin",
+        "current_u": "current_u_bin/frame_0202.bin",
+        "current_v": "current_v_bin/frame_0202.bin"
+      }
+    },
+    {
+      "frame": 203,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 11,
+      "files": {
+        "temperature": "temp_bin/frame_0203.bin",
+        "ssh": "ssh_bin/frame_0203.bin",
+        "current_u": "current_u_bin/frame_0203.bin",
+        "current_v": "current_v_bin/frame_0203.bin"
+      }
+    },
+    {
+      "frame": 204,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 12,
+      "files": {
+        "temperature": "temp_bin/frame_0204.bin",
+        "ssh": "ssh_bin/frame_0204.bin",
+        "current_u": "current_u_bin/frame_0204.bin",
+        "current_v": "current_v_bin/frame_0204.bin"
+      }
+    },
+    {
+      "frame": 205,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 13,
+      "files": {
+        "temperature": "temp_bin/frame_0205.bin",
+        "ssh": "ssh_bin/frame_0205.bin",
+        "current_u": "current_u_bin/frame_0205.bin",
+        "current_v": "current_v_bin/frame_0205.bin"
+      }
+    },
+    {
+      "frame": 206,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 14,
+      "files": {
+        "temperature": "temp_bin/frame_0206.bin",
+        "ssh": "ssh_bin/frame_0206.bin",
+        "current_u": "current_u_bin/frame_0206.bin",
+        "current_v": "current_v_bin/frame_0206.bin"
+      }
+    },
+    {
+      "frame": 207,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 15,
+      "files": {
+        "temperature": "temp_bin/frame_0207.bin",
+        "ssh": "ssh_bin/frame_0207.bin",
+        "current_u": "current_u_bin/frame_0207.bin",
+        "current_v": "current_v_bin/frame_0207.bin"
+      }
+    },
+    {
+      "frame": 208,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 16,
+      "files": {
+        "temperature": "temp_bin/frame_0208.bin",
+        "ssh": "ssh_bin/frame_0208.bin",
+        "current_u": "current_u_bin/frame_0208.bin",
+        "current_v": "current_v_bin/frame_0208.bin"
+      }
+    },
+    {
+      "frame": 209,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 17,
+      "files": {
+        "temperature": "temp_bin/frame_0209.bin",
+        "ssh": "ssh_bin/frame_0209.bin",
+        "current_u": "current_u_bin/frame_0209.bin",
+        "current_v": "current_v_bin/frame_0209.bin"
+      }
+    },
+    {
+      "frame": 210,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 18,
+      "files": {
+        "temperature": "temp_bin/frame_0210.bin",
+        "ssh": "ssh_bin/frame_0210.bin",
+        "current_u": "current_u_bin/frame_0210.bin",
+        "current_v": "current_v_bin/frame_0210.bin"
+      }
+    },
+    {
+      "frame": 211,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 19,
+      "files": {
+        "temperature": "temp_bin/frame_0211.bin",
+        "ssh": "ssh_bin/frame_0211.bin",
+        "current_u": "current_u_bin/frame_0211.bin",
+        "current_v": "current_v_bin/frame_0211.bin"
+      }
+    },
+    {
+      "frame": 212,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 20,
+      "files": {
+        "temperature": "temp_bin/frame_0212.bin",
+        "ssh": "ssh_bin/frame_0212.bin",
+        "current_u": "current_u_bin/frame_0212.bin",
+        "current_v": "current_v_bin/frame_0212.bin"
+      }
+    },
+    {
+      "frame": 213,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 21,
+      "files": {
+        "temperature": "temp_bin/frame_0213.bin",
+        "ssh": "ssh_bin/frame_0213.bin",
+        "current_u": "current_u_bin/frame_0213.bin",
+        "current_v": "current_v_bin/frame_0213.bin"
+      }
+    },
+    {
+      "frame": 214,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 22,
+      "files": {
+        "temperature": "temp_bin/frame_0214.bin",
+        "ssh": "ssh_bin/frame_0214.bin",
+        "current_u": "current_u_bin/frame_0214.bin",
+        "current_v": "current_v_bin/frame_0214.bin"
+      }
+    },
+    {
+      "frame": 215,
+      "day": 199,
+      "date": "2023-07-18",
+      "hour_index": 23,
+      "files": {
+        "temperature": "temp_bin/frame_0215.bin",
+        "ssh": "ssh_bin/frame_0215.bin",
+        "current_u": "current_u_bin/frame_0215.bin",
+        "current_v": "current_v_bin/frame_0215.bin"
+      }
+    },
+    {
+      "frame": 216,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 0,
+      "files": {
+        "temperature": "temp_bin/frame_0216.bin",
+        "ssh": "ssh_bin/frame_0216.bin",
+        "current_u": "current_u_bin/frame_0216.bin",
+        "current_v": "current_v_bin/frame_0216.bin"
+      }
+    },
+    {
+      "frame": 217,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 1,
+      "files": {
+        "temperature": "temp_bin/frame_0217.bin",
+        "ssh": "ssh_bin/frame_0217.bin",
+        "current_u": "current_u_bin/frame_0217.bin",
+        "current_v": "current_v_bin/frame_0217.bin"
+      }
+    },
+    {
+      "frame": 218,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 2,
+      "files": {
+        "temperature": "temp_bin/frame_0218.bin",
+        "ssh": "ssh_bin/frame_0218.bin",
+        "current_u": "current_u_bin/frame_0218.bin",
+        "current_v": "current_v_bin/frame_0218.bin"
+      }
+    },
+    {
+      "frame": 219,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 3,
+      "files": {
+        "temperature": "temp_bin/frame_0219.bin",
+        "ssh": "ssh_bin/frame_0219.bin",
+        "current_u": "current_u_bin/frame_0219.bin",
+        "current_v": "current_v_bin/frame_0219.bin"
+      }
+    },
+    {
+      "frame": 220,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 4,
+      "files": {
+        "temperature": "temp_bin/frame_0220.bin",
+        "ssh": "ssh_bin/frame_0220.bin",
+        "current_u": "current_u_bin/frame_0220.bin",
+        "current_v": "current_v_bin/frame_0220.bin"
+      }
+    },
+    {
+      "frame": 221,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 5,
+      "files": {
+        "temperature": "temp_bin/frame_0221.bin",
+        "ssh": "ssh_bin/frame_0221.bin",
+        "current_u": "current_u_bin/frame_0221.bin",
+        "current_v": "current_v_bin/frame_0221.bin"
+      }
+    },
+    {
+      "frame": 222,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 6,
+      "files": {
+        "temperature": "temp_bin/frame_0222.bin",
+        "ssh": "ssh_bin/frame_0222.bin",
+        "current_u": "current_u_bin/frame_0222.bin",
+        "current_v": "current_v_bin/frame_0222.bin"
+      }
+    },
+    {
+      "frame": 223,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 7,
+      "files": {
+        "temperature": "temp_bin/frame_0223.bin",
+        "ssh": "ssh_bin/frame_0223.bin",
+        "current_u": "current_u_bin/frame_0223.bin",
+        "current_v": "current_v_bin/frame_0223.bin"
+      }
+    },
+    {
+      "frame": 224,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 8,
+      "files": {
+        "temperature": "temp_bin/frame_0224.bin",
+        "ssh": "ssh_bin/frame_0224.bin",
+        "current_u": "current_u_bin/frame_0224.bin",
+        "current_v": "current_v_bin/frame_0224.bin"
+      }
+    },
+    {
+      "frame": 225,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 9,
+      "files": {
+        "temperature": "temp_bin/frame_0225.bin",
+        "ssh": "ssh_bin/frame_0225.bin",
+        "current_u": "current_u_bin/frame_0225.bin",
+        "current_v": "current_v_bin/frame_0225.bin"
+      }
+    },
+    {
+      "frame": 226,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 10,
+      "files": {
+        "temperature": "temp_bin/frame_0226.bin",
+        "ssh": "ssh_bin/frame_0226.bin",
+        "current_u": "current_u_bin/frame_0226.bin",
+        "current_v": "current_v_bin/frame_0226.bin"
+      }
+    },
+    {
+      "frame": 227,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 11,
+      "files": {
+        "temperature": "temp_bin/frame_0227.bin",
+        "ssh": "ssh_bin/frame_0227.bin",
+        "current_u": "current_u_bin/frame_0227.bin",
+        "current_v": "current_v_bin/frame_0227.bin"
+      }
+    },
+    {
+      "frame": 228,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 12,
+      "files": {
+        "temperature": "temp_bin/frame_0228.bin",
+        "ssh": "ssh_bin/frame_0228.bin",
+        "current_u": "current_u_bin/frame_0228.bin",
+        "current_v": "current_v_bin/frame_0228.bin"
+      }
+    },
+    {
+      "frame": 229,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 13,
+      "files": {
+        "temperature": "temp_bin/frame_0229.bin",
+        "ssh": "ssh_bin/frame_0229.bin",
+        "current_u": "current_u_bin/frame_0229.bin",
+        "current_v": "current_v_bin/frame_0229.bin"
+      }
+    },
+    {
+      "frame": 230,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 14,
+      "files": {
+        "temperature": "temp_bin/frame_0230.bin",
+        "ssh": "ssh_bin/frame_0230.bin",
+        "current_u": "current_u_bin/frame_0230.bin",
+        "current_v": "current_v_bin/frame_0230.bin"
+      }
+    },
+    {
+      "frame": 231,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 15,
+      "files": {
+        "temperature": "temp_bin/frame_0231.bin",
+        "ssh": "ssh_bin/frame_0231.bin",
+        "current_u": "current_u_bin/frame_0231.bin",
+        "current_v": "current_v_bin/frame_0231.bin"
+      }
+    },
+    {
+      "frame": 232,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 16,
+      "files": {
+        "temperature": "temp_bin/frame_0232.bin",
+        "ssh": "ssh_bin/frame_0232.bin",
+        "current_u": "current_u_bin/frame_0232.bin",
+        "current_v": "current_v_bin/frame_0232.bin"
+      }
+    },
+    {
+      "frame": 233,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 17,
+      "files": {
+        "temperature": "temp_bin/frame_0233.bin",
+        "ssh": "ssh_bin/frame_0233.bin",
+        "current_u": "current_u_bin/frame_0233.bin",
+        "current_v": "current_v_bin/frame_0233.bin"
+      }
+    },
+    {
+      "frame": 234,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 18,
+      "files": {
+        "temperature": "temp_bin/frame_0234.bin",
+        "ssh": "ssh_bin/frame_0234.bin",
+        "current_u": "current_u_bin/frame_0234.bin",
+        "current_v": "current_v_bin/frame_0234.bin"
+      }
+    },
+    {
+      "frame": 235,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 19,
+      "files": {
+        "temperature": "temp_bin/frame_0235.bin",
+        "ssh": "ssh_bin/frame_0235.bin",
+        "current_u": "current_u_bin/frame_0235.bin",
+        "current_v": "current_v_bin/frame_0235.bin"
+      }
+    },
+    {
+      "frame": 236,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 20,
+      "files": {
+        "temperature": "temp_bin/frame_0236.bin",
+        "ssh": "ssh_bin/frame_0236.bin",
+        "current_u": "current_u_bin/frame_0236.bin",
+        "current_v": "current_v_bin/frame_0236.bin"
+      }
+    },
+    {
+      "frame": 237,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 21,
+      "files": {
+        "temperature": "temp_bin/frame_0237.bin",
+        "ssh": "ssh_bin/frame_0237.bin",
+        "current_u": "current_u_bin/frame_0237.bin",
+        "current_v": "current_v_bin/frame_0237.bin"
+      }
+    },
+    {
+      "frame": 238,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 22,
+      "files": {
+        "temperature": "temp_bin/frame_0238.bin",
+        "ssh": "ssh_bin/frame_0238.bin",
+        "current_u": "current_u_bin/frame_0238.bin",
+        "current_v": "current_v_bin/frame_0238.bin"
+      }
+    },
+    {
+      "frame": 239,
+      "day": 200,
+      "date": "2023-07-19",
+      "hour_index": 23,
+      "files": {
+        "temperature": "temp_bin/frame_0239.bin",
+        "ssh": "ssh_bin/frame_0239.bin",
+        "current_u": "current_u_bin/frame_0239.bin",
+        "current_v": "current_v_bin/frame_0239.bin"
+      }
+    },
+    {
+      "frame": 240,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 0,
+      "files": {
+        "temperature": "temp_bin/frame_0240.bin",
+        "ssh": "ssh_bin/frame_0240.bin",
+        "current_u": "current_u_bin/frame_0240.bin",
+        "current_v": "current_v_bin/frame_0240.bin"
+      }
+    },
+    {
+      "frame": 241,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 1,
+      "files": {
+        "temperature": "temp_bin/frame_0241.bin",
+        "ssh": "ssh_bin/frame_0241.bin",
+        "current_u": "current_u_bin/frame_0241.bin",
+        "current_v": "current_v_bin/frame_0241.bin"
+      }
+    },
+    {
+      "frame": 242,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 2,
+      "files": {
+        "temperature": "temp_bin/frame_0242.bin",
+        "ssh": "ssh_bin/frame_0242.bin",
+        "current_u": "current_u_bin/frame_0242.bin",
+        "current_v": "current_v_bin/frame_0242.bin"
+      }
+    },
+    {
+      "frame": 243,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 3,
+      "files": {
+        "temperature": "temp_bin/frame_0243.bin",
+        "ssh": "ssh_bin/frame_0243.bin",
+        "current_u": "current_u_bin/frame_0243.bin",
+        "current_v": "current_v_bin/frame_0243.bin"
+      }
+    },
+    {
+      "frame": 244,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 4,
+      "files": {
+        "temperature": "temp_bin/frame_0244.bin",
+        "ssh": "ssh_bin/frame_0244.bin",
+        "current_u": "current_u_bin/frame_0244.bin",
+        "current_v": "current_v_bin/frame_0244.bin"
+      }
+    },
+    {
+      "frame": 245,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 5,
+      "files": {
+        "temperature": "temp_bin/frame_0245.bin",
+        "ssh": "ssh_bin/frame_0245.bin",
+        "current_u": "current_u_bin/frame_0245.bin",
+        "current_v": "current_v_bin/frame_0245.bin"
+      }
+    },
+    {
+      "frame": 246,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 6,
+      "files": {
+        "temperature": "temp_bin/frame_0246.bin",
+        "ssh": "ssh_bin/frame_0246.bin",
+        "current_u": "current_u_bin/frame_0246.bin",
+        "current_v": "current_v_bin/frame_0246.bin"
+      }
+    },
+    {
+      "frame": 247,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 7,
+      "files": {
+        "temperature": "temp_bin/frame_0247.bin",
+        "ssh": "ssh_bin/frame_0247.bin",
+        "current_u": "current_u_bin/frame_0247.bin",
+        "current_v": "current_v_bin/frame_0247.bin"
+      }
+    },
+    {
+      "frame": 248,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 8,
+      "files": {
+        "temperature": "temp_bin/frame_0248.bin",
+        "ssh": "ssh_bin/frame_0248.bin",
+        "current_u": "current_u_bin/frame_0248.bin",
+        "current_v": "current_v_bin/frame_0248.bin"
+      }
+    },
+    {
+      "frame": 249,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 9,
+      "files": {
+        "temperature": "temp_bin/frame_0249.bin",
+        "ssh": "ssh_bin/frame_0249.bin",
+        "current_u": "current_u_bin/frame_0249.bin",
+        "current_v": "current_v_bin/frame_0249.bin"
+      }
+    },
+    {
+      "frame": 250,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 10,
+      "files": {
+        "temperature": "temp_bin/frame_0250.bin",
+        "ssh": "ssh_bin/frame_0250.bin",
+        "current_u": "current_u_bin/frame_0250.bin",
+        "current_v": "current_v_bin/frame_0250.bin"
+      }
+    },
+    {
+      "frame": 251,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 11,
+      "files": {
+        "temperature": "temp_bin/frame_0251.bin",
+        "ssh": "ssh_bin/frame_0251.bin",
+        "current_u": "current_u_bin/frame_0251.bin",
+        "current_v": "current_v_bin/frame_0251.bin"
+      }
+    },
+    {
+      "frame": 252,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 12,
+      "files": {
+        "temperature": "temp_bin/frame_0252.bin",
+        "ssh": "ssh_bin/frame_0252.bin",
+        "current_u": "current_u_bin/frame_0252.bin",
+        "current_v": "current_v_bin/frame_0252.bin"
+      }
+    },
+    {
+      "frame": 253,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 13,
+      "files": {
+        "temperature": "temp_bin/frame_0253.bin",
+        "ssh": "ssh_bin/frame_0253.bin",
+        "current_u": "current_u_bin/frame_0253.bin",
+        "current_v": "current_v_bin/frame_0253.bin"
+      }
+    },
+    {
+      "frame": 254,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 14,
+      "files": {
+        "temperature": "temp_bin/frame_0254.bin",
+        "ssh": "ssh_bin/frame_0254.bin",
+        "current_u": "current_u_bin/frame_0254.bin",
+        "current_v": "current_v_bin/frame_0254.bin"
+      }
+    },
+    {
+      "frame": 255,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 15,
+      "files": {
+        "temperature": "temp_bin/frame_0255.bin",
+        "ssh": "ssh_bin/frame_0255.bin",
+        "current_u": "current_u_bin/frame_0255.bin",
+        "current_v": "current_v_bin/frame_0255.bin"
+      }
+    },
+    {
+      "frame": 256,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 16,
+      "files": {
+        "temperature": "temp_bin/frame_0256.bin",
+        "ssh": "ssh_bin/frame_0256.bin",
+        "current_u": "current_u_bin/frame_0256.bin",
+        "current_v": "current_v_bin/frame_0256.bin"
+      }
+    },
+    {
+      "frame": 257,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 17,
+      "files": {
+        "temperature": "temp_bin/frame_0257.bin",
+        "ssh": "ssh_bin/frame_0257.bin",
+        "current_u": "current_u_bin/frame_0257.bin",
+        "current_v": "current_v_bin/frame_0257.bin"
+      }
+    },
+    {
+      "frame": 258,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 18,
+      "files": {
+        "temperature": "temp_bin/frame_0258.bin",
+        "ssh": "ssh_bin/frame_0258.bin",
+        "current_u": "current_u_bin/frame_0258.bin",
+        "current_v": "current_v_bin/frame_0258.bin"
+      }
+    },
+    {
+      "frame": 259,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 19,
+      "files": {
+        "temperature": "temp_bin/frame_0259.bin",
+        "ssh": "ssh_bin/frame_0259.bin",
+        "current_u": "current_u_bin/frame_0259.bin",
+        "current_v": "current_v_bin/frame_0259.bin"
+      }
+    },
+    {
+      "frame": 260,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 20,
+      "files": {
+        "temperature": "temp_bin/frame_0260.bin",
+        "ssh": "ssh_bin/frame_0260.bin",
+        "current_u": "current_u_bin/frame_0260.bin",
+        "current_v": "current_v_bin/frame_0260.bin"
+      }
+    },
+    {
+      "frame": 261,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 21,
+      "files": {
+        "temperature": "temp_bin/frame_0261.bin",
+        "ssh": "ssh_bin/frame_0261.bin",
+        "current_u": "current_u_bin/frame_0261.bin",
+        "current_v": "current_v_bin/frame_0261.bin"
+      }
+    },
+    {
+      "frame": 262,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 22,
+      "files": {
+        "temperature": "temp_bin/frame_0262.bin",
+        "ssh": "ssh_bin/frame_0262.bin",
+        "current_u": "current_u_bin/frame_0262.bin",
+        "current_v": "current_v_bin/frame_0262.bin"
+      }
+    },
+    {
+      "frame": 263,
+      "day": 201,
+      "date": "2023-07-20",
+      "hour_index": 23,
+      "files": {
+        "temperature": "temp_bin/frame_0263.bin",
+        "ssh": "ssh_bin/frame_0263.bin",
+        "current_u": "current_u_bin/frame_0263.bin",
+        "current_v": "current_v_bin/frame_0263.bin"
+      }
+    },
+    {
+      "frame": 264,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 0,
+      "files": {
+        "temperature": "temp_bin/frame_0264.bin",
+        "ssh": "ssh_bin/frame_0264.bin",
+        "current_u": "current_u_bin/frame_0264.bin",
+        "current_v": "current_v_bin/frame_0264.bin"
+      }
+    },
+    {
+      "frame": 265,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 1,
+      "files": {
+        "temperature": "temp_bin/frame_0265.bin",
+        "ssh": "ssh_bin/frame_0265.bin",
+        "current_u": "current_u_bin/frame_0265.bin",
+        "current_v": "current_v_bin/frame_0265.bin"
+      }
+    },
+    {
+      "frame": 266,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 2,
+      "files": {
+        "temperature": "temp_bin/frame_0266.bin",
+        "ssh": "ssh_bin/frame_0266.bin",
+        "current_u": "current_u_bin/frame_0266.bin",
+        "current_v": "current_v_bin/frame_0266.bin"
+      }
+    },
+    {
+      "frame": 267,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 3,
+      "files": {
+        "temperature": "temp_bin/frame_0267.bin",
+        "ssh": "ssh_bin/frame_0267.bin",
+        "current_u": "current_u_bin/frame_0267.bin",
+        "current_v": "current_v_bin/frame_0267.bin"
+      }
+    },
+    {
+      "frame": 268,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 4,
+      "files": {
+        "temperature": "temp_bin/frame_0268.bin",
+        "ssh": "ssh_bin/frame_0268.bin",
+        "current_u": "current_u_bin/frame_0268.bin",
+        "current_v": "current_v_bin/frame_0268.bin"
+      }
+    },
+    {
+      "frame": 269,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 5,
+      "files": {
+        "temperature": "temp_bin/frame_0269.bin",
+        "ssh": "ssh_bin/frame_0269.bin",
+        "current_u": "current_u_bin/frame_0269.bin",
+        "current_v": "current_v_bin/frame_0269.bin"
+      }
+    },
+    {
+      "frame": 270,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 6,
+      "files": {
+        "temperature": "temp_bin/frame_0270.bin",
+        "ssh": "ssh_bin/frame_0270.bin",
+        "current_u": "current_u_bin/frame_0270.bin",
+        "current_v": "current_v_bin/frame_0270.bin"
+      }
+    },
+    {
+      "frame": 271,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 7,
+      "files": {
+        "temperature": "temp_bin/frame_0271.bin",
+        "ssh": "ssh_bin/frame_0271.bin",
+        "current_u": "current_u_bin/frame_0271.bin",
+        "current_v": "current_v_bin/frame_0271.bin"
+      }
+    },
+    {
+      "frame": 272,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 8,
+      "files": {
+        "temperature": "temp_bin/frame_0272.bin",
+        "ssh": "ssh_bin/frame_0272.bin",
+        "current_u": "current_u_bin/frame_0272.bin",
+        "current_v": "current_v_bin/frame_0272.bin"
+      }
+    },
+    {
+      "frame": 273,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 9,
+      "files": {
+        "temperature": "temp_bin/frame_0273.bin",
+        "ssh": "ssh_bin/frame_0273.bin",
+        "current_u": "current_u_bin/frame_0273.bin",
+        "current_v": "current_v_bin/frame_0273.bin"
+      }
+    },
+    {
+      "frame": 274,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 10,
+      "files": {
+        "temperature": "temp_bin/frame_0274.bin",
+        "ssh": "ssh_bin/frame_0274.bin",
+        "current_u": "current_u_bin/frame_0274.bin",
+        "current_v": "current_v_bin/frame_0274.bin"
+      }
+    },
+    {
+      "frame": 275,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 11,
+      "files": {
+        "temperature": "temp_bin/frame_0275.bin",
+        "ssh": "ssh_bin/frame_0275.bin",
+        "current_u": "current_u_bin/frame_0275.bin",
+        "current_v": "current_v_bin/frame_0275.bin"
+      }
+    },
+    {
+      "frame": 276,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 12,
+      "files": {
+        "temperature": "temp_bin/frame_0276.bin",
+        "ssh": "ssh_bin/frame_0276.bin",
+        "current_u": "current_u_bin/frame_0276.bin",
+        "current_v": "current_v_bin/frame_0276.bin"
+      }
+    },
+    {
+      "frame": 277,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 13,
+      "files": {
+        "temperature": "temp_bin/frame_0277.bin",
+        "ssh": "ssh_bin/frame_0277.bin",
+        "current_u": "current_u_bin/frame_0277.bin",
+        "current_v": "current_v_bin/frame_0277.bin"
+      }
+    },
+    {
+      "frame": 278,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 14,
+      "files": {
+        "temperature": "temp_bin/frame_0278.bin",
+        "ssh": "ssh_bin/frame_0278.bin",
+        "current_u": "current_u_bin/frame_0278.bin",
+        "current_v": "current_v_bin/frame_0278.bin"
+      }
+    },
+    {
+      "frame": 279,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 15,
+      "files": {
+        "temperature": "temp_bin/frame_0279.bin",
+        "ssh": "ssh_bin/frame_0279.bin",
+        "current_u": "current_u_bin/frame_0279.bin",
+        "current_v": "current_v_bin/frame_0279.bin"
+      }
+    },
+    {
+      "frame": 280,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 16,
+      "files": {
+        "temperature": "temp_bin/frame_0280.bin",
+        "ssh": "ssh_bin/frame_0280.bin",
+        "current_u": "current_u_bin/frame_0280.bin",
+        "current_v": "current_v_bin/frame_0280.bin"
+      }
+    },
+    {
+      "frame": 281,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 17,
+      "files": {
+        "temperature": "temp_bin/frame_0281.bin",
+        "ssh": "ssh_bin/frame_0281.bin",
+        "current_u": "current_u_bin/frame_0281.bin",
+        "current_v": "current_v_bin/frame_0281.bin"
+      }
+    },
+    {
+      "frame": 282,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 18,
+      "files": {
+        "temperature": "temp_bin/frame_0282.bin",
+        "ssh": "ssh_bin/frame_0282.bin",
+        "current_u": "current_u_bin/frame_0282.bin",
+        "current_v": "current_v_bin/frame_0282.bin"
+      }
+    },
+    {
+      "frame": 283,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 19,
+      "files": {
+        "temperature": "temp_bin/frame_0283.bin",
+        "ssh": "ssh_bin/frame_0283.bin",
+        "current_u": "current_u_bin/frame_0283.bin",
+        "current_v": "current_v_bin/frame_0283.bin"
+      }
+    },
+    {
+      "frame": 284,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 20,
+      "files": {
+        "temperature": "temp_bin/frame_0284.bin",
+        "ssh": "ssh_bin/frame_0284.bin",
+        "current_u": "current_u_bin/frame_0284.bin",
+        "current_v": "current_v_bin/frame_0284.bin"
+      }
+    },
+    {
+      "frame": 285,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 21,
+      "files": {
+        "temperature": "temp_bin/frame_0285.bin",
+        "ssh": "ssh_bin/frame_0285.bin",
+        "current_u": "current_u_bin/frame_0285.bin",
+        "current_v": "current_v_bin/frame_0285.bin"
+      }
+    },
+    {
+      "frame": 286,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 22,
+      "files": {
+        "temperature": "temp_bin/frame_0286.bin",
+        "ssh": "ssh_bin/frame_0286.bin",
+        "current_u": "current_u_bin/frame_0286.bin",
+        "current_v": "current_v_bin/frame_0286.bin"
+      }
+    },
+    {
+      "frame": 287,
+      "day": 202,
+      "date": "2023-07-21",
+      "hour_index": 23,
+      "files": {
+        "temperature": "temp_bin/frame_0287.bin",
+        "ssh": "ssh_bin/frame_0287.bin",
+        "current_u": "current_u_bin/frame_0287.bin",
+        "current_v": "current_v_bin/frame_0287.bin"
+      }
+    },
+    {
+      "frame": 288,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 0,
+      "files": {
+        "temperature": "temp_bin/frame_0288.bin",
+        "ssh": "ssh_bin/frame_0288.bin",
+        "current_u": "current_u_bin/frame_0288.bin",
+        "current_v": "current_v_bin/frame_0288.bin"
+      }
+    },
+    {
+      "frame": 289,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 1,
+      "files": {
+        "temperature": "temp_bin/frame_0289.bin",
+        "ssh": "ssh_bin/frame_0289.bin",
+        "current_u": "current_u_bin/frame_0289.bin",
+        "current_v": "current_v_bin/frame_0289.bin"
+      }
+    },
+    {
+      "frame": 290,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 2,
+      "files": {
+        "temperature": "temp_bin/frame_0290.bin",
+        "ssh": "ssh_bin/frame_0290.bin",
+        "current_u": "current_u_bin/frame_0290.bin",
+        "current_v": "current_v_bin/frame_0290.bin"
+      }
+    },
+    {
+      "frame": 291,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 3,
+      "files": {
+        "temperature": "temp_bin/frame_0291.bin",
+        "ssh": "ssh_bin/frame_0291.bin",
+        "current_u": "current_u_bin/frame_0291.bin",
+        "current_v": "current_v_bin/frame_0291.bin"
+      }
+    },
+    {
+      "frame": 292,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 4,
+      "files": {
+        "temperature": "temp_bin/frame_0292.bin",
+        "ssh": "ssh_bin/frame_0292.bin",
+        "current_u": "current_u_bin/frame_0292.bin",
+        "current_v": "current_v_bin/frame_0292.bin"
+      }
+    },
+    {
+      "frame": 293,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 5,
+      "files": {
+        "temperature": "temp_bin/frame_0293.bin",
+        "ssh": "ssh_bin/frame_0293.bin",
+        "current_u": "current_u_bin/frame_0293.bin",
+        "current_v": "current_v_bin/frame_0293.bin"
+      }
+    },
+    {
+      "frame": 294,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 6,
+      "files": {
+        "temperature": "temp_bin/frame_0294.bin",
+        "ssh": "ssh_bin/frame_0294.bin",
+        "current_u": "current_u_bin/frame_0294.bin",
+        "current_v": "current_v_bin/frame_0294.bin"
+      }
+    },
+    {
+      "frame": 295,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 7,
+      "files": {
+        "temperature": "temp_bin/frame_0295.bin",
+        "ssh": "ssh_bin/frame_0295.bin",
+        "current_u": "current_u_bin/frame_0295.bin",
+        "current_v": "current_v_bin/frame_0295.bin"
+      }
+    },
+    {
+      "frame": 296,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 8,
+      "files": {
+        "temperature": "temp_bin/frame_0296.bin",
+        "ssh": "ssh_bin/frame_0296.bin",
+        "current_u": "current_u_bin/frame_0296.bin",
+        "current_v": "current_v_bin/frame_0296.bin"
+      }
+    },
+    {
+      "frame": 297,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 9,
+      "files": {
+        "temperature": "temp_bin/frame_0297.bin",
+        "ssh": "ssh_bin/frame_0297.bin",
+        "current_u": "current_u_bin/frame_0297.bin",
+        "current_v": "current_v_bin/frame_0297.bin"
+      }
+    },
+    {
+      "frame": 298,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 10,
+      "files": {
+        "temperature": "temp_bin/frame_0298.bin",
+        "ssh": "ssh_bin/frame_0298.bin",
+        "current_u": "current_u_bin/frame_0298.bin",
+        "current_v": "current_v_bin/frame_0298.bin"
+      }
+    },
+    {
+      "frame": 299,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 11,
+      "files": {
+        "temperature": "temp_bin/frame_0299.bin",
+        "ssh": "ssh_bin/frame_0299.bin",
+        "current_u": "current_u_bin/frame_0299.bin",
+        "current_v": "current_v_bin/frame_0299.bin"
+      }
+    },
+    {
+      "frame": 300,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 12,
+      "files": {
+        "temperature": "temp_bin/frame_0300.bin",
+        "ssh": "ssh_bin/frame_0300.bin",
+        "current_u": "current_u_bin/frame_0300.bin",
+        "current_v": "current_v_bin/frame_0300.bin"
+      }
+    },
+    {
+      "frame": 301,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 13,
+      "files": {
+        "temperature": "temp_bin/frame_0301.bin",
+        "ssh": "ssh_bin/frame_0301.bin",
+        "current_u": "current_u_bin/frame_0301.bin",
+        "current_v": "current_v_bin/frame_0301.bin"
+      }
+    },
+    {
+      "frame": 302,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 14,
+      "files": {
+        "temperature": "temp_bin/frame_0302.bin",
+        "ssh": "ssh_bin/frame_0302.bin",
+        "current_u": "current_u_bin/frame_0302.bin",
+        "current_v": "current_v_bin/frame_0302.bin"
+      }
+    },
+    {
+      "frame": 303,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 15,
+      "files": {
+        "temperature": "temp_bin/frame_0303.bin",
+        "ssh": "ssh_bin/frame_0303.bin",
+        "current_u": "current_u_bin/frame_0303.bin",
+        "current_v": "current_v_bin/frame_0303.bin"
+      }
+    },
+    {
+      "frame": 304,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 16,
+      "files": {
+        "temperature": "temp_bin/frame_0304.bin",
+        "ssh": "ssh_bin/frame_0304.bin",
+        "current_u": "current_u_bin/frame_0304.bin",
+        "current_v": "current_v_bin/frame_0304.bin"
+      }
+    },
+    {
+      "frame": 305,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 17,
+      "files": {
+        "temperature": "temp_bin/frame_0305.bin",
+        "ssh": "ssh_bin/frame_0305.bin",
+        "current_u": "current_u_bin/frame_0305.bin",
+        "current_v": "current_v_bin/frame_0305.bin"
+      }
+    },
+    {
+      "frame": 306,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 18,
+      "files": {
+        "temperature": "temp_bin/frame_0306.bin",
+        "ssh": "ssh_bin/frame_0306.bin",
+        "current_u": "current_u_bin/frame_0306.bin",
+        "current_v": "current_v_bin/frame_0306.bin"
+      }
+    },
+    {
+      "frame": 307,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 19,
+      "files": {
+        "temperature": "temp_bin/frame_0307.bin",
+        "ssh": "ssh_bin/frame_0307.bin",
+        "current_u": "current_u_bin/frame_0307.bin",
+        "current_v": "current_v_bin/frame_0307.bin"
+      }
+    },
+    {
+      "frame": 308,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 20,
+      "files": {
+        "temperature": "temp_bin/frame_0308.bin",
+        "ssh": "ssh_bin/frame_0308.bin",
+        "current_u": "current_u_bin/frame_0308.bin",
+        "current_v": "current_v_bin/frame_0308.bin"
+      }
+    },
+    {
+      "frame": 309,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 21,
+      "files": {
+        "temperature": "temp_bin/frame_0309.bin",
+        "ssh": "ssh_bin/frame_0309.bin",
+        "current_u": "current_u_bin/frame_0309.bin",
+        "current_v": "current_v_bin/frame_0309.bin"
+      }
+    },
+    {
+      "frame": 310,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 22,
+      "files": {
+        "temperature": "temp_bin/frame_0310.bin",
+        "ssh": "ssh_bin/frame_0310.bin",
+        "current_u": "current_u_bin/frame_0310.bin",
+        "current_v": "current_v_bin/frame_0310.bin"
+      }
+    },
+    {
+      "frame": 311,
+      "day": 203,
+      "date": "2023-07-22",
+      "hour_index": 23,
+      "files": {
+        "temperature": "temp_bin/frame_0311.bin",
+        "ssh": "ssh_bin/frame_0311.bin",
+        "current_u": "current_u_bin/frame_0311.bin",
+        "current_v": "current_v_bin/frame_0311.bin"
+      }
+    },
+    {
+      "frame": 312,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 0,
+      "files": {
+        "temperature": "temp_bin/frame_0312.bin",
+        "ssh": "ssh_bin/frame_0312.bin",
+        "current_u": "current_u_bin/frame_0312.bin",
+        "current_v": "current_v_bin/frame_0312.bin"
+      }
+    },
+    {
+      "frame": 313,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 1,
+      "files": {
+        "temperature": "temp_bin/frame_0313.bin",
+        "ssh": "ssh_bin/frame_0313.bin",
+        "current_u": "current_u_bin/frame_0313.bin",
+        "current_v": "current_v_bin/frame_0313.bin"
+      }
+    },
+    {
+      "frame": 314,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 2,
+      "files": {
+        "temperature": "temp_bin/frame_0314.bin",
+        "ssh": "ssh_bin/frame_0314.bin",
+        "current_u": "current_u_bin/frame_0314.bin",
+        "current_v": "current_v_bin/frame_0314.bin"
+      }
+    },
+    {
+      "frame": 315,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 3,
+      "files": {
+        "temperature": "temp_bin/frame_0315.bin",
+        "ssh": "ssh_bin/frame_0315.bin",
+        "current_u": "current_u_bin/frame_0315.bin",
+        "current_v": "current_v_bin/frame_0315.bin"
+      }
+    },
+    {
+      "frame": 316,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 4,
+      "files": {
+        "temperature": "temp_bin/frame_0316.bin",
+        "ssh": "ssh_bin/frame_0316.bin",
+        "current_u": "current_u_bin/frame_0316.bin",
+        "current_v": "current_v_bin/frame_0316.bin"
+      }
+    },
+    {
+      "frame": 317,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 5,
+      "files": {
+        "temperature": "temp_bin/frame_0317.bin",
+        "ssh": "ssh_bin/frame_0317.bin",
+        "current_u": "current_u_bin/frame_0317.bin",
+        "current_v": "current_v_bin/frame_0317.bin"
+      }
+    },
+    {
+      "frame": 318,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 6,
+      "files": {
+        "temperature": "temp_bin/frame_0318.bin",
+        "ssh": "ssh_bin/frame_0318.bin",
+        "current_u": "current_u_bin/frame_0318.bin",
+        "current_v": "current_v_bin/frame_0318.bin"
+      }
+    },
+    {
+      "frame": 319,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 7,
+      "files": {
+        "temperature": "temp_bin/frame_0319.bin",
+        "ssh": "ssh_bin/frame_0319.bin",
+        "current_u": "current_u_bin/frame_0319.bin",
+        "current_v": "current_v_bin/frame_0319.bin"
+      }
+    },
+    {
+      "frame": 320,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 8,
+      "files": {
+        "temperature": "temp_bin/frame_0320.bin",
+        "ssh": "ssh_bin/frame_0320.bin",
+        "current_u": "current_u_bin/frame_0320.bin",
+        "current_v": "current_v_bin/frame_0320.bin"
+      }
+    },
+    {
+      "frame": 321,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 9,
+      "files": {
+        "temperature": "temp_bin/frame_0321.bin",
+        "ssh": "ssh_bin/frame_0321.bin",
+        "current_u": "current_u_bin/frame_0321.bin",
+        "current_v": "current_v_bin/frame_0321.bin"
+      }
+    },
+    {
+      "frame": 322,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 10,
+      "files": {
+        "temperature": "temp_bin/frame_0322.bin",
+        "ssh": "ssh_bin/frame_0322.bin",
+        "current_u": "current_u_bin/frame_0322.bin",
+        "current_v": "current_v_bin/frame_0322.bin"
+      }
+    },
+    {
+      "frame": 323,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 11,
+      "files": {
+        "temperature": "temp_bin/frame_0323.bin",
+        "ssh": "ssh_bin/frame_0323.bin",
+        "current_u": "current_u_bin/frame_0323.bin",
+        "current_v": "current_v_bin/frame_0323.bin"
+      }
+    },
+    {
+      "frame": 324,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 12,
+      "files": {
+        "temperature": "temp_bin/frame_0324.bin",
+        "ssh": "ssh_bin/frame_0324.bin",
+        "current_u": "current_u_bin/frame_0324.bin",
+        "current_v": "current_v_bin/frame_0324.bin"
+      }
+    },
+    {
+      "frame": 325,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 13,
+      "files": {
+        "temperature": "temp_bin/frame_0325.bin",
+        "ssh": "ssh_bin/frame_0325.bin",
+        "current_u": "current_u_bin/frame_0325.bin",
+        "current_v": "current_v_bin/frame_0325.bin"
+      }
+    },
+    {
+      "frame": 326,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 14,
+      "files": {
+        "temperature": "temp_bin/frame_0326.bin",
+        "ssh": "ssh_bin/frame_0326.bin",
+        "current_u": "current_u_bin/frame_0326.bin",
+        "current_v": "current_v_bin/frame_0326.bin"
+      }
+    },
+    {
+      "frame": 327,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 15,
+      "files": {
+        "temperature": "temp_bin/frame_0327.bin",
+        "ssh": "ssh_bin/frame_0327.bin",
+        "current_u": "current_u_bin/frame_0327.bin",
+        "current_v": "current_v_bin/frame_0327.bin"
+      }
+    },
+    {
+      "frame": 328,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 16,
+      "files": {
+        "temperature": "temp_bin/frame_0328.bin",
+        "ssh": "ssh_bin/frame_0328.bin",
+        "current_u": "current_u_bin/frame_0328.bin",
+        "current_v": "current_v_bin/frame_0328.bin"
+      }
+    },
+    {
+      "frame": 329,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 17,
+      "files": {
+        "temperature": "temp_bin/frame_0329.bin",
+        "ssh": "ssh_bin/frame_0329.bin",
+        "current_u": "current_u_bin/frame_0329.bin",
+        "current_v": "current_v_bin/frame_0329.bin"
+      }
+    },
+    {
+      "frame": 330,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 18,
+      "files": {
+        "temperature": "temp_bin/frame_0330.bin",
+        "ssh": "ssh_bin/frame_0330.bin",
+        "current_u": "current_u_bin/frame_0330.bin",
+        "current_v": "current_v_bin/frame_0330.bin"
+      }
+    },
+    {
+      "frame": 331,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 19,
+      "files": {
+        "temperature": "temp_bin/frame_0331.bin",
+        "ssh": "ssh_bin/frame_0331.bin",
+        "current_u": "current_u_bin/frame_0331.bin",
+        "current_v": "current_v_bin/frame_0331.bin"
+      }
+    },
+    {
+      "frame": 332,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 20,
+      "files": {
+        "temperature": "temp_bin/frame_0332.bin",
+        "ssh": "ssh_bin/frame_0332.bin",
+        "current_u": "current_u_bin/frame_0332.bin",
+        "current_v": "current_v_bin/frame_0332.bin"
+      }
+    },
+    {
+      "frame": 333,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 21,
+      "files": {
+        "temperature": "temp_bin/frame_0333.bin",
+        "ssh": "ssh_bin/frame_0333.bin",
+        "current_u": "current_u_bin/frame_0333.bin",
+        "current_v": "current_v_bin/frame_0333.bin"
+      }
+    },
+    {
+      "frame": 334,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 22,
+      "files": {
+        "temperature": "temp_bin/frame_0334.bin",
+        "ssh": "ssh_bin/frame_0334.bin",
+        "current_u": "current_u_bin/frame_0334.bin",
+        "current_v": "current_v_bin/frame_0334.bin"
+      }
+    },
+    {
+      "frame": 335,
+      "day": 204,
+      "date": "2023-07-23",
+      "hour_index": 23,
+      "files": {
+        "temperature": "temp_bin/frame_0335.bin",
+        "ssh": "ssh_bin/frame_0335.bin",
+        "current_u": "current_u_bin/frame_0335.bin",
+        "current_v": "current_v_bin/frame_0335.bin"
+      }
+    },
+    {
+      "frame": 336,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 0,
+      "files": {
+        "temperature": "temp_bin/frame_0336.bin",
+        "ssh": "ssh_bin/frame_0336.bin",
+        "current_u": "current_u_bin/frame_0336.bin",
+        "current_v": "current_v_bin/frame_0336.bin"
+      }
+    },
+    {
+      "frame": 337,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 1,
+      "files": {
+        "temperature": "temp_bin/frame_0337.bin",
+        "ssh": "ssh_bin/frame_0337.bin",
+        "current_u": "current_u_bin/frame_0337.bin",
+        "current_v": "current_v_bin/frame_0337.bin"
+      }
+    },
+    {
+      "frame": 338,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 2,
+      "files": {
+        "temperature": "temp_bin/frame_0338.bin",
+        "ssh": "ssh_bin/frame_0338.bin",
+        "current_u": "current_u_bin/frame_0338.bin",
+        "current_v": "current_v_bin/frame_0338.bin"
+      }
+    },
+    {
+      "frame": 339,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 3,
+      "files": {
+        "temperature": "temp_bin/frame_0339.bin",
+        "ssh": "ssh_bin/frame_0339.bin",
+        "current_u": "current_u_bin/frame_0339.bin",
+        "current_v": "current_v_bin/frame_0339.bin"
+      }
+    },
+    {
+      "frame": 340,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 4,
+      "files": {
+        "temperature": "temp_bin/frame_0340.bin",
+        "ssh": "ssh_bin/frame_0340.bin",
+        "current_u": "current_u_bin/frame_0340.bin",
+        "current_v": "current_v_bin/frame_0340.bin"
+      }
+    },
+    {
+      "frame": 341,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 5,
+      "files": {
+        "temperature": "temp_bin/frame_0341.bin",
+        "ssh": "ssh_bin/frame_0341.bin",
+        "current_u": "current_u_bin/frame_0341.bin",
+        "current_v": "current_v_bin/frame_0341.bin"
+      }
+    },
+    {
+      "frame": 342,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 6,
+      "files": {
+        "temperature": "temp_bin/frame_0342.bin",
+        "ssh": "ssh_bin/frame_0342.bin",
+        "current_u": "current_u_bin/frame_0342.bin",
+        "current_v": "current_v_bin/frame_0342.bin"
+      }
+    },
+    {
+      "frame": 343,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 7,
+      "files": {
+        "temperature": "temp_bin/frame_0343.bin",
+        "ssh": "ssh_bin/frame_0343.bin",
+        "current_u": "current_u_bin/frame_0343.bin",
+        "current_v": "current_v_bin/frame_0343.bin"
+      }
+    },
+    {
+      "frame": 344,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 8,
+      "files": {
+        "temperature": "temp_bin/frame_0344.bin",
+        "ssh": "ssh_bin/frame_0344.bin",
+        "current_u": "current_u_bin/frame_0344.bin",
+        "current_v": "current_v_bin/frame_0344.bin"
+      }
+    },
+    {
+      "frame": 345,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 9,
+      "files": {
+        "temperature": "temp_bin/frame_0345.bin",
+        "ssh": "ssh_bin/frame_0345.bin",
+        "current_u": "current_u_bin/frame_0345.bin",
+        "current_v": "current_v_bin/frame_0345.bin"
+      }
+    },
+    {
+      "frame": 346,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 10,
+      "files": {
+        "temperature": "temp_bin/frame_0346.bin",
+        "ssh": "ssh_bin/frame_0346.bin",
+        "current_u": "current_u_bin/frame_0346.bin",
+        "current_v": "current_v_bin/frame_0346.bin"
+      }
+    },
+    {
+      "frame": 347,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 11,
+      "files": {
+        "temperature": "temp_bin/frame_0347.bin",
+        "ssh": "ssh_bin/frame_0347.bin",
+        "current_u": "current_u_bin/frame_0347.bin",
+        "current_v": "current_v_bin/frame_0347.bin"
+      }
+    },
+    {
+      "frame": 348,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 12,
+      "files": {
+        "temperature": "temp_bin/frame_0348.bin",
+        "ssh": "ssh_bin/frame_0348.bin",
+        "current_u": "current_u_bin/frame_0348.bin",
+        "current_v": "current_v_bin/frame_0348.bin"
+      }
+    },
+    {
+      "frame": 349,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 13,
+      "files": {
+        "temperature": "temp_bin/frame_0349.bin",
+        "ssh": "ssh_bin/frame_0349.bin",
+        "current_u": "current_u_bin/frame_0349.bin",
+        "current_v": "current_v_bin/frame_0349.bin"
+      }
+    },
+    {
+      "frame": 350,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 14,
+      "files": {
+        "temperature": "temp_bin/frame_0350.bin",
+        "ssh": "ssh_bin/frame_0350.bin",
+        "current_u": "current_u_bin/frame_0350.bin",
+        "current_v": "current_v_bin/frame_0350.bin"
+      }
+    },
+    {
+      "frame": 351,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 15,
+      "files": {
+        "temperature": "temp_bin/frame_0351.bin",
+        "ssh": "ssh_bin/frame_0351.bin",
+        "current_u": "current_u_bin/frame_0351.bin",
+        "current_v": "current_v_bin/frame_0351.bin"
+      }
+    },
+    {
+      "frame": 352,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 16,
+      "files": {
+        "temperature": "temp_bin/frame_0352.bin",
+        "ssh": "ssh_bin/frame_0352.bin",
+        "current_u": "current_u_bin/frame_0352.bin",
+        "current_v": "current_v_bin/frame_0352.bin"
+      }
+    },
+    {
+      "frame": 353,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 17,
+      "files": {
+        "temperature": "temp_bin/frame_0353.bin",
+        "ssh": "ssh_bin/frame_0353.bin",
+        "current_u": "current_u_bin/frame_0353.bin",
+        "current_v": "current_v_bin/frame_0353.bin"
+      }
+    },
+    {
+      "frame": 354,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 18,
+      "files": {
+        "temperature": "temp_bin/frame_0354.bin",
+        "ssh": "ssh_bin/frame_0354.bin",
+        "current_u": "current_u_bin/frame_0354.bin",
+        "current_v": "current_v_bin/frame_0354.bin"
+      }
+    },
+    {
+      "frame": 355,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 19,
+      "files": {
+        "temperature": "temp_bin/frame_0355.bin",
+        "ssh": "ssh_bin/frame_0355.bin",
+        "current_u": "current_u_bin/frame_0355.bin",
+        "current_v": "current_v_bin/frame_0355.bin"
+      }
+    },
+    {
+      "frame": 356,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 20,
+      "files": {
+        "temperature": "temp_bin/frame_0356.bin",
+        "ssh": "ssh_bin/frame_0356.bin",
+        "current_u": "current_u_bin/frame_0356.bin",
+        "current_v": "current_v_bin/frame_0356.bin"
+      }
+    },
+    {
+      "frame": 357,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 21,
+      "files": {
+        "temperature": "temp_bin/frame_0357.bin",
+        "ssh": "ssh_bin/frame_0357.bin",
+        "current_u": "current_u_bin/frame_0357.bin",
+        "current_v": "current_v_bin/frame_0357.bin"
+      }
+    },
+    {
+      "frame": 358,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 22,
+      "files": {
+        "temperature": "temp_bin/frame_0358.bin",
+        "ssh": "ssh_bin/frame_0358.bin",
+        "current_u": "current_u_bin/frame_0358.bin",
+        "current_v": "current_v_bin/frame_0358.bin"
+      }
+    },
+    {
+      "frame": 359,
+      "day": 205,
+      "date": "2023-07-24",
+      "hour_index": 23,
+      "files": {
+        "temperature": "temp_bin/frame_0359.bin",
+        "ssh": "ssh_bin/frame_0359.bin",
+        "current_u": "current_u_bin/frame_0359.bin",
+        "current_v": "current_v_bin/frame_0359.bin"
+      }
+    }
+  ]
+}
