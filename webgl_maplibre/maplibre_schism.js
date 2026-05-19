@@ -32,11 +32,11 @@ const GLState = { gl:null, scalarProgram:null, meshProgram:null, nodeBuffer:null
 function setStatus(msg){ if(els.statusLine) els.statusLine.textContent = msg; }
 function pad4(i){ return String(i).padStart(4,"0"); }
 function frameCount(){ return meta && meta.frames ? meta.frames.length : 0; }
-function scalarFrameUrl(v,i){ if(v==="temperature") return DATA_ROOT+`temp_bin/frame_${pad4(i)}.bin`; if(v==="ssh") return DATA_ROOT+`ssh_bin/frame_${pad4(i)}.bin`; return null; }
+function scalarFrameUrl(v,i){ if(v==="temperature") return DATA_ROOT+`temp_bin/frame_${pad4(i)}.bin`; if(v==="salinity") return DATA_ROOT+`salinity_bin/frame_${pad4(i)}.bin`; if(v==="ssh") return DATA_ROOT+`ssh_bin/frame_${pad4(i)}.bin`; return null; }
 function currentUUrl(i){ return DATA_ROOT+`current_u_bin/frame_${pad4(i)}.bin`; }
 function currentVUrl(i){ return DATA_ROOT+`current_v_bin/frame_${pad4(i)}.bin`; }
-function variableMeta(v){ if(v==="temperature") return meta.variables.temperature; if(v==="ssh") return meta.variables.ssh; return null; }
-function currentOverlayEnabled(){ return els.currentOverlay && els.currentOverlay.checked && (currentVar==="temperature" || currentVar==="ssh"); }
+function variableMeta(v){ if(v==="temperature") return meta.variables.temperature; if(v==="salinity") return meta.variables.salinity; if(v==="ssh") return meta.variables.ssh; return null; }
+function currentOverlayEnabled(){ return els.currentOverlay && els.currentOverlay.checked && (currentVar==="temperature" || currentVar==="salinity" || currentVar==="ssh"); }
 function shouldDrawCurrentParticles(){ return currentVar==="current" || currentOverlayEnabled(); }
 function updateCurrentOverlayAvailability(){ if(!els.currentOverlay) return; if(currentVar==="current"){ els.currentOverlay.checked=false; els.currentOverlay.disabled=true; } else { els.currentOverlay.disabled=false; if(!els.currentOverlay.dataset.userTouched) els.currentOverlay.checked=true; } }
 async function fetchJson(url){ const sep = url.includes("?") ? "&" : "?"; const r=await fetch(url + sep + "v=july_meta_nostore_01", {cache:"no-store"}); if(!r.ok) throw new Error(`${url}: ${r.status}`); return await r.json(); }
@@ -82,6 +82,14 @@ async function fetchFloat16AsFloat32(url, expectedLen){
   return out;
 }
 
+
+
+function fmtLegendNumber(x, digits=1){
+  const n = Number(x);
+  if(!Number.isFinite(n)) return String(x);
+  if(Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n));
+  return n.toFixed(digits).replace(/\.?0+$/,"");
+}
 
 function updateLegend(){
   if(!els.legendBox || !meta) return;
@@ -777,3 +785,22 @@ function setBaseMap(name) {
 // KOP_META_JSON_NOSTORE_JULY_01
 
 // KOP_PARTICLE_SPEED_INDEPENDENT_FROM_PLAYBACK_01
+
+
+function setupMadeByNyj(){
+  const team = document.getElementById("ust21-team");
+  const made = document.getElementById("made-by-nyj");
+  if(team && made && !team.dataset.madeByNyjReady){
+    team.dataset.madeByNyjReady = "1";
+    team.style.cursor = "pointer";
+    team.addEventListener("click", () => {
+      made.style.display = made.style.display === "none" ? "inline" : "none";
+    });
+  }
+}
+
+
+setTimeout(setupMadeByNyj, 0);
+// KOP_SETUP_MADE_BY_NYJ_CALL
+
+// KOP_JULY7_SALINITY_01
