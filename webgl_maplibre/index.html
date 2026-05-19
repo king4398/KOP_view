@@ -1239,6 +1239,272 @@ body.device-mobile #time-label {
   }
 }
 
+
+/* ===== Mobile right panel + attribution fix ===== */
+
+/* 제목: 확대/축소 버튼 오른쪽 */
+body.device-mobile .title-box {
+  left: 88px !important;
+  top: 18px !important;
+  font-size: 12px !important;
+  padding: 5px 9px !important;
+  z-index: 71000 !important;
+}
+
+/* 지도 선택 */
+body.device-mobile .basemap-radio-box {
+  right: 20px !important;
+  top: 18px !important;
+  font-size: 12px !important;
+  padding: 5px 8px !important;
+  z-index: 71000 !important;
+}
+
+/* Layer Options: 오른쪽 끝 + 지도 선택 바로 밑 + 폭 줄임 */
+body.device-mobile .side-panel {
+  left: auto !important;
+  right: 20px !important;
+  top: 112px !important;
+  width: 270px !important;
+  max-width: calc(100vw - 40px) !important;
+  padding: 8px 10px !important;
+  font-size: 12px !important;
+  border-radius: 8px !important;
+  background: rgba(15,18,24,0.70) !important;
+  z-index: 65000 !important;
+}
+
+body.device-mobile .side-panel-title {
+  font-size: 13px !important;
+  margin-bottom: 7px !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+/* 한글 제거: 기호만 */
+body.device-mobile .side-panel-title::after {
+  content: "▲" !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 20px !important;
+  height: 20px !important;
+  margin-left: 8px !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  color: #ffffff !important;
+  background: rgba(255,255,255,0.16) !important;
+  border-radius: 50% !important;
+}
+
+body.device-mobile .side-panel label {
+  display: grid !important;
+  grid-template-columns: 1fr 112px !important;
+  gap: 8px !important;
+  align-items: center !important;
+  margin: 6px 0 !important;
+}
+
+body.device-mobile .side-panel select {
+  width: 112px !important;
+  max-width: 112px !important;
+  height: 30px !important;
+  padding: 3px 6px !important;
+  font-size: 12px !important;
+}
+
+body.device-mobile .side-panel input[type="checkbox"] {
+  transform: scale(1.0) !important;
+  justify-self: end !important;
+}
+
+body.device-mobile .status-line {
+  display: none !important;
+}
+
+/* 접힌 상태: 오른쪽 끝에 작게 */
+body.device-mobile .side-panel.collapsed {
+  left: auto !important;
+  right: 20px !important;
+  top: 112px !important;
+  width: auto !important;
+  min-width: 145px !important;
+  max-width: 185px !important;
+  padding: 7px 10px !important;
+}
+
+body.device-mobile .side-panel.collapsed .side-panel-title {
+  margin-bottom: 0 !important;
+  gap: 10px !important;
+}
+
+body.device-mobile .side-panel.collapsed .side-panel-title::after {
+  content: "▼" !important;
+}
+
+body.device-mobile .side-panel.collapsed label,
+body.device-mobile .side-panel.collapsed .status-line {
+  display: none !important;
+}
+
+/* 로고 + 컬러바: 재생바 바로 위 같은 높이 */
+body.device-mobile #ust21-logo-overlay {
+  left: 20px !important;
+  bottom: 112px !important;
+  max-width: 82px !important;
+}
+
+body.device-mobile #ust21-logo-title {
+  font-size: 11px !important;
+  padding: 3px 6px !important;
+  margin-bottom: 3px !important;
+}
+
+body.device-mobile #ust21-logo-img {
+  width: 76px !important;
+  max-width: 76px !important;
+}
+
+body.device-mobile .legend-box {
+  right: 20px !important;
+  bottom: 112px !important;
+  width: 128px !important;
+  min-width: 128px !important;
+  padding: 7px 8px !important;
+  font-size: 11px !important;
+  border-radius: 8px !important;
+}
+
+body.device-mobile .legend-title {
+  font-size: 11px !important;
+  line-height: 1.15 !important;
+}
+
+body.device-mobile .legend-box div[style*="linear-gradient"] {
+  min-width: 0 !important;
+  width: 100% !important;
+  height: 12px !important;
+}
+
+body.device-mobile .legend-ticks {
+  font-size: 11px !important;
+}
+
+/* 재생바 */
+body.device-mobile .control-box {
+  left: 20px !important;
+  right: 20px !important;
+  bottom: 18px !important;
+  transform: none !important;
+  width: auto !important;
+  min-width: 0 !important;
+  padding: 8px 9px !important;
+  border-radius: 8px !important;
+  z-index: 60000 !important;
+}
+
+body.device-mobile .control-box > div {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important;
+  grid-template-rows: auto auto auto !important;
+  gap: 7px !important;
+  align-items: center !important;
+}
+
+body.device-mobile #play-btn {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  padding: 5px 9px !important;
+  font-size: 12px !important;
+}
+
+body.device-mobile #frame-slider {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+body.device-mobile #speed-select {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+  width: 68px !important;
+  font-size: 12px !important;
+  padding: 4px !important;
+}
+
+body.device-mobile .control-box label {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  font-size: 12px !important;
+  justify-self: start !important;
+}
+
+body.device-mobile #opacity-slider {
+  grid-column: 2 / 4 !important;
+  grid-row: 2 !important;
+  width: 115px !important;
+  justify-self: start !important;
+}
+
+body.device-mobile #time-label {
+  grid-column: 1 / 4 !important;
+  grid-row: 3 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  font-size: 12px !important;
+  line-height: 1.1 !important;
+}
+
+/* MapLibre / Esri attribution: 다른 UI보다 위 */
+body.device-mobile .maplibregl-ctrl-bottom-right,
+body.device-mobile .maplibregl-ctrl-attrib,
+body.device-mobile .maplibregl-ctrl-attrib-button {
+  z-index: 999999 !important;
+}
+
+body.device-mobile .maplibregl-ctrl-bottom-right {
+  right: 6px !important;
+  bottom: 6px !important;
+  pointer-events: auto !important;
+}
+
+body.device-mobile .maplibregl-ctrl-attrib {
+  background: rgba(255,255,255,0.92) !important;
+  border-radius: 10px !important;
+}
+
+/* 작은 폰 */
+@media (max-width: 430px) {
+  body.device-mobile .side-panel {
+    right: 20px !important;
+    top: 112px !important;
+    width: 255px !important;
+    max-width: calc(100vw - 40px) !important;
+  }
+
+  body.device-mobile .side-panel.collapsed {
+    right: 20px !important;
+    top: 112px !important;
+  }
+
+  body.device-mobile .legend-box {
+    right: 20px !important;
+    bottom: 112px !important;
+    width: 126px !important;
+    min-width: 126px !important;
+  }
+
+  body.device-mobile #ust21-logo-overlay {
+    left: 20px !important;
+    bottom: 112px !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1316,7 +1582,7 @@ body.device-mobile #time-label {
   <label><b>Opacity</b></label><input id="opacity-slider" type="range" min="0.1" max="1.0" value="0.82" step="0.05" style="width:110px;">
   <span id="time-label" style="font-size:13px; min-width:180px; display:inline-block;"></span>
 </div></div>
-<script src="maplibre_schism.js?v=mobile_screenshot_fix01"></script>
+<script src="maplibre_schism.js?v=mobile_right_panel_attrib01"></script>
 
   <div id="ust21-logo-overlay">
     <div id="ust21-logo-title">UST21 수치예보팀</div>
@@ -1353,9 +1619,12 @@ body.device-mobile #time-label {
 
 
 
+
+
+
 <script>
 (function(){
-  function setupLayerPanelToggleOnce(){
+  function setupLayerPanelToggleClean(){
     const panel = document.querySelector(".side-panel");
     const title = document.querySelector(".side-panel-title");
     if(!panel || !title) return;
@@ -1369,13 +1638,13 @@ body.device-mobile #time-label {
   }
 
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", setupLayerPanelToggleOnce);
+    document.addEventListener("DOMContentLoaded", setupLayerPanelToggleClean);
   } else {
-    setupLayerPanelToggleOnce();
+    setupLayerPanelToggleClean();
   }
 
   window.addEventListener("resize", function(){
-    setTimeout(setupLayerPanelToggleOnce, 100);
+    setTimeout(setupLayerPanelToggleClean, 100);
   });
 })();
 </script>
