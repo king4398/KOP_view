@@ -620,6 +620,121 @@ body.device-mobile #ust21-logo-img {
   }
 }
 
+
+/* ===== Mobile panel toggle/layout patch ===== */
+body.device-mobile .title-box {
+  left: 58px !important;
+  top: 10px !important;
+  z-index: 71000 !important;
+}
+
+body.device-mobile .side-panel {
+  top: 86px !important;
+}
+
+body.device-mobile .side-panel-title {
+  cursor: pointer !important;
+  user-select: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+body.device-mobile .side-panel-title::after {
+  content: "접기";
+  font-size: 11px;
+  opacity: 0.85;
+  margin-left: 8px;
+}
+
+body.device-mobile .side-panel.collapsed {
+  width: auto !important;
+  right: auto !important;
+  max-width: 180px !important;
+  padding: 7px 10px !important;
+}
+
+body.device-mobile .side-panel.collapsed .side-panel-title {
+  margin-bottom: 0 !important;
+}
+
+body.device-mobile .side-panel.collapsed .side-panel-title::after {
+  content: "펼치기";
+}
+
+body.device-mobile .side-panel.collapsed label,
+body.device-mobile .side-panel.collapsed .status-line {
+  display: none !important;
+}
+
+/* 모바일 재생 패널: Opacity 글자를 슬라이더 줄로 내림 */
+body.device-mobile .control-box > div {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important;
+  grid-template-rows: auto auto auto !important;
+  gap: 7px !important;
+  align-items: center !important;
+}
+
+body.device-mobile #play-btn {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+}
+
+body.device-mobile #frame-slider {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+body.device-mobile #speed-select {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+}
+
+body.device-mobile .control-box label {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  font-size: 12px !important;
+  justify-self: start !important;
+}
+
+body.device-mobile #opacity-slider {
+  grid-column: 2 / 4 !important;
+  grid-row: 2 !important;
+  width: 115px !important;
+  justify-self: start !important;
+}
+
+body.device-mobile #time-label {
+  grid-column: 1 / 4 !important;
+  grid-row: 3 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  font-size: 12px !important;
+}
+
+/* 패널을 내렸으니 컬러바/로고는 살짝 정돈 */
+body.device-mobile .legend-box {
+  bottom: 176px !important;
+}
+
+body.device-mobile #ust21-logo-overlay {
+  bottom: 128px !important;
+}
+
+@media (max-width: 430px) {
+  body.device-mobile .side-panel {
+    top: 84px !important;
+  }
+
+  body.device-mobile .legend-box {
+    bottom: 180px !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -697,7 +812,7 @@ body.device-mobile #ust21-logo-img {
   <label><b>Opacity</b></label><input id="opacity-slider" type="range" min="0.1" max="1.0" value="0.82" step="0.05" style="width:110px;">
   <span id="time-label" style="font-size:13px; min-width:180px; display:inline-block;"></span>
 </div></div>
-<script src="maplibre_schism.js?v=mobile_compact_particles01"></script>
+<script src="maplibre_schism.js?v=mobile_panel_toggle01"></script>
 
   <div id="ust21-logo-overlay">
     <div id="ust21-logo-title">UST21 수치예보팀</div>
@@ -724,6 +839,34 @@ body.device-mobile #ust21-logo-img {
   } else {
     setupUst21Click();
   }
+})();
+</script>
+
+
+<script>
+(function(){
+  function setupMobileLayerPanelToggle(){
+    const panel = document.querySelector(".side-panel");
+    const title = document.querySelector(".side-panel-title");
+    if(!panel || !title || title.dataset.toggleReady === "1") return;
+
+    title.dataset.toggleReady = "1";
+    title.addEventListener("click", function(){
+      if(document.body.classList.contains("device-mobile")){
+        panel.classList.toggle("collapsed");
+      }
+    });
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", setupMobileLayerPanelToggle);
+  } else {
+    setupMobileLayerPanelToggle();
+  }
+
+  window.addEventListener("resize", function(){
+    setTimeout(setupMobileLayerPanelToggle, 100);
+  });
 })();
 </script>
 
