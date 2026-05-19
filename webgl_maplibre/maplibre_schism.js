@@ -94,47 +94,39 @@ function fmtLegendNumber(x, digits=1){
 function updateLegend(){
   if(!els.legendBox || !meta || !meta.variables) return;
 
+  const jetGrad = "linear-gradient(to right,#0000cc,#0066ff,#00ccff,#00cc66,#ffff00,#ff9900,#cc0000)";
+  const elevGrad = "linear-gradient(to right,#0000cc,#ffffff,#cc0000)";
+  const currentGrad = jetGrad;
+
+  function box(title, grad, a, b, c){
+    els.legendBox.innerHTML =
+      `<div class="legend-title">${title}</div>` +
+      `<div style="height:14px; width:100%; min-width:190px; margin:6px 0 4px 0; border-radius:3px; background:${grad};"></div>` +
+      `<div class="legend-ticks" style="display:flex; justify-content:space-between; gap:12px;">` +
+      `<span>${a}</span><span>${b}</span><span>${c}</span>` +
+      `</div>`;
+  }
+
   if(currentVar==="temperature"){
-    const v = meta.variables.temperature;
-    els.legendBox.innerHTML = `
-      <div class="legend-title">Surface Temperature [degC]</div>
-      <div class="legend-gradient"></div>
-      <div class="legend-ticks">
-        <span>${fmtLegendNumber(v.vmin)}</span>
-        <span>${fmtLegendNumber((v.vmin+v.vmax)/2)}</span>
-        <span>${fmtLegendNumber(v.vmax)}</span>
-      </div>
-    `;
+    const v = meta.variables.temperature || {vmin:0, vmax:32};
+    box("Surface Temperature [degC]", jetGrad,
+        fmtLegendNumber(v.vmin),
+        fmtLegendNumber((v.vmin+v.vmax)/2),
+        fmtLegendNumber(v.vmax));
   } else if(currentVar==="salinity"){
     const v = meta.variables.salinity || {vmin:28, vmax:35};
-    els.legendBox.innerHTML = `
-      <div class="legend-title">Salinity [psu]</div>
-      <div class="legend-gradient"></div>
-      <div class="legend-ticks">
-        <span>${fmtLegendNumber(v.vmin)}</span>
-        <span>${fmtLegendNumber((v.vmin+v.vmax)/2)}</span>
-        <span>${fmtLegendNumber(v.vmax)}</span>
-      </div>
-    `;
+    box("Salinity [psu]", jetGrad,
+        fmtLegendNumber(v.vmin),
+        fmtLegendNumber((v.vmin+v.vmax)/2),
+        fmtLegendNumber(v.vmax));
   } else if(currentVar==="ssh"){
-    const v = meta.variables.ssh;
-    els.legendBox.innerHTML = `
-      <div class="legend-title">Elevation [m]</div>
-      <div class="legend-gradient"></div>
-      <div class="legend-ticks">
-        <span>${fmtLegendNumber(v.vmin,2)}</span>
-        <span>${fmtLegendNumber((v.vmin+v.vmax)/2,2)}</span>
-        <span>${fmtLegendNumber(v.vmax,2)}</span>
-      </div>
-    `;
+    const v = meta.variables.ssh || {vmin:-1, vmax:1};
+    box("Elevation [m]", elevGrad,
+        fmtLegendNumber(v.vmin,2),
+        fmtLegendNumber((v.vmin+v.vmax)/2,2),
+        fmtLegendNumber(v.vmax,2));
   } else {
-    els.legendBox.innerHTML = `
-      <div class="legend-title">Current Speed [m/s]</div>
-      <div class="legend-gradient current-gradient"></div>
-      <div class="legend-ticks">
-        <span>0</span><span>0.5</span><span>1</span>
-      </div>
-    `;
+    box("Current Speed [m/s]", currentGrad, "0", "0.5", "1");
   }
 }
 
@@ -655,7 +647,7 @@ function makeMapStyle() {
     };
 }
 function initMap(){ const b=meta.bounds; const south=b[0][0], west=b[0][1], north=b[1][0], east=b[1][1]; map=new maplibregl.Map({container:"map",style:makeMapStyle(),center:[(west+east)/2,(south+north)/2],zoom:7,minZoom:3,maxZoom:14,dragRotate:false,pitchWithRotate:false,renderWorldCopies:false,attributionControl:true}); map.addControl(new maplibregl.NavigationControl({visualizePitch:false}),"top-left"); map.fitBounds([[west,south],[east,north]],{padding:20,duration:0}); }
-async function boot(){ setStatus("Loading metadata..."); meta=await fetchJson(CONFIG.metaUrl); meta.variables=meta.variables||{}; meta.variables.salinity=meta.variables.salinity||{name:"Salinity",units:"psu",vmin:28,vmax:35}; meta.variables.salinity.vmin=28; meta.variables.salinity.vmax=35; lookupMeta=await fetchJson(CONFIG.lookupMetaUrl); els.frameSlider.max=frameCount()-1; setStatus("Loading mesh and lookup..."); [nodesLonLat,elems,meshEdges,lookupOffsets,lookupTriangles]=await Promise.all([fetchFloat32(CONFIG.nodesUrl,meta.node_count*2),fetchUint32(CONFIG.elemsUrl,meta.index_count),fetchUint32(CONFIG.edgesUrl),fetchUint32(CONFIG.lookupOffsetsUrl),fetchUint32(CONFIG.lookupTrianglesUrl)]); initMap(); map.on("load",async()=>{ setStatus("Preparing WebGL layer..."); buildMercatorNodes(); initParticleCanvas(); map.addLayer(makeSchismLayer()); setupEvents(); updateCurrentOverlayAvailability(); updateLegend(); await setFrame(0); setStatus(`Ready: ${meta.node_count.toLocaleString()} nodes, ${meta.triangle_count.toLocaleString()} triangles`); }); }
+async function boot(){ setStatus("Loading metadata..."); meta=await fetchJson(CONFIG.metaUrl); meta.variables=meta.variables||{}; meta.variables.salinity=meta.variables.salinity||{name:"Salinity",units:"psu",vmin:28,vmax:35}; meta.variables.salinity.vmin=28; meta.variables.salinity.vmax=35; meta.variables=meta.variables||{}; meta.variables.salinity=meta.variables.salinity||{name:"Salinity",units:"psu",vmin:28,vmax:35}; meta.variables.salinity.vmin=28; meta.variables.salinity.vmax=35; lookupMeta=await fetchJson(CONFIG.lookupMetaUrl); els.frameSlider.max=frameCount()-1; setStatus("Loading mesh and lookup..."); [nodesLonLat,elems,meshEdges,lookupOffsets,lookupTriangles]=await Promise.all([fetchFloat32(CONFIG.nodesUrl,meta.node_count*2),fetchUint32(CONFIG.elemsUrl,meta.index_count),fetchUint32(CONFIG.edgesUrl),fetchUint32(CONFIG.lookupOffsetsUrl),fetchUint32(CONFIG.lookupTrianglesUrl)]); initMap(); map.on("load",async()=>{ setStatus("Preparing WebGL layer..."); buildMercatorNodes(); initParticleCanvas(); map.addLayer(makeSchismLayer()); setupEvents(); updateCurrentOverlayAvailability(); updateLegend(); await setFrame(0); setStatus(`Ready: ${meta.node_count.toLocaleString()} nodes, ${meta.triangle_count.toLocaleString()} triangles`); }); }
 boot().catch(err=>{ console.error(err); setStatus("ERROR: "+err.message); alert(err.message); });
 
 
@@ -826,3 +818,7 @@ function setBaseMap(name) {
 // KOP_SALINITY_META_RANGE_28_35
 
 // KOP_SALINITY_LEGEND_CLEANUP_01
+
+// KOP_FORCE_SALINITY_28_35_META
+
+// KOP_LEGEND_FORCEFIX_02
