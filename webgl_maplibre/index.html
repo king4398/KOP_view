@@ -282,9 +282,202 @@ button, select, input { font-family:Arial,sans-serif; }
   }
 }
 
+
+/* ===== Device class responsive layout ===== */
+/* PC: 기존 스타일 유지 */
+/* Mobile: body.device-mobile 일 때만 아래 스타일 적용 */
+
+body.device-mobile .title-box {
+  left: 8px !important;
+  top: 8px !important;
+  padding: 5px 8px !important;
+  font-size: 12px !important;
+  max-width: calc(100vw - 150px) !important;
+  white-space: nowrap !important;
+}
+
+body.device-mobile .basemap-radio-box {
+  right: 8px !important;
+  top: 8px !important;
+  padding: 5px 7px !important;
+  font-size: 12px !important;
+}
+
+body.device-mobile .side-panel {
+  left: 8px !important;
+  right: auto !important;
+  top: 48px !important;
+  width: calc(100vw - 16px) !important;
+  box-sizing: border-box !important;
+  padding: 7px 9px !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  background: rgba(15,18,24,0.78) !important;
+}
+
+body.device-mobile .side-panel-title {
+  font-size: 13px !important;
+  margin-bottom: 4px !important;
+}
+
+body.device-mobile .side-panel label {
+  margin: 4px 0 !important;
+}
+
+body.device-mobile .side-panel select {
+  width: 120px !important;
+  max-width: 120px !important;
+  padding: 3px 5px !important;
+  font-size: 12px !important;
+}
+
+body.device-mobile .status-line {
+  display: none !important;
+}
+
+body.device-mobile .legend-box {
+  right: 8px !important;
+  bottom: 152px !important;
+  min-width: 145px !important;
+  width: 145px !important;
+  padding: 7px 8px !important;
+  font-size: 11px !important;
+}
+
+body.device-mobile .legend-title {
+  font-size: 11px !important;
+}
+
+body.device-mobile .control-box {
+  left: 8px !important;
+  right: 8px !important;
+  bottom: 8px !important;
+  transform: none !important;
+  min-width: 0 !important;
+  width: calc(100vw - 16px) !important;
+  box-sizing: border-box !important;
+  padding: 7px 8px !important;
+  border-radius: 8px !important;
+}
+
+body.device-mobile .control-box > div {
+  gap: 6px !important;
+  flex-wrap: wrap !important;
+}
+
+body.device-mobile #play-btn {
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+}
+
+body.device-mobile #frame-slider {
+  width: 42vw !important;
+  min-width: 105px !important;
+  max-width: 180px !important;
+  flex: 0 0 42vw !important;
+}
+
+body.device-mobile #speed-select {
+  padding: 4px 5px !important;
+  font-size: 12px !important;
+}
+
+body.device-mobile #opacity-slider {
+  width: 65px !important;
+}
+
+body.device-mobile .control-box label {
+  font-size: 11px !important;
+}
+
+body.device-mobile #time-label {
+  min-width: 0 !important;
+  width: 100% !important;
+  font-size: 12px !important;
+}
+
+body.device-mobile #ust21-logo-overlay {
+  left: 8px !important;
+  bottom: 98px !important;
+  max-width: 90px !important;
+}
+
+body.device-mobile #ust21-logo-title {
+  font-size: 11px !important;
+  padding: 3px 6px !important;
+  margin-bottom: 4px !important;
+}
+
+body.device-mobile #ust21-logo-img {
+  width: 78px !important;
+  max-width: 78px !important;
+}
+
+/* 아주 작은 폰 */
+@media (max-width: 480px) {
+  body.device-mobile .side-panel {
+    top: 44px !important;
+  }
+
+  body.device-mobile .legend-box {
+    bottom: 160px !important;
+    width: 135px !important;
+    min-width: 135px !important;
+  }
+
+  body.device-mobile #frame-slider {
+    width: 40vw !important;
+    min-width: 100px !important;
+    max-width: 165px !important;
+    flex: 0 0 40vw !important;
+  }
+
+  body.device-mobile #opacity-slider {
+    width: 60px !important;
+  }
+}
+
 </style>
 </head>
 <body>
+
+<script>
+(function(){
+  function detectDeviceLayout(){
+    const ua = navigator.userAgent || "";
+    const isMobileUA = /Android|iPhone|iPad|iPod|Mobile|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    const isSmallScreen = window.innerWidth <= 768;
+    const isTouch = navigator.maxTouchPoints && navigator.maxTouchPoints > 0;
+
+    const isMobile = isMobileUA || (isSmallScreen && isTouch);
+
+    document.documentElement.classList.remove("device-mobile", "device-pc");
+    document.body.classList.remove("device-mobile", "device-pc");
+
+    if(isMobile){
+      document.documentElement.classList.add("device-mobile");
+      document.body.classList.add("device-mobile");
+    } else {
+      document.documentElement.classList.add("device-pc");
+      document.body.classList.add("device-pc");
+    }
+  }
+
+  window.KOP_detectDeviceLayout = detectDeviceLayout;
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", detectDeviceLayout);
+  } else {
+    detectDeviceLayout();
+  }
+
+  window.addEventListener("resize", function(){
+    clearTimeout(window.KOP_deviceResizeTimer);
+    window.KOP_deviceResizeTimer = setTimeout(detectDeviceLayout, 150);
+  });
+})();
+</script>
+
 <div id="map"></div>
 
 <div id="basemap-radio-box" class="basemap-radio-box">
@@ -321,7 +514,7 @@ button, select, input { font-family:Arial,sans-serif; }
   <label><b>Opacity</b></label><input id="opacity-slider" type="range" min="0.1" max="1.0" value="0.82" step="0.05" style="width:110px;">
   <span id="time-label" style="font-size:13px; min-width:180px; display:inline-block;"></span>
 </div></div>
-<script src="maplibre_schism.js?v=mobile_playbar_legend01"></script>
+<script src="maplibre_schism.js?v=device_layout_class01"></script>
 
   <div id="ust21-logo-overlay">
     <div id="ust21-logo-title">UST21 수치예보팀</div>
