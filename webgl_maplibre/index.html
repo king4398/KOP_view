@@ -254,6 +254,34 @@ button, select, input { font-family:Arial,sans-serif; }
   }
 }
 
+
+/* ===== Mobile playbar compact patch ===== */
+@media (max-width: 768px) {
+  #frame-slider {
+    width: 45vw !important;
+    min-width: 120px !important;
+    max-width: 220px !important;
+    flex: 0 0 45vw !important;
+  }
+
+  .legend-box {
+    bottom: 142px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  #frame-slider {
+    width: 42vw !important;
+    min-width: 105px !important;
+    max-width: 180px !important;
+    flex: 0 0 42vw !important;
+  }
+
+  .legend-box {
+    bottom: 152px !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -293,7 +321,7 @@ button, select, input { font-family:Arial,sans-serif; }
   <label><b>Opacity</b></label><input id="opacity-slider" type="range" min="0.1" max="1.0" value="0.82" step="0.05" style="width:110px;">
   <span id="time-label" style="font-size:13px; min-width:180px; display:inline-block;"></span>
 </div></div>
-<script src="maplibre_schism.js?v=mobile_ui_fix01"></script>
+<script src="maplibre_schism.js?v=mobile_playbar_legend01"></script>
 
   <div id="ust21-logo-overlay">
     <div id="ust21-logo-title">UST21 수치예보팀</div>
