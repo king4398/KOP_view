@@ -1494,6 +1494,81 @@ body.device-mobile .play-icon-btn {
   }
 }
 
+
+/* ===== Mobile logo/legend balance patch ===== */
+
+/* UST21 + colorbar: replay panel 바로 위에 좌우 정렬 */
+body.device-mobile #ust21-logo-overlay {
+  left: 20px !important;
+  bottom: 108px !important;
+  max-width: 88px !important;
+  z-index: 61000 !important;
+}
+
+body.device-mobile #ust21-logo-title {
+  font-size: 10.5px !important;
+  padding: 3px 6px !important;
+  margin-bottom: 3px !important;
+  border-radius: 7px !important;
+}
+
+body.device-mobile #ust21-logo-img {
+  width: 78px !important;
+  max-width: 78px !important;
+}
+
+body.device-mobile .legend-box {
+  right: 20px !important;
+  bottom: 108px !important;
+  width: 122px !important;
+  min-width: 122px !important;
+  padding: 7px 8px !important;
+  border-radius: 8px !important;
+  z-index: 61000 !important;
+}
+
+body.device-mobile .legend-title {
+  font-size: 10.5px !important;
+  line-height: 1.15 !important;
+  margin-bottom: 4px !important;
+}
+
+body.device-mobile .legend-box div[style*="linear-gradient"] {
+  min-width: 0 !important;
+  width: 100% !important;
+  height: 11px !important;
+  margin: 4px 0 4px 0 !important;
+}
+
+body.device-mobile .legend-ticks {
+  font-size: 10.5px !important;
+}
+
+/* 재생바와 너무 붙거나 겹치지 않게 */
+body.device-mobile .control-box {
+  bottom: 18px !important;
+}
+
+/* 아주 작은 화면에서는 조금 더 압축 */
+@media (max-width: 430px) {
+  body.device-mobile #ust21-logo-overlay {
+    left: 20px !important;
+    bottom: 106px !important;
+  }
+
+  body.device-mobile .legend-box {
+    right: 20px !important;
+    bottom: 106px !important;
+    width: 118px !important;
+    min-width: 118px !important;
+  }
+
+  body.device-mobile #ust21-logo-img {
+    width: 74px !important;
+    max-width: 74px !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1571,7 +1646,7 @@ body.device-mobile .play-icon-btn {
   <label><b>Opacity</b></label><input id="opacity-slider" type="range" min="0.1" max="1.0" value="0.82" step="0.05" style="width:110px;">
   <span id="time-label" style="font-size:13px; min-width:180px; display:inline-block;"></span>
 </div></div>
-<script src="maplibre_schism.js?v=mobile_panel_playicon01"></script>
+<script src="maplibre_schism.js?v=mobile_logo_legend_balance01"></script>
 
   <div id="ust21-logo-overlay">
     <div id="ust21-logo-title">UST21 수치예보팀</div>
