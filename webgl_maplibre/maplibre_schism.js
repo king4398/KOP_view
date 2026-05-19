@@ -521,6 +521,7 @@ function startParticles() {
         // This keeps particles attached to the map during pan/zoom.
         particleCtx.globalCompositeOperation = "source-over";
         particleCtx.clearRect(0, 0, width, height);
+        drawMeshOverlayOnParticleCanvas();
         particleCtx.lineWidth = 1.2;
         particleCtx.lineCap = "round";
 
@@ -601,8 +602,54 @@ function startParticles() {
 
     particleAnimId = requestAnimationFrame(step);
 }
+
+function drawMeshOverlayOnParticleCanvas(){
+    if (!particleCtx || !map) return;
+    if (currentVar !== "current") return;
+    if (!els.meshOverlay || !els.meshOverlay.checked) return;
+    if (!meshEdges || !nodesLonLat) return;
+
+    const rect = map.getContainer().getBoundingClientRect();
+
+    particleCtx.save();
+    particleCtx.globalCompositeOperation = "source-over";
+    particleCtx.strokeStyle = "rgba(20,20,20,0.50)";
+    particleCtx.lineWidth = 0.55;
+    particleCtx.beginPath();
+
+    const maxEdges = meshEdges.length;
+    for (let k = 0; k < maxEdges; k += 2) {
+        const ia = meshEdges[k];
+        const ib = meshEdges[k + 1];
+        if (ia == null || ib == null) continue;
+
+        const lonA = nodesLonLat[ia * 2];
+        const latA = nodesLonLat[ia * 2 + 1];
+        const lonB = nodesLonLat[ib * 2];
+        const latB = nodesLonLat[ib * 2 + 1];
+
+        if (!Number.isFinite(lonA) || !Number.isFinite(latA) ||
+            !Number.isFinite(lonB) || !Number.isFinite(latB)) continue;
+
+        const a = map.project([lonA, latA]);
+        const b = map.project([lonB, latB]);
+
+        if ((a.x < -50 && b.x < -50) || (a.x > rect.width + 50 && b.x > rect.width + 50) ||
+            (a.y < -50 && b.y < -50) || (a.y > rect.height + 50 && b.y > rect.height + 50)) {
+            continue;
+        }
+
+        particleCtx.moveTo(a.x, a.y);
+        particleCtx.lineTo(b.x, b.y);
+    }
+
+    particleCtx.stroke();
+    particleCtx.restore();
+}
+
+
 function stopParticles(){ particleRunning=false; if(particleAnimId!==null){ cancelAnimationFrame(particleAnimId); particleAnimId=null; } clearCurrentCanvas(); }
-function setupEvents(){ els.currentOverlay.checked=true; els.currentOverlay.dataset.userTouched=""; els.currentOverlay.addEventListener("change",()=>{els.currentOverlay.dataset.userTouched="1"; updateCurrentOverlayAvailability(); setFrame(currentFrame);}); els.meshOverlay.addEventListener("change",()=>map.triggerRepaint()); els.varSelect.addEventListener("change",e=>{currentVar=e.target.value; updateCurrentOverlayAvailability(); updateLegend(); setFrame(currentFrame); map.triggerRepaint();}); els.playBtn.addEventListener("click",()=>{ if(timer===null){els.playBtn.textContent="Pause"; startTimer();} else {els.playBtn.textContent="Play"; clearInterval(timer); timer=null;} }); els.frameSlider.addEventListener("input",e=>setFrame(e.target.value)); els.speedSelect.addEventListener("change",e=>{ speed=parseFloat(e.target.value); if(timer!==null) startTimer(); }); els.opacitySlider.addEventListener("input",()=>map.triggerRepaint()); els.densitySelect.addEventListener("change",e=>{ particleCount=parseInt(e.target.value); resetParticles(); clearCurrentCanvas(); }); map.on("moveend",()=>resetParticles());
+function setupEvents(){ els.currentOverlay.checked=true; els.currentOverlay.dataset.userTouched=""; els.currentOverlay.addEventListener("change",()=>{els.currentOverlay.dataset.userTouched="1"; updateCurrentOverlayAvailability(); setFrame(currentFrame);}); els.meshOverlay.addEventListener("change",()=>{ clearCurrentCanvas(); drawMeshOverlayOnParticleCanvas(); map.triggerRepaint(); }); els.varSelect.addEventListener("change",e=>{currentVar=e.target.value; updateCurrentOverlayAvailability(); updateLegend(); setFrame(currentFrame); map.triggerRepaint();}); els.playBtn.addEventListener("click",()=>{ if(timer===null){els.playBtn.textContent="Pause"; startTimer();} else {els.playBtn.textContent="Play"; clearInterval(timer); timer=null;} }); els.frameSlider.addEventListener("input",e=>setFrame(e.target.value)); els.speedSelect.addEventListener("change",e=>{ speed=parseFloat(e.target.value); if(timer!==null) startTimer(); }); els.opacitySlider.addEventListener("input",()=>map.triggerRepaint()); els.densitySelect.addEventListener("change",e=>{ particleCount=parseInt(e.target.value); resetParticles(); clearCurrentCanvas(); }); map.on("moveend",()=>resetParticles());
 }
 
 
@@ -824,3 +871,5 @@ function setBaseMap(name) {
 // KOP_LEGEND_FORCEFIX_02
 
 // KOP_LEGEND_TEMPERATURE_TITLE_NO_SURFACE_01
+
+// KOP_CURRENT_MESH_CANVAS_OVERLAY_01
