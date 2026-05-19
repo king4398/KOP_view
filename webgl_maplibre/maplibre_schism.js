@@ -311,7 +311,7 @@ function isMobileLayout(){
 
 function effectiveParticleCount(){
   const n = Number(particleCount || 0);
-  if(isMobileLayout()) return Math.max(300, Math.round(n * 0.50));
+  if(isMobileLayout()) return Math.max(250, Math.round(n * 0.32));
   return n;
 }
 
@@ -883,3 +883,5 @@ function setBaseMap(name) {
 
 
 // KOP_MOBILE_PARTICLE_HALF_01
+
+// KOP_MOBILE_PARTICLE_032_01

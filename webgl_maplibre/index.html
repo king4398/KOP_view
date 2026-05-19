@@ -735,6 +735,259 @@ body.device-mobile #ust21-logo-overlay {
   }
 }
 
+
+/* ===== Mobile final layout patch ===== */
+
+/* 타이틀은 확대/축소 버튼 오른쪽 */
+body.device-mobile .title-box {
+  left: 116px !important;
+  top: 18px !important;
+  font-size: 12px !important;
+  padding: 5px 9px !important;
+  z-index: 71000 !important;
+}
+
+/* 지도 선택은 우상단 유지 */
+body.device-mobile .basemap-radio-box {
+  right: 18px !important;
+  top: 18px !important;
+  font-size: 12px !important;
+  padding: 5px 8px !important;
+  z-index: 71000 !important;
+}
+
+/* 레이어 패널: 확대/축소 버튼보다 아래, 높이 줄임 */
+body.device-mobile .side-panel {
+  left: 20px !important;
+  right: 20px !important;
+  top: 168px !important;
+  width: auto !important;
+  padding: 8px 11px !important;
+  font-size: 12px !important;
+  border-radius: 8px !important;
+  background: rgba(15,18,24,0.70) !important;
+  z-index: 65000 !important;
+}
+
+body.device-mobile .side-panel-title {
+  font-size: 13px !important;
+  margin-bottom: 7px !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+/* 기존 접기/펼치기 한글 덮어쓰기 */
+body.device-mobile .side-panel-title::after {
+  content: "▲" !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 20px !important;
+  height: 20px !important;
+  margin-left: 8px !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  color: #ffffff !important;
+  background: rgba(255,255,255,0.16) !important;
+  border-radius: 50% !important;
+}
+
+/* 패널 내부 줄 간격 압축 */
+body.device-mobile .side-panel label {
+  display: grid !important;
+  grid-template-columns: 1fr 125px !important;
+  gap: 8px !important;
+  align-items: center !important;
+  margin: 6px 0 !important;
+}
+
+body.device-mobile .side-panel select {
+  width: 125px !important;
+  max-width: 125px !important;
+  height: 30px !important;
+  padding: 3px 6px !important;
+  font-size: 12px !important;
+}
+
+body.device-mobile .side-panel input[type="checkbox"] {
+  transform: scale(1.0) !important;
+  justify-self: end !important;
+}
+
+body.device-mobile .status-line {
+  display: none !important;
+}
+
+/* 접힌 상태: 작게, 오른쪽 버튼 한글 없이 기호만 */
+body.device-mobile .side-panel.collapsed {
+  left: 20px !important;
+  right: auto !important;
+  top: 168px !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  padding: 7px 10px !important;
+  border-radius: 8px !important;
+}
+
+body.device-mobile .side-panel.collapsed .side-panel-title {
+  margin-bottom: 0 !important;
+  gap: 10px !important;
+}
+
+body.device-mobile .side-panel.collapsed .side-panel-title::after {
+  content: "▼" !important;
+}
+
+body.device-mobile .side-panel.collapsed label,
+body.device-mobile .side-panel.collapsed .status-line {
+  display: none !important;
+}
+
+/* 컬러바: 사진 기준 지금 위치가 좋아서 살짝만 고정 */
+body.device-mobile .legend-box {
+  right: 20px !important;
+  bottom: 176px !important;
+  width: 132px !important;
+  min-width: 132px !important;
+  padding: 7px 8px !important;
+  font-size: 11px !important;
+  border-radius: 8px !important;
+}
+
+body.device-mobile .legend-title {
+  font-size: 11px !important;
+  line-height: 1.15 !important;
+}
+
+body.device-mobile .legend-box div[style*="linear-gradient"] {
+  min-width: 0 !important;
+  width: 100% !important;
+  height: 12px !important;
+}
+
+body.device-mobile .legend-ticks {
+  font-size: 11px !important;
+}
+
+/* UST21 로고: 컬러바와 비슷한 높이 */
+body.device-mobile #ust21-logo-overlay {
+  left: 20px !important;
+  bottom: 176px !important;
+  max-width: 82px !important;
+}
+
+body.device-mobile #ust21-logo-title {
+  font-size: 11px !important;
+  padding: 3px 6px !important;
+  margin-bottom: 3px !important;
+}
+
+body.device-mobile #ust21-logo-img {
+  width: 76px !important;
+  max-width: 76px !important;
+}
+
+/* 재생바는 현재 사진 기준 유지 */
+body.device-mobile .control-box {
+  left: 20px !important;
+  right: 20px !important;
+  bottom: 18px !important;
+  transform: none !important;
+  width: auto !important;
+  min-width: 0 !important;
+  padding: 8px 9px !important;
+  border-radius: 8px !important;
+}
+
+body.device-mobile .control-box > div {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important;
+  grid-template-rows: auto auto auto !important;
+  gap: 7px !important;
+  align-items: center !important;
+}
+
+body.device-mobile #play-btn {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  padding: 5px 9px !important;
+  font-size: 12px !important;
+}
+
+body.device-mobile #frame-slider {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+body.device-mobile #speed-select {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+  width: 68px !important;
+  font-size: 12px !important;
+  padding: 4px !important;
+}
+
+body.device-mobile .control-box label {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  font-size: 12px !important;
+  justify-self: start !important;
+}
+
+body.device-mobile #opacity-slider {
+  grid-column: 2 / 4 !important;
+  grid-row: 2 !important;
+  width: 115px !important;
+  justify-self: start !important;
+}
+
+body.device-mobile #time-label {
+  grid-column: 1 / 4 !important;
+  grid-row: 3 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  font-size: 12px !important;
+  line-height: 1.1 !important;
+}
+
+@media (max-width: 430px) {
+  body.device-mobile .title-box {
+    left: 116px !important;
+    top: 18px !important;
+  }
+
+  body.device-mobile .side-panel {
+    top: 168px !important;
+    left: 20px !important;
+    right: 20px !important;
+  }
+
+  body.device-mobile .side-panel.collapsed {
+    top: 168px !important;
+    left: 20px !important;
+  }
+
+  body.device-mobile .legend-box {
+    bottom: 176px !important;
+    right: 20px !important;
+    width: 128px !important;
+    min-width: 128px !important;
+  }
+
+  body.device-mobile #ust21-logo-overlay {
+    bottom: 176px !important;
+    left: 20px !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -812,7 +1065,7 @@ body.device-mobile #ust21-logo-overlay {
   <label><b>Opacity</b></label><input id="opacity-slider" type="range" min="0.1" max="1.0" value="0.82" step="0.05" style="width:110px;">
   <span id="time-label" style="font-size:13px; min-width:180px; display:inline-block;"></span>
 </div></div>
-<script src="maplibre_schism.js?v=mobile_panel_toggle01"></script>
+<script src="maplibre_schism.js?v=mobile_final_layout01"></script>
 
   <div id="ust21-logo-overlay">
     <div id="ust21-logo-title">UST21 수치예보팀</div>
@@ -866,6 +1119,34 @@ body.device-mobile #ust21-logo-overlay {
 
   window.addEventListener("resize", function(){
     setTimeout(setupMobileLayerPanelToggle, 100);
+  });
+})();
+</script>
+
+
+<script>
+(function(){
+  function setupMobileLayerPanelToggleFinal(){
+    const panel = document.querySelector(".side-panel");
+    const title = document.querySelector(".side-panel-title");
+    if(!panel || !title || title.dataset.finalToggleReady === "1") return;
+
+    title.dataset.finalToggleReady = "1";
+    title.addEventListener("click", function(){
+      if(document.body.classList.contains("device-mobile")){
+        panel.classList.toggle("collapsed");
+      }
+    });
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", setupMobileLayerPanelToggleFinal);
+  } else {
+    setupMobileLayerPanelToggleFinal();
+  }
+
+  window.addEventListener("resize", function(){
+    setTimeout(setupMobileLayerPanelToggleFinal, 100);
   });
 })();
 </script>
