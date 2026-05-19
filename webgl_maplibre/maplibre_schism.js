@@ -91,12 +91,20 @@ function fmtLegendNumber(x, digits=1){
   return n.toFixed(digits).replace(/\.?0+$/,"");
 }
 
+function cmapCode(name){
+  const c = String(name || "").toLowerCase();
+  if(c === "rdbu" || c === "bluewhitered" || c === "bwr") return 1;
+  if(c === "ylgnbu" || c === "ylgnbbu" || c === "ylognbu") return 2;
+  return 0;
+}
+
 function updateLegend(){
   if(!els.legendBox || !meta || !meta.variables) return;
 
   const jetGrad = "linear-gradient(to right,#0000cc,#0066ff,#00ccff,#00cc66,#ffff00,#ff9900,#cc0000)";
   const elevGrad = "linear-gradient(to right,#0000cc,#ffffff,#cc0000)";
   const currentGrad = jetGrad;
+  const ylgnbuGrad = "linear-gradient(to right,#ffffcc,#c7e9b4,#7fcdbb,#41b6c4,#2c7fb8,#253494)";
 
   function box(title, grad, a, b, c){
     els.legendBox.innerHTML =
@@ -114,8 +122,8 @@ function updateLegend(){
         fmtLegendNumber((v.vmin+v.vmax)/2),
         fmtLegendNumber(v.vmax));
   } else if(currentVar==="salinity"){
-    const v = meta.variables.salinity || {vmin:28, vmax:35};
-    box("Salinity [psu]", jetGrad,
+    const v = meta.variables.salinity || {vmin:25, vmax:35};
+    box("Salinity [psu]", ylgnbuGrad,
         fmtLegendNumber(v.vmin),
         fmtLegendNumber((v.vmin+v.vmax)/2),
         fmtLegendNumber(v.vmax));
@@ -155,6 +163,27 @@ vec3 smoothJet(float t) {
 
 
 
+
+vec3 ylgnbu(float t) {
+    // ColorBrewer-like YlGnBu:
+    // low -> high: yellow -> green -> cyan -> blue
+    t = clamp(t, 0.0, 1.0);
+
+    vec3 c0 = vec3(1.000, 1.000, 0.800); // #ffffcc
+    vec3 c1 = vec3(0.780, 0.914, 0.706); // #c7e9b4
+    vec3 c2 = vec3(0.498, 0.804, 0.733); // #7fcdbb
+    vec3 c3 = vec3(0.255, 0.714, 0.769); // #41b6c4
+    vec3 c4 = vec3(0.173, 0.498, 0.722); // #2c7fb8
+    vec3 c5 = vec3(0.145, 0.204, 0.580); // #253494
+
+    if (t < 0.20) return mix(c0, c1, t / 0.20);
+    if (t < 0.40) return mix(c1, c2, (t - 0.20) / 0.20);
+    if (t < 0.60) return mix(c2, c3, (t - 0.40) / 0.20);
+    if (t < 0.80) return mix(c3, c4, (t - 0.60) / 0.20);
+    return mix(c4, c5, (t - 0.80) / 0.20);
+}
+
+
 vec3 simpleBlueWhiteRed(float t) {
     // Simple smooth elevation colormap:
     // jet-blue -> white -> jet-red
@@ -192,12 +221,12 @@ vec3 smoothRdBu(float t) {
     return mix(c5, c6, (t - 0.8333) / 0.1667);
 }
 
-vec3 rdbu(float t){t=clamp(t,0.0,1.0);vec3 c0=vec3(0.031,0.188,0.420);vec3 c1=vec3(0.420,0.682,0.839);vec3 c2=vec3(0.969);vec3 c3=vec3(0.984,0.416,0.290);vec3 c4=vec3(0.404,0.0,0.051);if(t<0.25)return mix3(c0,c1,t/0.25);if(t<0.50)return mix3(c1,c2,(t-0.25)/0.25);if(t<0.75)return mix3(c2,c3,(t-0.50)/0.25);return mix3(c3,c4,(t-0.75)/0.25);} void main(){ if((v_value!=v_value)||v_value<=u_invalid+1.0) discard; float den=max(abs(u_vmax-u_vmin),1e-12); float t=clamp((v_value-u_vmin)/den,0.0,1.0); vec3 c = (u_cmap == 1) ? simpleBlueWhiteRed(t) : smoothJet(t); gl_FragColor=vec4(c,u_opacity); }`;
+vec3 rdbu(float t){t=clamp(t,0.0,1.0);vec3 c0=vec3(0.031,0.188,0.420);vec3 c1=vec3(0.420,0.682,0.839);vec3 c2=vec3(0.969);vec3 c3=vec3(0.984,0.416,0.290);vec3 c4=vec3(0.404,0.0,0.051);if(t<0.25)return mix3(c0,c1,t/0.25);if(t<0.50)return mix3(c1,c2,(t-0.25)/0.25);if(t<0.75)return mix3(c2,c3,(t-0.50)/0.25);return mix3(c3,c4,(t-0.75)/0.25);} void main(){ if((v_value!=v_value)||v_value<=u_invalid+1.0) discard; float den=max(abs(u_vmax-u_vmin),1e-12); float t=clamp((v_value-u_vmin)/den,0.0,1.0); vec3 c = (u_cmap == 1) ? simpleBlueWhiteRed(t) : ((u_cmap == 2) ? ylgnbu(t) : smoothJet(t)); gl_FragColor=vec4(c,u_opacity); }`;
 const MESH_VS=`precision highp float; attribute vec2 a_pos; uniform mat4 u_matrix; void main(){ gl_Position=u_matrix*vec4(a_pos,0.0,1.0); }`;
 const MESH_FS=`precision highp float; uniform vec4 u_color; void main(){ gl_FragColor=u_color; }`;
 
 function buildMercatorNodes(){ nodesMerc=new Float32Array(meta.node_count*2); for(let i=0;i<meta.node_count;i++){ const lon=nodesLonLat[i*2], lat=nodesLonLat[i*2+1]; const mc=maplibregl.MercatorCoordinate.fromLngLat({lng:lon,lat:lat}); nodesMerc[i*2]=mc.x; nodesMerc[i*2+1]=mc.y; } }
-function makeSchismLayer(){ return { id:"schism-custom-layer", type:"custom", renderingMode:"2d", onAdd:function(m,gl){ GLState.gl=gl; gl.getExtension("OES_element_index_uint"); GLState.scalarProgram=makeProgram(gl,SCALAR_VS,SCALAR_FS); GLState.meshProgram=makeProgram(gl,MESH_VS,MESH_FS); GLState.aPos=gl.getAttribLocation(GLState.scalarProgram,"a_pos"); GLState.aVal=gl.getAttribLocation(GLState.scalarProgram,"a_value"); GLState.uMatrix=gl.getUniformLocation(GLState.scalarProgram,"u_matrix"); GLState.uVmin=gl.getUniformLocation(GLState.scalarProgram,"u_vmin"); GLState.uVmax=gl.getUniformLocation(GLState.scalarProgram,"u_vmax"); GLState.uOpacity=gl.getUniformLocation(GLState.scalarProgram,"u_opacity"); GLState.uCmap=gl.getUniformLocation(GLState.scalarProgram,"u_cmap"); GLState.uInvalid=gl.getUniformLocation(GLState.scalarProgram,"u_invalid"); GLState.meshAPos=gl.getAttribLocation(GLState.meshProgram,"a_pos"); GLState.meshUMatrix=gl.getUniformLocation(GLState.meshProgram,"u_matrix"); GLState.meshUColor=gl.getUniformLocation(GLState.meshProgram,"u_color"); GLState.nodeBuffer=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.nodeBuffer); gl.bufferData(gl.ARRAY_BUFFER,nodesMerc,gl.STATIC_DRAW); GLState.valueBuffer=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.valueBuffer); gl.bufferData(gl.ARRAY_BUFFER,meta.node_count*4,gl.DYNAMIC_DRAW); GLState.elemBuffer=gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,GLState.elemBuffer); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,elems,gl.STATIC_DRAW); GLState.meshNodeBuffer=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.meshNodeBuffer); gl.bufferData(gl.ARRAY_BUFFER,nodesMerc,gl.STATIC_DRAW); GLState.meshEdgeBuffer=gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,GLState.meshEdgeBuffer); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,meshEdges,gl.STATIC_DRAW); GLState.ready=true; }, render:function(gl,matrix){ if(!GLState.ready) return; gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA); if(currentVar!=="current"){ const vm=variableMeta(currentVar); if(vm){ gl.useProgram(GLState.scalarProgram); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.nodeBuffer); gl.enableVertexAttribArray(GLState.aPos); gl.vertexAttribPointer(GLState.aPos,2,gl.FLOAT,false,0,0); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.valueBuffer); gl.enableVertexAttribArray(GLState.aVal); gl.vertexAttribPointer(GLState.aVal,1,gl.FLOAT,false,0,0); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,GLState.elemBuffer); gl.uniformMatrix4fv(GLState.uMatrix,false,matrix); gl.uniform1f(GLState.uVmin,vm.vmin); gl.uniform1f(GLState.uVmax,vm.vmax); gl.uniform1f(GLState.uOpacity,parseFloat(els.opacitySlider.value)); gl.uniform1i(GLState.uCmap,vm.cmap==="rdbu"?1:0); gl.uniform1f(GLState.uInvalid,meta.invalid_value); gl.drawElements(gl.TRIANGLES,meta.index_count,gl.UNSIGNED_INT,0); } } if(els.meshOverlay && els.meshOverlay.checked){ gl.useProgram(GLState.meshProgram); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.meshNodeBuffer); gl.enableVertexAttribArray(GLState.meshAPos); gl.vertexAttribPointer(GLState.meshAPos,2,gl.FLOAT,false,0,0); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,GLState.meshEdgeBuffer); gl.uniformMatrix4fv(GLState.meshUMatrix,false,matrix); gl.uniform4f(GLState.meshUColor, 0.78, 0.78, 0.78, 0.35); gl.drawElements(gl.LINES,meshEdges.length,gl.UNSIGNED_INT,0); } } }; }
+function makeSchismLayer(){ return { id:"schism-custom-layer", type:"custom", renderingMode:"2d", onAdd:function(m,gl){ GLState.gl=gl; gl.getExtension("OES_element_index_uint"); GLState.scalarProgram=makeProgram(gl,SCALAR_VS,SCALAR_FS); GLState.meshProgram=makeProgram(gl,MESH_VS,MESH_FS); GLState.aPos=gl.getAttribLocation(GLState.scalarProgram,"a_pos"); GLState.aVal=gl.getAttribLocation(GLState.scalarProgram,"a_value"); GLState.uMatrix=gl.getUniformLocation(GLState.scalarProgram,"u_matrix"); GLState.uVmin=gl.getUniformLocation(GLState.scalarProgram,"u_vmin"); GLState.uVmax=gl.getUniformLocation(GLState.scalarProgram,"u_vmax"); GLState.uOpacity=gl.getUniformLocation(GLState.scalarProgram,"u_opacity"); GLState.uCmap=gl.getUniformLocation(GLState.scalarProgram,"u_cmap"); GLState.uInvalid=gl.getUniformLocation(GLState.scalarProgram,"u_invalid"); GLState.meshAPos=gl.getAttribLocation(GLState.meshProgram,"a_pos"); GLState.meshUMatrix=gl.getUniformLocation(GLState.meshProgram,"u_matrix"); GLState.meshUColor=gl.getUniformLocation(GLState.meshProgram,"u_color"); GLState.nodeBuffer=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.nodeBuffer); gl.bufferData(gl.ARRAY_BUFFER,nodesMerc,gl.STATIC_DRAW); GLState.valueBuffer=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.valueBuffer); gl.bufferData(gl.ARRAY_BUFFER,meta.node_count*4,gl.DYNAMIC_DRAW); GLState.elemBuffer=gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,GLState.elemBuffer); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,elems,gl.STATIC_DRAW); GLState.meshNodeBuffer=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.meshNodeBuffer); gl.bufferData(gl.ARRAY_BUFFER,nodesMerc,gl.STATIC_DRAW); GLState.meshEdgeBuffer=gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,GLState.meshEdgeBuffer); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,meshEdges,gl.STATIC_DRAW); GLState.ready=true; }, render:function(gl,matrix){ if(!GLState.ready) return; gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA); if(currentVar!=="current"){ const vm=variableMeta(currentVar); if(vm){ gl.useProgram(GLState.scalarProgram); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.nodeBuffer); gl.enableVertexAttribArray(GLState.aPos); gl.vertexAttribPointer(GLState.aPos,2,gl.FLOAT,false,0,0); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.valueBuffer); gl.enableVertexAttribArray(GLState.aVal); gl.vertexAttribPointer(GLState.aVal,1,gl.FLOAT,false,0,0); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,GLState.elemBuffer); gl.uniformMatrix4fv(GLState.uMatrix,false,matrix); gl.uniform1f(GLState.uVmin,vm.vmin); gl.uniform1f(GLState.uVmax,vm.vmax); gl.uniform1f(GLState.uOpacity,parseFloat(els.opacitySlider.value)); gl.uniform1i(GLState.uCmap,cmapCode(vm.cmap)); gl.uniform1f(GLState.uInvalid,meta.invalid_value); gl.drawElements(gl.TRIANGLES,meta.index_count,gl.UNSIGNED_INT,0); } } if(els.meshOverlay && els.meshOverlay.checked){ gl.useProgram(GLState.meshProgram); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.meshNodeBuffer); gl.enableVertexAttribArray(GLState.meshAPos); gl.vertexAttribPointer(GLState.meshAPos,2,gl.FLOAT,false,0,0); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,GLState.meshEdgeBuffer); gl.uniformMatrix4fv(GLState.meshUMatrix,false,matrix); gl.uniform4f(GLState.meshUColor, 0.78, 0.78, 0.78, 0.35); gl.drawElements(gl.LINES,meshEdges.length,gl.UNSIGNED_INT,0); } } }; }
 
 async function loadScalarFrame(v,i){ const url=scalarFrameUrl(v,i); if(!url) return null; const key=`${v}:${i}`; if(scalarCache.has(key)) return scalarCache.get(key); if(scalarLoading.has(key)) return await scalarLoading.get(key); const promise=fetchFloat16AsFloat32(url, meta.node_count).then(arr=>{ scalarCache.set(key,arr); scalarLoading.delete(key); for(const k of Array.from(scalarCache.keys())){ const [vv,ff]=k.split(":"); if(vv!==v || Math.abs(parseInt(ff)-i)>2) scalarCache.delete(k); } return arr; }); scalarLoading.set(key,promise); return await promise; }
 function preloadScalarNeighbors(v,i){ if(v==="current") return; loadScalarFrame(v,Math.max(0,i-1)).catch(()=>{}); loadScalarFrame(v,Math.min(frameCount()-1,i+1)).catch(()=>{}); }
@@ -703,7 +732,7 @@ function makeMapStyle() {
     };
 }
 function initMap(){ const b=meta.bounds; const south=b[0][0], west=b[0][1], north=b[1][0], east=b[1][1]; map=new maplibregl.Map({container:"map",style:makeMapStyle(),center:[(west+east)/2,(south+north)/2],zoom:7,minZoom:3,maxZoom:14,dragRotate:false,pitchWithRotate:false,renderWorldCopies:false,attributionControl:true}); map.addControl(new maplibregl.NavigationControl({visualizePitch:false}),"top-left"); map.fitBounds([[west,south],[east,north]],{padding:20,duration:0}); }
-async function boot(){ setStatus("Loading metadata..."); meta=await fetchJson(CONFIG.metaUrl); meta.variables=meta.variables||{}; meta.variables.salinity=meta.variables.salinity||{name:"Salinity",units:"psu",vmin:28,vmax:35}; meta.variables.salinity.vmin=28; meta.variables.salinity.vmax=35; meta.variables=meta.variables||{}; meta.variables.salinity=meta.variables.salinity||{name:"Salinity",units:"psu",vmin:28,vmax:35}; meta.variables.salinity.vmin=28; meta.variables.salinity.vmax=35; lookupMeta=await fetchJson(CONFIG.lookupMetaUrl); els.frameSlider.max=frameCount()-1; setStatus("Loading mesh and lookup..."); [nodesLonLat,elems,meshEdges,lookupOffsets,lookupTriangles]=await Promise.all([fetchFloat32(CONFIG.nodesUrl,meta.node_count*2),fetchUint32(CONFIG.elemsUrl,meta.index_count),fetchUint32(CONFIG.edgesUrl),fetchUint32(CONFIG.lookupOffsetsUrl),fetchUint32(CONFIG.lookupTrianglesUrl)]); initMap(); map.on("load",async()=>{ setStatus("Preparing WebGL layer..."); buildMercatorNodes(); initParticleCanvas(); map.addLayer(makeSchismLayer()); setupEvents(); updateCurrentOverlayAvailability(); updateLegend(); await setFrame(0); setStatus(`Ready: ${meta.node_count.toLocaleString()} nodes, ${meta.triangle_count.toLocaleString()} triangles`); }); }
+async function boot(){ setStatus("Loading metadata..."); meta=await fetchJson(CONFIG.metaUrl); meta.variables=meta.variables||{}; meta.variables.salinity=meta.variables.salinity||{name:"Salinity",units:"psu",vmin:25,vmax:35}; meta.variables.salinity.vmin=25; meta.variables.salinity.vmax=35; meta.variables=meta.variables||{}; meta.variables.salinity=meta.variables.salinity||{name:"Salinity",units:"psu",vmin:25,vmax:35}; meta.variables.salinity.vmin=25; meta.variables.salinity.vmax=35; lookupMeta=await fetchJson(CONFIG.lookupMetaUrl); els.frameSlider.max=frameCount()-1; setStatus("Loading mesh and lookup..."); [nodesLonLat,elems,meshEdges,lookupOffsets,lookupTriangles]=await Promise.all([fetchFloat32(CONFIG.nodesUrl,meta.node_count*2),fetchUint32(CONFIG.elemsUrl,meta.index_count),fetchUint32(CONFIG.edgesUrl),fetchUint32(CONFIG.lookupOffsetsUrl),fetchUint32(CONFIG.lookupTrianglesUrl)]); initMap(); map.on("load",async()=>{ setStatus("Preparing WebGL layer..."); buildMercatorNodes(); initParticleCanvas(); map.addLayer(makeSchismLayer()); setupEvents(); updateCurrentOverlayAvailability(); updateLegend(); await setFrame(0); setStatus(`Ready: ${meta.node_count.toLocaleString()} nodes, ${meta.triangle_count.toLocaleString()} triangles`); }); }
 boot().catch(err=>{ console.error(err); setStatus("ERROR: "+err.message); alert(err.message); });
 
 
@@ -889,3 +918,5 @@ function setBaseMap(name) {
 // KOP_MOBILE_PARTICLE_032_FROM_SCREENSHOT_01
 
 // KOP_PLAY_ICON_BUTTON_01
+
+// KOP_SALINITY_YLGNBU_25_35_01

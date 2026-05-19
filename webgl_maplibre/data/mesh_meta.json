@@ -1889,9 +1889,9 @@
     "salinity": {
       "name": "Salinity",
       "units": "psu",
-      "vmin": 28,
+      "vmin": 25,
       "vmax": 35,
-      "cmap": "jet_like_temperature"
+      "cmap": "ylgnbu"
     }
   },
   "lookup": {
