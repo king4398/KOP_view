@@ -534,6 +534,21 @@ function releaseParticleSnapshotAfterMove() {
 }
 
 
+function particleFlowScale(){
+  const base = CONFIG.flowScale; // default: 0.005
+  if(!map) return base;
+
+  const z = map.getZoom();
+  const refZoom = 7.0;
+
+  // zoom 7: 100%
+  // zoom 8+: slower on screen as zoom increases
+  const factor = Math.pow(0.75, Math.max(0, z - refZoom));
+
+  // do not go below 20% of base speed
+  return Math.max(base * 0.20, base * factor);
+}
+
 function startParticles() {
     if (particleAnimId !== null) {
         cancelAnimationFrame(particleAnimId);
@@ -584,7 +599,7 @@ function startParticles() {
             let coslat = Math.cos(latRad);
             if (Math.abs(coslat) < 1e-6) coslat = 1e-6;
 
-            const dt = CONFIG.flowScale;
+            const dt = particleFlowScale();
             const newLon = p.lon + (vec.u * dt) / coslat;
             const newLat = p.lat + vec.v * dt;
 
@@ -920,3 +935,5 @@ function setBaseMap(name) {
 // KOP_PLAY_ICON_BUTTON_01
 
 // KOP_SALINITY_YLGNBU_25_35_01
+
+// KOP_ZOOM_PARTICLE_SPEED_01
