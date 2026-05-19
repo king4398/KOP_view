@@ -133,11 +133,8 @@ function preloadCurrentFrame(i){ const next=Math.min(frameCount()-1,i+1), key=St
 async function setFrame(i){ const n=frameCount(); if(n<=0) return; currentFrame=parseInt(i); if(!Number.isFinite(currentFrame)) currentFrame=0; currentFrame=Math.max(0,Math.min(n-1,currentFrame)); els.frameSlider.value=currentFrame; const fm=meta.frames[currentFrame]||{}; els.timeLabel.textContent=fm.label||`frame ${currentFrame}`; updateCurrentOverlayAvailability(); updateLegend(); if(currentVar!=="current"){ const arr=await loadScalarFrame(currentVar,currentFrame); if(GLState.gl && GLState.valueBuffer){ const gl=GLState.gl; gl.bindBuffer(gl.ARRAY_BUFFER,GLState.valueBuffer); gl.bufferSubData(gl.ARRAY_BUFFER,0,arr); } preloadScalarNeighbors(currentVar,currentFrame); } if(shouldDrawCurrentParticles()){ await loadCurrentFrame(currentFrame); clearCurrentCanvas(); startParticles(); preloadCurrentFrame(currentFrame); } else stopParticles(); setStatus(`${currentVar} frame ${currentFrame+1}/${n}`); map.triggerRepaint(); }
 function startTimer(){ if(timer!==null) clearInterval(timer); timer=setInterval(()=>{ currentFrame=(currentFrame+1)%frameCount(); setFrame(currentFrame); },1000/speed); }
 
+
 function initParticleCanvas() {
-    // Important:
-    // Attach particle canvas to the map container itself, not to MapLibre's canvasContainer.
-    // The canvasContainer can participate in map transforms during navigation.
-    // We want particles to stay screen-fixed while the map is being dragged.
     const container = map.getContainer();
 
     if (particleCanvas && particleCanvas.parentNode) {
@@ -155,7 +152,8 @@ function initParticleCanvas() {
     particleCanvas.style.pointerEvents = "none";
     particleCanvas.style.zIndex = "20";
     particleCanvas.style.transform = "none";
-    particleCanvas.style.willChange = "auto";
+    particleCanvas.style.opacity = "1";
+    particleCanvas.style.visibility = "visible";
 
     container.appendChild(particleCanvas);
 
@@ -167,12 +165,11 @@ function initParticleCanvas() {
     map.on("resize", resizeParticleCanvas);
 }
 
+
 function resizeParticleCanvas() {
     if (!map || !particleCanvas || !particleCtx) return;
 
-    const container = map.getContainer();
-    const rect = container.getBoundingClientRect();
-
+    const rect = map.getContainer().getBoundingClientRect();
     const w = Math.max(1, Math.round(rect.width));
     const h = Math.max(1, Math.round(rect.height));
     const dpr = window.devicePixelRatio || 1;
@@ -184,17 +181,18 @@ function resizeParticleCanvas() {
     particleCanvas.style.left = "0";
     particleCanvas.style.top = "0";
     particleCanvas.style.transform = "none";
+    particleCanvas.style.opacity = "1";
+    particleCanvas.style.visibility = "visible";
 
     particleCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     clearCurrentCanvas();
 }
 
+
 function clearCurrentCanvas() {
     if (!particleCtx || !map) return;
 
-    const container = map.getContainer();
-    const rect = container.getBoundingClientRect();
-
+    const rect = map.getContainer().getBoundingClientRect();
     particleCtx.clearRect(0, 0, rect.width, rect.height);
 }
 
@@ -233,7 +231,24 @@ function lookupCell(lon,lat){ const g=getLookupBounds(); if(lon<g.lonMin||lon>g.
 function barycentricVector(lon,lat,tri){ const ia=elems[tri*3], ib=elems[tri*3+1], ic=elems[tri*3+2]; const ax=nodesLonLat[ia*2], ay=nodesLonLat[ia*2+1], bx=nodesLonLat[ib*2], by=nodesLonLat[ib*2+1], cx=nodesLonLat[ic*2], cy=nodesLonLat[ic*2+1]; const v0x=bx-ax, v0y=by-ay, v1x=cx-ax, v1y=cy-ay, v2x=lon-ax, v2y=lat-ay; const den=v0x*v1y-v1x*v0y; if(Math.abs(den)<1e-20) return null; const w1=(v2x*v1y-v1x*v2y)/den, w2=(v0x*v2y-v2x*v0y)/den, w0=1-w1-w2; if(w0<-1e-7||w1<-1e-7||w2<-1e-7) return null; const ua=currentU[ia], ub=currentU[ib], uc=currentU[ic], va=currentV[ia], vb=currentV[ib], vc=currentV[ic]; if(!Number.isFinite(ua+ub+uc+va+vb+vc) || ua<=meta.invalid_value+1 || ub<=meta.invalid_value+1 || uc<=meta.invalid_value+1 || va<=meta.invalid_value+1 || vb<=meta.invalid_value+1 || vc<=meta.invalid_value+1) return null; const u=w0*ua+w1*ub+w2*uc, v=w0*va+w1*vb+w2*vc, speed=Math.hypot(u,v); if(!Number.isFinite(speed)) return null; return {u,v,speed}; }
 function vectorAt(lon,lat){ if(!currentU||!currentV||!lookupOffsets||!lookupTriangles) return null; const cell=lookupCell(lon,lat); if(cell===null) return null; const start=lookupOffsets[cell], end=lookupOffsets[cell+1]; for(let k=start;k<end;k++){ const vec=barycentricVector(lon,lat,lookupTriangles[k]); if(vec) return vec; } return null; }
 function randomValidPoint(){ const g=getLookupBounds(); let west=g.lonMin,east=g.lonMax,south=g.latMin,north=g.latMax; if(map){ const b=map.getBounds(); west=Math.max(west,b.getWest()); east=Math.min(east,b.getEast()); south=Math.max(south,b.getSouth()); north=Math.min(north,b.getNorth()); } if(!(west<east&&south<north)){ west=g.lonMin; east=g.lonMax; south=g.latMin; north=g.latMax; } for(let i=0;i<800;i++){ const lon=west+Math.random()*(east-west), lat=south+Math.random()*(north-south); if(vectorAt(lon,lat)) return {lon,lat}; } return null; }
-function resetParticle(p){ const ll=randomValidPoint(); if(ll){p.lon=ll.lon;p.lat=ll.lat;} else {p.lon=meta.bounds[0][1];p.lat=meta.bounds[0][0];} p.age=Math.floor(Math.random()*100); p.maxAge=80+Math.floor(Math.random()*80); }
+
+function resetParticle(p) {
+    const ll = randomValidPoint();
+
+    if (!ll) {
+        p.lon = meta.bounds[0][1];
+        p.lat = meta.bounds[0][0];
+    } else {
+        p.lon = ll.lon;
+        p.lat = ll.lat;
+    }
+
+    p.age = Math.floor(Math.random() * 100);
+    p.maxAge = 80 + Math.floor(Math.random() * 80);
+
+    // Geographic trail. This makes particles stick to the map during pan/zoom.
+    p.trail = [{ lon: p.lon, lat: p.lat }];
+}
 function resetParticles(){ particles=[]; if(!currentU||!currentV) return; for(let i=0;i<particleCount;i++){ const p={}; resetParticle(p); particles.push(p); } }
 
 let frozenParticleView = null;
@@ -406,7 +421,113 @@ function releaseParticleSnapshotAfterMove() {
     }
 }
 
-function startParticles(){ if(particleAnimId!==null) cancelAnimationFrame(particleAnimId); particleRunning=true; resetParticles(); function step(){ if(window.__KOP_PARTICLE_LOCKED || !particleRunning||!shouldDrawCurrentParticles()){ particleAnimId=requestAnimationFrame(step); return; } const rect=map.getContainer().getBoundingClientRect(), width=rect.width, height=rect.height; particleCtx.globalCompositeOperation="destination-in"; particleCtx.fillStyle="rgba(0,0,0,0.92)"; particleCtx.fillRect(0,0,width,height); particleCtx.globalCompositeOperation="source-over"; particleCtx.lineWidth=1.2; for(const p of particles){ if(!p||p.age>p.maxAge){resetParticle(p);continue;} const vec=vectorAt(p.lon,p.lat); if(!vec){resetParticle(p);continue;} const oldPoint = projectParticlePoint(p.lon, p.lat); const latRad=p.lat*Math.PI/180; let coslat=Math.cos(latRad); if(Math.abs(coslat)<1e-6) coslat=1e-6; const dt=CONFIG.flowScale*speed; const newLon=p.lon+(vec.u*dt)/coslat, newLat=p.lat+vec.v*dt; if(!vectorAt(newLon,newLat)){resetParticle(p);continue;} p.lon=newLon; p.lat=newLat; p.age++; const newPoint = projectParticlePoint(p.lon, p.lat); if(newPoint.x<-50||newPoint.x>width+50||newPoint.y<-50||newPoint.y>height+50){resetParticle(p);continue;} particleCtx.strokeStyle=currentParticleColor(vec.speed); particleCtx.beginPath(); particleCtx.moveTo(oldPoint.x,oldPoint.y); particleCtx.lineTo(newPoint.x,newPoint.y); particleCtx.stroke(); } particleAnimId=requestAnimationFrame(step); } particleAnimId=requestAnimationFrame(step); }
+
+function startParticles() {
+    if (particleAnimId !== null) {
+        cancelAnimationFrame(particleAnimId);
+        particleAnimId = null;
+    }
+
+    particleRunning = true;
+    resetParticles();
+
+    const TRAIL_LEN = 8;
+
+    function step() {
+        if (!particleRunning || !shouldDrawCurrentParticles()) {
+            particleAnimId = requestAnimationFrame(step);
+            return;
+        }
+
+        const rect = map.getContainer().getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+
+        // Important:
+        // Clear and redraw all particle trails from lon/lat each frame.
+        // This keeps particles attached to the map during pan/zoom.
+        particleCtx.globalCompositeOperation = "source-over";
+        particleCtx.clearRect(0, 0, width, height);
+        particleCtx.lineWidth = 1.2;
+        particleCtx.lineCap = "round";
+
+        if (particles.length < particleCount * 0.60) {
+            resetParticles();
+        }
+
+        for (const p of particles) {
+            if (!p || p.age > p.maxAge) {
+                resetParticle(p);
+                continue;
+            }
+
+            const vec = vectorAt(p.lon, p.lat);
+
+            if (!vec || !Number.isFinite(vec.u) || !Number.isFinite(vec.v)) {
+                resetParticle(p);
+                continue;
+            }
+
+            const latRad = p.lat * Math.PI / 180.0;
+            let coslat = Math.cos(latRad);
+            if (Math.abs(coslat) < 1e-6) coslat = 1e-6;
+
+            const dt = CONFIG.flowScale * speed;
+            const newLon = p.lon + (vec.u * dt) / coslat;
+            const newLat = p.lat + vec.v * dt;
+
+            const vec2 = vectorAt(newLon, newLat);
+
+            if (!vec2) {
+                resetParticle(p);
+                continue;
+            }
+
+            p.lon = newLon;
+            p.lat = newLat;
+            p.age += 1;
+
+            if (!p.trail) p.trail = [];
+            p.trail.push({ lon: p.lon, lat: p.lat });
+
+            if (p.trail.length > TRAIL_LEN) {
+                p.trail.shift();
+            }
+
+            const head = map.project([p.lon, p.lat]);
+
+            if (
+                head.x < -80 || head.x > width + 80 ||
+                head.y < -80 || head.y > height + 80
+            ) {
+                resetParticle(p);
+                continue;
+            }
+
+            if (p.trail.length < 2) continue;
+
+            particleCtx.strokeStyle = currentParticleColor(vec.speed);
+            particleCtx.beginPath();
+
+            for (let i = 0; i < p.trail.length; i++) {
+                const q = p.trail[i];
+                const pt = map.project([q.lon, q.lat]);
+
+                if (i === 0) {
+                    particleCtx.moveTo(pt.x, pt.y);
+                } else {
+                    particleCtx.lineTo(pt.x, pt.y);
+                }
+            }
+
+            particleCtx.stroke();
+        }
+
+        particleAnimId = requestAnimationFrame(step);
+    }
+
+    particleAnimId = requestAnimationFrame(step);
+}
 function stopParticles(){ particleRunning=false; if(particleAnimId!==null){ cancelAnimationFrame(particleAnimId); particleAnimId=null; } clearCurrentCanvas(); }
 function setupEvents(){ els.currentOverlay.checked=true; els.currentOverlay.dataset.userTouched=""; els.currentOverlay.addEventListener("change",()=>{els.currentOverlay.dataset.userTouched="1"; updateCurrentOverlayAvailability(); setFrame(currentFrame);}); els.meshOverlay.addEventListener("change",()=>map.triggerRepaint()); els.varSelect.addEventListener("change",e=>{currentVar=e.target.value; updateCurrentOverlayAvailability(); updateLegend(); setFrame(currentFrame); map.triggerRepaint();}); els.playBtn.addEventListener("click",()=>{ if(timer===null){els.playBtn.textContent="Pause"; startTimer();} else {els.playBtn.textContent="Play"; clearInterval(timer); timer=null;} }); els.frameSlider.addEventListener("input",e=>setFrame(e.target.value)); els.speedSelect.addEventListener("change",e=>{ speed=parseFloat(e.target.value); if(timer!==null) startTimer(); }); els.opacitySlider.addEventListener("input",()=>map.triggerRepaint()); els.densitySelect.addEventListener("change",e=>{ particleCount=parseInt(e.target.value); resetParticles(); clearCurrentCanvas(); }); map.on("moveend",()=>resetParticles());
 }
@@ -582,157 +703,28 @@ function setBaseMap(name) {
 
 
 
-// KOP_PARTICLE_SNAPSHOT_DURING_MOVE
 
 
-// KOP_PARTICLE_BODY_SNAPSHOT_START
-(function () {
-    "use strict";
 
-    let snapCanvas = null;
-    let snapCtx = null;
-    let installed = false;
 
-    function getMapSafe() {
-        try {
-            if (typeof map !== "undefined" && map) return map;
-        } catch (e) {}
-        return null;
-    }
 
-    function getParticleCanvasSafe() {
-        try {
-            if (typeof particleCanvas !== "undefined" && particleCanvas) return particleCanvas;
-        } catch (e) {}
-        return document.getElementById("particle-canvas");
-    }
 
-    function ensureSnapCanvas() {
-        if (snapCanvas) return snapCanvas;
 
-        snapCanvas = document.createElement("canvas");
-        snapCanvas.id = "kop-particle-fixed-snapshot";
-        snapCanvas.style.position = "fixed";
-        snapCanvas.style.pointerEvents = "none";
-        snapCanvas.style.zIndex = "999999";
-        snapCanvas.style.display = "none";
-        snapCanvas.style.transform = "none";
-        snapCanvas.style.opacity = "1";
+(function removeParticleSnapshotArtifacts() {
+    const badIds = [
+        "kop-particle-fixed-snapshot",
+        "particle-snapshot-canvas"
+    ];
 
-        document.body.appendChild(snapCanvas);
-        snapCtx = snapCanvas.getContext("2d");
-        return snapCanvas;
-    }
-
-    function freezeParticlesOnScreen() {
-        const m = getMapSafe();
-        const live = getParticleCanvasSafe();
-        if (!m || !live) return;
-
-        ensureSnapCanvas();
-
-        const rect = m.getContainer().getBoundingClientRect();
-        const dpr = window.devicePixelRatio || 1;
-
-        snapCanvas.width = Math.max(1, Math.round(rect.width * dpr));
-        snapCanvas.height = Math.max(1, Math.round(rect.height * dpr));
-
-        snapCanvas.style.left = rect.left + "px";
-        snapCanvas.style.top = rect.top + "px";
-        snapCanvas.style.width = rect.width + "px";
-        snapCanvas.style.height = rect.height + "px";
-        snapCanvas.style.display = "block";
-        snapCanvas.style.visibility = "visible";
-
-        snapCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        snapCtx.clearRect(0, 0, rect.width, rect.height);
-
-        try {
-            snapCtx.drawImage(live, 0, 0, rect.width, rect.height);
-        } catch (e) {
-            console.warn("[KOP particle fixed snapshot] drawImage failed", e);
+    for (const id of badIds) {
+        const el = document.getElementById(id);
+        if (el && el.parentNode) {
+            el.parentNode.removeChild(el);
         }
-
-        window.__KOP_PARTICLE_LOCKED = true;
-
-        try {
-            if (typeof particleRunning !== "undefined") particleRunning = false;
-            if (typeof particleAnimId !== "undefined" && particleAnimId !== null) {
-                cancelAnimationFrame(particleAnimId);
-                particleAnimId = null;
-            }
-        } catch (e) {}
-
-        live.style.opacity = "0";
-        live.style.visibility = "hidden";
-
-        console.log("[KOP particle fixed snapshot] freeze");
     }
 
-    function releaseParticlesAfterMove() {
-        const m = getMapSafe();
-        const live = getParticleCanvasSafe();
-        if (!m || !live) return;
-
-        window.__KOP_PARTICLE_LOCKED = false;
-
-        if (snapCanvas) {
-            snapCanvas.style.display = "none";
-        }
-
-        live.style.opacity = "1";
-        live.style.visibility = "visible";
-
-        try {
-            if (typeof resizeParticleCanvas === "function") resizeParticleCanvas();
-            if (typeof clearCurrentCanvas === "function") clearCurrentCanvas();
-            if (typeof resetParticles === "function") resetParticles();
-
-            if (
-                typeof shouldDrawCurrentParticles === "function" &&
-                shouldDrawCurrentParticles() &&
-                typeof startParticles === "function"
-            ) {
-                startParticles();
-            }
-        } catch (e) {
-            console.warn("[KOP particle fixed snapshot] release failed", e);
-        }
-
-        console.log("[KOP particle fixed snapshot] release");
-    }
-
-    function install() {
-        const m = getMapSafe();
-        if (!m) {
-            setTimeout(install, 300);
-            return;
-        }
-
-        if (installed || m.__kopParticleBodySnapshotInstalled) return;
-        installed = true;
-        m.__kopParticleBodySnapshotInstalled = true;
-
-        // 직접 drag 이벤트에 붙임. 기존 setupEvents 성공/실패와 무관하게 작동.
-        m.on("dragstart", freezeParticlesOnScreen);
-        m.on("movestart", freezeParticlesOnScreen);
-        m.on("zoomstart", freezeParticlesOnScreen);
-
-        m.on("dragend", releaseParticlesAfterMove);
-        m.on("moveend", releaseParticlesAfterMove);
-        m.on("zoomend", releaseParticlesAfterMove);
-
-        window.KOP_FREEZE_PARTICLES_ON_SCREEN = freezeParticlesOnScreen;
-        window.KOP_RELEASE_PARTICLES_AFTER_MOVE = releaseParticlesAfterMove;
-
-        console.log("[KOP particle fixed snapshot] installed");
-    }
-
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", () => setTimeout(install, 800));
-    } else {
-        setTimeout(install, 800);
-    }
+    window.__KOP_PARTICLE_LOCKED = false;
 })();
-// KOP_PARTICLE_BODY_SNAPSHOT_END
 
+
+// KOP_PARTICLE_GEOTRAIL_MAP_ATTACHED
