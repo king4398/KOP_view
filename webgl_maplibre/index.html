@@ -437,6 +437,189 @@ body.device-mobile #ust21-logo-img {
   }
 }
 
+
+/* ===== Mobile compact UI patch ===== */
+body.device-mobile .title-box {
+  left: 10px !important;
+  top: 10px !important;
+  font-size: 12px !important;
+  padding: 5px 8px !important;
+}
+
+body.device-mobile .basemap-radio-box {
+  right: 10px !important;
+  top: 10px !important;
+  font-size: 12px !important;
+  padding: 5px 7px !important;
+}
+
+body.device-mobile .side-panel {
+  left: 10px !important;
+  right: 10px !important;
+  top: 58px !important;
+  width: auto !important;
+  padding: 8px 10px !important;
+  font-size: 12px !important;
+  border-radius: 8px !important;
+  background: rgba(15,18,24,0.72) !important;
+}
+
+body.device-mobile .side-panel-title {
+  font-size: 13px !important;
+  margin-bottom: 5px !important;
+}
+
+body.device-mobile .side-panel label {
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  gap: 8px !important;
+  align-items: center !important;
+  margin: 5px 0 !important;
+}
+
+body.device-mobile .side-panel select {
+  width: 130px !important;
+  max-width: 130px !important;
+  height: 31px !important;
+  font-size: 12px !important;
+}
+
+body.device-mobile .side-panel input[type="checkbox"] {
+  transform: scale(1.05) !important;
+}
+
+body.device-mobile .status-line {
+  display: none !important;
+}
+
+/* made by nyj가 모바일 화면 너무 차지하면 접어둠 */
+body.device-mobile #made-by-nyj {
+  font-size: 11px !important;
+  padding: 3px 6px !important;
+  margin-bottom: 3px !important;
+  max-width: 80px !important;
+}
+
+/* 컬러바: 더 작게, 플레이바와 안 겹치게 위로 */
+body.device-mobile .legend-box {
+  right: 10px !important;
+  bottom: 170px !important;
+  width: 132px !important;
+  min-width: 132px !important;
+  padding: 7px 8px !important;
+  font-size: 11px !important;
+  border-radius: 8px !important;
+}
+
+body.device-mobile .legend-title {
+  font-size: 11px !important;
+  line-height: 1.15 !important;
+}
+
+/* inline legend gradient도 모바일에서 짧게 */
+body.device-mobile .legend-box div[style*="linear-gradient"] {
+  min-width: 0 !important;
+  width: 100% !important;
+  height: 12px !important;
+}
+
+body.device-mobile .legend-ticks {
+  font-size: 11px !important;
+}
+
+/* 재생바: 2줄 컴팩트 */
+body.device-mobile .control-box {
+  left: 10px !important;
+  right: 10px !important;
+  bottom: 10px !important;
+  transform: none !important;
+  width: auto !important;
+  min-width: 0 !important;
+  padding: 8px 9px !important;
+}
+
+body.device-mobile .control-box > div {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto auto !important;
+  gap: 7px !important;
+  align-items: center !important;
+}
+
+body.device-mobile #play-btn {
+  padding: 5px 9px !important;
+  font-size: 12px !important;
+}
+
+body.device-mobile #frame-slider {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  flex: none !important;
+}
+
+body.device-mobile #speed-select {
+  width: 68px !important;
+  font-size: 12px !important;
+  padding: 4px !important;
+}
+
+body.device-mobile .control-box label {
+  font-size: 11px !important;
+}
+
+body.device-mobile #opacity-slider {
+  grid-column: 1 / 3 !important;
+  width: 95px !important;
+}
+
+body.device-mobile #time-label {
+  grid-column: 1 / 5 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  font-size: 12px !important;
+  line-height: 1.1 !important;
+}
+
+/* UST21은 모바일에서 작게 */
+body.device-mobile #ust21-logo-overlay {
+  left: 10px !important;
+  bottom: 122px !important;
+  max-width: 82px !important;
+}
+
+body.device-mobile #ust21-logo-title {
+  font-size: 11px !important;
+  padding: 3px 6px !important;
+  margin-bottom: 3px !important;
+}
+
+body.device-mobile #ust21-logo-img {
+  width: 76px !important;
+  max-width: 76px !important;
+}
+
+@media (max-width: 430px) {
+  body.device-mobile .side-panel {
+    top: 56px !important;
+    padding: 7px 9px !important;
+  }
+
+  body.device-mobile .side-panel select {
+    width: 122px !important;
+    max-width: 122px !important;
+  }
+
+  body.device-mobile .legend-box {
+    bottom: 176px !important;
+    width: 128px !important;
+    min-width: 128px !important;
+  }
+
+  body.device-mobile #ust21-logo-overlay {
+    bottom: 128px !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -514,7 +697,7 @@ body.device-mobile #ust21-logo-img {
   <label><b>Opacity</b></label><input id="opacity-slider" type="range" min="0.1" max="1.0" value="0.82" step="0.05" style="width:110px;">
   <span id="time-label" style="font-size:13px; min-width:180px; display:inline-block;"></span>
 </div></div>
-<script src="maplibre_schism.js?v=device_layout_class01"></script>
+<script src="maplibre_schism.js?v=mobile_compact_particles01"></script>
 
   <div id="ust21-logo-overlay">
     <div id="ust21-logo-title">UST21 수치예보팀</div>

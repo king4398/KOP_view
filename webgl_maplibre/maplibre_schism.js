@@ -305,6 +305,16 @@ function barycentricVector(lon,lat,tri){ const ia=elems[tri*3], ib=elems[tri*3+1
 function vectorAt(lon,lat){ if(!currentU||!currentV||!lookupOffsets||!lookupTriangles) return null; const cell=lookupCell(lon,lat); if(cell===null) return null; const start=lookupOffsets[cell], end=lookupOffsets[cell+1]; for(let k=start;k<end;k++){ const vec=barycentricVector(lon,lat,lookupTriangles[k]); if(vec) return vec; } return null; }
 function randomValidPoint(){ const g=getLookupBounds(); let west=g.lonMin,east=g.lonMax,south=g.latMin,north=g.latMax; if(map){ const b=map.getBounds(); west=Math.max(west,b.getWest()); east=Math.min(east,b.getEast()); south=Math.max(south,b.getSouth()); north=Math.min(north,b.getNorth()); } if(!(west<east&&south<north)){ west=g.lonMin; east=g.lonMax; south=g.latMin; north=g.latMax; } for(let i=0;i<800;i++){ const lon=west+Math.random()*(east-west), lat=south+Math.random()*(north-south); if(vectorAt(lon,lat)) return {lon,lat}; } return null; }
 
+function isMobileLayout(){
+  return document.body && document.body.classList && document.body.classList.contains("device-mobile");
+}
+
+function effectiveParticleCount(){
+  const n = Number(particleCount || 0);
+  if(isMobileLayout()) return Math.max(300, Math.round(n * 0.50));
+  return n;
+}
+
 function resetParticle(p) {
     const ll = randomValidPoint();
 
@@ -322,7 +332,7 @@ function resetParticle(p) {
     // Geographic trail. This makes particles stick to the map during pan/zoom.
     p.trail = [{ lon: p.lon, lat: p.lat }];
 }
-function resetParticles(){ particles=[]; if(!currentU||!currentV) return; for(let i=0;i<particleCount;i++){ const p={}; resetParticle(p); particles.push(p); } }
+function resetParticles(){ particles=[]; if(!currentU||!currentV) return; const n=effectiveParticleCount(); for(let i=0;i<n;i++){ const p={}; resetParticle(p); particles.push(p); } }
 
 let frozenParticleView = null;
 
@@ -524,7 +534,7 @@ function startParticles() {
         particleCtx.lineWidth = 1.2;
         particleCtx.lineCap = "round";
 
-        if (particles.length < particleCount * 0.60) {
+        if (particles.length < effectiveParticleCount() * 0.60) {
             resetParticles();
         }
 
@@ -871,3 +881,5 @@ function setBaseMap(name) {
 
 // KOP_LEGEND_TEMPERATURE_TITLE_NO_SURFACE_01
 
+
+// KOP_MOBILE_PARTICLE_HALF_01
