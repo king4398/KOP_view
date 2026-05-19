@@ -1,0 +1,751 @@
+{
+  "format": "q16-gzip",
+  "dtype": "int16",
+  "missing": -32768,
+  "qmin": -32767,
+  "qmax": 32767,
+  "frames": {
+    "0": {
+      "temperature": {
+        "min": -0.5362794399261475,
+        "max": 25.554431915283203,
+        "file": "frame_0000.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 568224
+      },
+      "ssh": {
+        "min": -19.42119026184082,
+        "max": 0.6933708786964417,
+        "file": "frame_0000.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 339213
+      },
+      "current_u": {
+        "min": -1.9142184257507324,
+        "max": 1.5656828880310059,
+        "file": "frame_0000.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 515000
+      },
+      "current_v": {
+        "min": -1.654599666595459,
+        "max": 1.3292707204818726,
+        "file": "frame_0000.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 525548
+      }
+    },
+    "1": {
+      "temperature": {
+        "min": -0.8695202469825745,
+        "max": 25.601167678833008,
+        "file": "frame_0001.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 571081
+      },
+      "ssh": {
+        "min": -19.42119026184082,
+        "max": 0.7683762311935425,
+        "file": "frame_0001.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 323626
+      },
+      "current_u": {
+        "min": -1.3403902053833008,
+        "max": 1.5284322500228882,
+        "file": "frame_0001.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 524972
+      },
+      "current_v": {
+        "min": -1.5491498708724976,
+        "max": 0.8364686965942383,
+        "file": "frame_0001.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 538440
+      }
+    },
+    "2": {
+      "temperature": {
+        "min": -1.109176754951477,
+        "max": 25.605405807495117,
+        "file": "frame_0002.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 569948
+      },
+      "ssh": {
+        "min": -19.42119026184082,
+        "max": 0.7613838315010071,
+        "file": "frame_0002.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 322524
+      },
+      "current_u": {
+        "min": -0.6752970218658447,
+        "max": 1.5229448080062866,
+        "file": "frame_0002.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 538814
+      },
+      "current_v": {
+        "min": -1.3810222148895264,
+        "max": 0.8022081255912781,
+        "file": "frame_0002.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 544046
+      }
+    },
+    "3": {
+      "temperature": {
+        "min": -1.3470020294189453,
+        "max": 25.601716995239258,
+        "file": "frame_0003.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 569358
+      },
+      "ssh": {
+        "min": -161.388671875,
+        "max": 1.0481462478637695,
+        "file": "frame_0003.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 148945
+      },
+      "current_u": {
+        "min": -0.6198864579200745,
+        "max": 1.5455677509307861,
+        "file": "frame_0003.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 544860
+      },
+      "current_v": {
+        "min": -1.1342558860778809,
+        "max": 0.7689265012741089,
+        "file": "frame_0003.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 553561
+      }
+    },
+    "4": {
+      "temperature": {
+        "min": -1.1396842002868652,
+        "max": 25.587491989135742,
+        "file": "frame_0004.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 570211
+      },
+      "ssh": {
+        "min": -161.388671875,
+        "max": 1.3228830099105835,
+        "file": "frame_0004.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 170951
+      },
+      "current_u": {
+        "min": -0.8600672483444214,
+        "max": 1.6142488718032837,
+        "file": "frame_0004.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 553176
+      },
+      "current_v": {
+        "min": -1.7630069255828857,
+        "max": 0.874430239200592,
+        "file": "frame_0004.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 554526
+      }
+    },
+    "5": {
+      "temperature": {
+        "min": -1.2154490947723389,
+        "max": 25.573637008666992,
+        "file": "frame_0005.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 571398
+      },
+      "ssh": {
+        "min": -161.388671875,
+        "max": 1.5827839374542236,
+        "file": "frame_0005.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 189434
+      },
+      "current_u": {
+        "min": -1.4857765436172485,
+        "max": 2.0531532764434814,
+        "file": "frame_0005.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 541896
+      },
+      "current_v": {
+        "min": -2.4979991912841797,
+        "max": 1.183449625968933,
+        "file": "frame_0005.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 543794
+      }
+    },
+    "6": {
+      "temperature": {
+        "min": -1.1051443815231323,
+        "max": 25.563512802124023,
+        "file": "frame_0006.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 572904
+      },
+      "ssh": {
+        "min": -161.388671875,
+        "max": 1.8317021131515503,
+        "file": "frame_0006.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 204125
+      },
+      "current_u": {
+        "min": -2.451249361038208,
+        "max": 2.241770029067993,
+        "file": "frame_0006.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 531787
+      },
+      "current_v": {
+        "min": -2.1303205490112305,
+        "max": 1.7780121564865112,
+        "file": "frame_0006.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 543018
+      }
+    },
+    "7": {
+      "temperature": {
+        "min": -1.3200098276138306,
+        "max": 25.550395965576172,
+        "file": "frame_0007.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 573122
+      },
+      "ssh": {
+        "min": -161.388671875,
+        "max": 2.0691614151000977,
+        "file": "frame_0007.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 198259
+      },
+      "current_u": {
+        "min": -2.6249547004699707,
+        "max": 1.7075998783111572,
+        "file": "frame_0007.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 542018
+      },
+      "current_v": {
+        "min": -1.1690495014190674,
+        "max": 2.662546396255493,
+        "file": "frame_0007.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 550556
+      }
+    },
+    "8": {
+      "temperature": {
+        "min": -1.721303105354309,
+        "max": 25.537582397460938,
+        "file": "frame_0008.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 572884
+      },
+      "ssh": {
+        "min": -161.388671875,
+        "max": 2.2979884147644043,
+        "file": "frame_0008.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 201598
+      },
+      "current_u": {
+        "min": -1.4316961765289307,
+        "max": 1.812363862991333,
+        "file": "frame_0008.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 550542
+      },
+      "current_v": {
+        "min": -1.3984477519989014,
+        "max": 2.2830381393432617,
+        "file": "frame_0008.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 548408
+      }
+    },
+    "9": {
+      "temperature": {
+        "min": -2.0,
+        "max": 25.523136138916016,
+        "file": "frame_0009.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 573591
+      },
+      "ssh": {
+        "min": -161.388671875,
+        "max": 2.5185415744781494,
+        "file": "frame_0009.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 203302
+      },
+      "current_u": {
+        "min": -1.4442479610443115,
+        "max": 1.8040472269058228,
+        "file": "frame_0009.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 548864
+      },
+      "current_v": {
+        "min": -1.9222081899642944,
+        "max": 1.6724599599838257,
+        "file": "frame_0009.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 548132
+      }
+    },
+    "10": {
+      "temperature": {
+        "min": -2.0,
+        "max": 25.50152587890625,
+        "file": "frame_0010.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 574833
+      },
+      "ssh": {
+        "min": -44.45081329345703,
+        "max": 2.7310194969177246,
+        "file": "frame_0010.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 330640
+      },
+      "current_u": {
+        "min": -1.474189043045044,
+        "max": 1.8118987083435059,
+        "file": "frame_0010.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 549915
+      },
+      "current_v": {
+        "min": -1.0090829133987427,
+        "max": 1.2379814386367798,
+        "file": "frame_0010.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 568368
+      }
+    },
+    "11": {
+      "temperature": {
+        "min": -2.0,
+        "max": 25.472909927368164,
+        "file": "frame_0011.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 576179
+      },
+      "ssh": {
+        "min": -44.45081329345703,
+        "max": 2.9387993812561035,
+        "file": "frame_0011.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 323216
+      },
+      "current_u": {
+        "min": -1.502951741218567,
+        "max": 1.7922073602676392,
+        "file": "frame_0011.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 549715
+      },
+      "current_v": {
+        "min": -1.2910369634628296,
+        "max": 1.4703491926193237,
+        "file": "frame_0011.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 561072
+      }
+    },
+    "12": {
+      "temperature": {
+        "min": -2.0,
+        "max": 25.43912696838379,
+        "file": "frame_0012.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 577717
+      },
+      "ssh": {
+        "min": -44.45081329345703,
+        "max": 3.1383605003356934,
+        "file": "frame_0012.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 318259
+      },
+      "current_u": {
+        "min": -1.2086641788482666,
+        "max": 1.8148537874221802,
+        "file": "frame_0012.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 551088
+      },
+      "current_v": {
+        "min": -1.4221000671386719,
+        "max": 1.4543495178222656,
+        "file": "frame_0012.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 558136
+      }
+    },
+    "13": {
+      "temperature": {
+        "min": -2.0,
+        "max": 25.410078048706055,
+        "file": "frame_0013.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 578713
+      },
+      "ssh": {
+        "min": -44.45081329345703,
+        "max": 3.329930305480957,
+        "file": "frame_0013.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 327288
+      },
+      "current_u": {
+        "min": -1.0489095449447632,
+        "max": 1.8113969564437866,
+        "file": "frame_0013.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 551153
+      },
+      "current_v": {
+        "min": -1.607640027999878,
+        "max": 1.5702959299087524,
+        "file": "frame_0013.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 550263
+      }
+    },
+    "14": {
+      "temperature": {
+        "min": -2.0,
+        "max": 25.386903762817383,
+        "file": "frame_0014.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 579957
+      },
+      "ssh": {
+        "min": -161.388671875,
+        "max": 3.513603448867798,
+        "file": "frame_0014.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 202835
+      },
+      "current_u": {
+        "min": -1.060908317565918,
+        "max": 1.7626349925994873,
+        "file": "frame_0014.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 552499
+      },
+      "current_v": {
+        "min": -1.545366644859314,
+        "max": 1.1443471908569336,
+        "file": "frame_0014.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 554063
+      }
+    },
+    "15": {
+      "temperature": {
+        "min": -2.0,
+        "max": 25.361669540405273,
+        "file": "frame_0015.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 580860
+      },
+      "ssh": {
+        "min": -161.388671875,
+        "max": 3.6864469051361084,
+        "file": "frame_0015.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 206231
+      },
+      "current_u": {
+        "min": -1.19199800491333,
+        "max": 1.7040153741836548,
+        "file": "frame_0015.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 555699
+      },
+      "current_v": {
+        "min": -1.3802378177642822,
+        "max": 1.6024038791656494,
+        "file": "frame_0015.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 557868
+      }
+    },
+    "16": {
+      "temperature": {
+        "min": -2.0,
+        "max": 25.336299896240234,
+        "file": "frame_0016.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 581662
+      },
+      "ssh": {
+        "min": -161.388671875,
+        "max": 3.8474185466766357,
+        "file": "frame_0016.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 203873
+      },
+      "current_u": {
+        "min": -1.6952542066574097,
+        "max": 1.6675955057144165,
+        "file": "frame_0016.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 554354
+      },
+      "current_v": {
+        "min": -1.7679898738861084,
+        "max": 2.1370813846588135,
+        "file": "frame_0016.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 551303
+      }
+    },
+    "17": {
+      "temperature": {
+        "min": -2.0,
+        "max": 25.310867309570312,
+        "file": "frame_0017.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 582239
+      },
+      "ssh": {
+        "min": -161.388671875,
+        "max": 3.9938647747039795,
+        "file": "frame_0017.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 204651
+      },
+      "current_u": {
+        "min": -1.6985312700271606,
+        "max": 1.604067087173462,
+        "file": "frame_0017.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 554171
+      },
+      "current_v": {
+        "min": -1.5227108001708984,
+        "max": 1.864678144454956,
+        "file": "frame_0017.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 556466
+      }
+    },
+    "18": {
+      "temperature": {
+        "min": -2.0,
+        "max": 25.284109115600586,
+        "file": "frame_0018.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 582723
+      },
+      "ssh": {
+        "min": -161.388671875,
+        "max": 4.128503799438477,
+        "file": "frame_0018.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 206629
+      },
+      "current_u": {
+        "min": -1.1302968263626099,
+        "max": 1.87276029586792,
+        "file": "frame_0018.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 558534
+      },
+      "current_v": {
+        "min": -1.533393383026123,
+        "max": 1.028151273727417,
+        "file": "frame_0018.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 566787
+      }
+    },
+    "19": {
+      "temperature": {
+        "min": -2.0,
+        "max": 25.25986671447754,
+        "file": "frame_0019.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 583109
+      },
+      "ssh": {
+        "min": -161.388671875,
+        "max": 4.253210067749023,
+        "file": "frame_0019.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 214929
+      },
+      "current_u": {
+        "min": -1.1687045097351074,
+        "max": 1.4776995182037354,
+        "file": "frame_0019.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 563264
+      },
+      "current_v": {
+        "min": -1.0592169761657715,
+        "max": 1.0550709962844849,
+        "file": "frame_0019.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 573489
+      }
+    },
+    "20": {
+      "temperature": {
+        "min": -2.0,
+        "max": 25.23587417602539,
+        "file": "frame_0020.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 583794
+      },
+      "ssh": {
+        "min": -161.388671875,
+        "max": 4.36768102645874,
+        "file": "frame_0020.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 218511
+      },
+      "current_u": {
+        "min": -1.8648381233215332,
+        "max": 1.868647575378418,
+        "file": "frame_0020.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 550590
+      },
+      "current_v": {
+        "min": -1.409546971321106,
+        "max": 2.0535805225372314,
+        "file": "frame_0020.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 556790
+      }
+    },
+    "21": {
+      "temperature": {
+        "min": -2.0,
+        "max": 25.212993621826172,
+        "file": "frame_0021.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 584156
+      },
+      "ssh": {
+        "min": -161.388671875,
+        "max": 4.478021621704102,
+        "file": "frame_0021.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 222163
+      },
+      "current_u": {
+        "min": -1.8007310628890991,
+        "max": 1.512397050857544,
+        "file": "frame_0021.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 556512
+      },
+      "current_v": {
+        "min": -2.0239810943603516,
+        "max": 1.9879571199417114,
+        "file": "frame_0021.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 550790
+      }
+    },
+    "22": {
+      "temperature": {
+        "min": -2.0,
+        "max": 25.19264793395996,
+        "file": "frame_0022.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 584532
+      },
+      "ssh": {
+        "min": -50.53915023803711,
+        "max": 4.577207565307617,
+        "file": "frame_0022.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 343217
+      },
+      "current_u": {
+        "min": -1.6690447330474854,
+        "max": 1.52125084400177,
+        "file": "frame_0022.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 559509
+      },
+      "current_v": {
+        "min": -2.094623565673828,
+        "max": 1.8114818334579468,
+        "file": "frame_0022.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 552043
+      }
+    },
+    "23": {
+      "temperature": {
+        "min": -2.0,
+        "max": 25.176511764526367,
+        "file": "frame_0023.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 584539
+      },
+      "ssh": {
+        "min": -50.53915023803711,
+        "max": 4.671507358551025,
+        "file": "frame_0023.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 333482
+      },
+      "current_u": {
+        "min": -1.6683259010314941,
+        "max": 1.5244052410125732,
+        "file": "frame_0023.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 560165
+      },
+      "current_v": {
+        "min": -1.8141037225723267,
+        "max": 1.3726755380630493,
+        "file": "frame_0023.bin.gz",
+        "raw_bytes": 1230332,
+        "compressed_bytes": 561649
+      }
+    }
+  },
+  "static": {
+    "mesh_nodes.bin": {
+      "raw_bytes": 2460664,
+      "compressed_bytes": 1859147
+    },
+    "mesh_elems.bin": {
+      "raw_bytes": 6966708,
+      "compressed_bytes": 2495290
+    },
+    "mesh_edges.bin": {
+      "raw_bytes": 7114624,
+      "compressed_bytes": 1856385
+    },
+    "lookup_offsets.bin": {
+      "raw_bytes": 1440004,
+      "compressed_bytes": 187205
+    },
+    "lookup_triangles.bin": {
+      "raw_bytes": 5548348,
+      "compressed_bytes": 1758828
+    }
+  }
+}
