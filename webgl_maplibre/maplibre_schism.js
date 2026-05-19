@@ -62,21 +62,24 @@ function halfToFloat(h) {
     return sign * Math.pow(2, exp - 15) * (1.0 + frac / 1024.0);
 }
 
-async function fetchFloat16AsFloat32(url, expectedLength = null) {
-    const buf = await fetchArrayBuffer(url);
-    const half = new Uint16Array(buf);
+async function fetchFloat16AsFloat32(url, expectedLen){
+  const res = await fetch(url, {cache:"no-store"});
+  if(!res.ok) throw new Error(`fetch failed ${url}: ${res.status}`);
 
-    if (expectedLength !== null && half.length !== expectedLength) {
-        throw new Error(`${url}: Float16 length ${half.length} != expected ${expectedLength}`);
-    }
+  const buf = await res.arrayBuffer();
+  const h = new Uint16Array(buf);
 
-    const out = new Float32Array(half.length);
+  // Float16: 1 value = 2 bytes
+  // expectedLen is node_count, so compare with Uint16Array length, not byteLength.
+  if(expectedLen != null && h.length !== expectedLen){
+    throw new Error(`Float16 value length ${h.length} != expected ${expectedLen} for ${url}; byteLength=${buf.byteLength}`);
+  }
 
-    for (let i = 0; i < half.length; i++) {
-        out[i] = halfToFloat(half[i]);
-    }
-
-    return out;
+  const out = new Float32Array(h.length);
+  for(let i=0; i<h.length; i++){
+    out[i] = halfToFloat(h[i]);
+  }
+  return out;
 }
 
 
@@ -768,3 +771,5 @@ function setBaseMap(name) {
 // KOP_FLOAT16_JULY2023_SPRING_TIDE_15DAY
 
 // KOP_FIX_JULY15_META_FLOAT16_CURRENT_01
+
+// KOP_FORCE_REPLACE_FLOAT16_FUNC_02
