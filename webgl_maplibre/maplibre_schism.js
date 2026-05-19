@@ -511,7 +511,7 @@ function startParticles() {
             let coslat = Math.cos(latRad);
             if (Math.abs(coslat) < 1e-6) coslat = 1e-6;
 
-            const dt = CONFIG.flowScale * speed;
+            const dt = CONFIG.flowScale;
             const newLon = p.lon + (vec.u * dt) / coslat;
             const newLat = p.lat + vec.v * dt;
 
@@ -775,3 +775,5 @@ function setBaseMap(name) {
 // KOP_FORCE_REPLACE_FLOAT16_FUNC_02
 
 // KOP_META_JSON_NOSTORE_JULY_01
+
+// KOP_PARTICLE_SPEED_INDEPENDENT_FROM_PLAYBACK_01
