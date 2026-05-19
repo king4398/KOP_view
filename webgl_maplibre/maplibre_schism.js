@@ -804,3 +804,31 @@ setTimeout(setupMadeByNyj, 0);
 // KOP_SETUP_MADE_BY_NYJ_CALL
 
 // KOP_JULY7_SALINITY_01
+
+
+function setupMadeByNyjStrong(){
+  const made = document.getElementById("made-by-nyj");
+  if(!made) return;
+
+  const candidates = Array.from(document.querySelectorAll("body *")).filter(el => {
+    const txt = (el.textContent || "").trim();
+    return txt.includes("UST21 수치예보팀") || el.id === "ust21-logo-img" || el.src?.includes("ust21.png");
+  });
+
+  candidates.forEach(el => {
+    if(el.dataset.madeByNyjStrongReady) return;
+    el.dataset.madeByNyjStrongReady = "1";
+    el.style.cursor = "pointer";
+    el.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      made.style.display = made.style.display === "none" ? "block" : "none";
+    });
+  });
+}
+
+setTimeout(setupMadeByNyjStrong, 300);
+setTimeout(setupMadeByNyjStrong, 1000);
+setTimeout(setupMadeByNyjStrong, 2000);
+// KOP_UST21_CLICK_FIX_01
+
