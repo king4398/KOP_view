@@ -835,7 +835,7 @@ function startParticles() {
             const dy = ptHead.y - ptTail.y;
             const len = Math.sqrt(dx * dx + dy * dy);
 
-            if (len > 1.5) {
+            if (Number.isFinite(len) && len > 0.05) {
                 const baseColor = currentParticleColor(vec.speed);
 
                 // fade-in for newly reset particles
@@ -844,7 +844,7 @@ function startParticles() {
 
                 const sprite = particleGradientSprite(baseColor, fadeFactor);
 
-                const drawLen = Math.max(8, Math.min(48, len));
+                const drawLen = Math.max(12, Math.min(48, len));
                 const drawWidth = currentVar === "current" ? 3.0 : 2.3;
                 const ang = Math.atan2(dy, dx);
 
@@ -1163,3 +1163,5 @@ function setBaseMap(name) {
 // KOP_TEST_PARTICLE_COUNT_ORIGINAL_01
 
 // KOP_TEST_ZOOMOUT_PARTICLE_DENSITY_150_01
+
+// KOP_TEST_LOW_SPEED_PARTICLES_VISIBLE_01
