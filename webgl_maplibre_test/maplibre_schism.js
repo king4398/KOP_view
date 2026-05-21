@@ -752,6 +752,21 @@ function colorWithAlpha(color, alpha){
     return `rgba(${p[0]},${p[1]},${p[2]},${alpha})`;
 }
 
+function zoomOutParticleWidthMultiplier(){
+  if(!map) return 1.0;
+
+  const z = map.getZoom();
+
+  // zoomed out: thinner lines
+  // z <= 5 : 0.55x
+  // z = 7  : about 0.75x
+  // z >= 9 : 1.00x
+  if(z <= 5.0) return 0.55;
+  if(z >= 9.0) return 1.00;
+
+  return 0.55 + (z - 5.0) * (0.45 / 4.0);
+}
+
 function startParticles() {
     if (particleAnimId !== null) {
         cancelAnimationFrame(particleAnimId);
@@ -895,9 +910,11 @@ function startParticles() {
                     : (0.22 + 0.18 * tSpeed);
 
                 particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor);
+                const widthMul = zoomOutParticleWidthMultiplier();
+
                 particleCtx.lineWidth = currentVar === "current"
-                    ? (1.05 + 0.65 * tSpeed)
-                    : (0.95 + 0.45 * tSpeed);
+                    ? (1.05 + 0.65 * tSpeed) * widthMul
+                    : (0.95 + 0.45 * tSpeed) * widthMul;
 
                 particleCtx.beginPath();
                 particleCtx.moveTo(x0, y0);
@@ -1231,3 +1248,5 @@ function setBaseMap(name) {
 // KOP_TEST_PARTICLE_LENGTH_HALF_01
 
 // KOP_TEST_WINDY_SHORT_SEGMENT_01
+
+// KOP_TEST_ZOOMOUT_PARTICLE_WIDTH_01
