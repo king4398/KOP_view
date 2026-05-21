@@ -550,30 +550,25 @@ function particleFlowScale(){
 }
 
 function particleTrailLength(){
-  if(!map) return 22;
+  if(!map) return 26;
 
   const z = map.getZoom();
 
-  // straight head/tail particle:
-  // zoom out: longer
+  // Gradient-sprite particles:
+  // zoom out: longer particles
+  // normal: medium
   // zoom in: shorter
-  const extra = Math.round(Math.max(0, 8.8 - z) * 3.8);
-  return Math.max(16, Math.min(34, 16 + extra));
+  //
+  // zoom 4~5  -> 38~42
+  // zoom 6    -> 34
+  // zoom 7    -> 28
+  // zoom 8    -> 23
+  // zoom 9+   -> 20
+  const extra = Math.round(Math.max(0, 9.0 - z) * 4.4);
+  return Math.max(20, Math.min(42, 20 + extra));
 }
 
-function colorWithAlpha(color, alpha){
-  const m = String(color || "").match(/rgba?\(([^)]+)\)/);
-  if(!m) return color;
-
-  const p = m[1].split(",").map(s => s.trim());
-  if(p.length < 3) return color;
-
-  return `rgba(${p[0]},${p[1]},${p[2]},${alpha})`;
-}
-
-function particleTrailColor(speed, alpha){
-  return colorWithAlpha(currentParticleColor(speed), alpha);
-}
+const particleSpriteCache = new Map();
 
 function rgbPartsFromColor(color){
   const m = String(color || "").match(/rgba?\(([^)]+)\)/);
@@ -583,10 +578,50 @@ function rgbPartsFromColor(color){
   if(p.length < 3) return [238,238,238];
 
   return [
-    Number(p[0]) || 238,
-    Number(p[1]) || 238,
-    Number(p[2]) || 238
+    Math.max(0, Math.min(255, Number(p[0]) || 238)),
+    Math.max(0, Math.min(255, Number(p[1]) || 238)),
+    Math.max(0, Math.min(255, Number(p[2]) || 238))
   ];
+}
+
+function particleGradientSprite(color){
+  const rgb = rgbPartsFromColor(color);
+
+  // Quantize color a little so current-speed colors do not create too many sprites.
+  const rq = Math.round(rgb[0] / 16) * 16;
+  const gq = Math.round(rgb[1] / 16) * 16;
+  const bq = Math.round(rgb[2] / 16) * 16;
+  const key = `${rq},${gq},${bq}`;
+
+  if(particleSpriteCache.has(key)) return particleSpriteCache.get(key);
+
+  const w = 96;
+  const h = 8;
+
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+
+  const ctx = c.getContext("2d");
+  ctx.clearRect(0, 0, w, h);
+
+  const grad = ctx.createLinearGradient(0, 0, w, 0);
+  grad.addColorStop(0.00, `rgba(${rq},${gq},${bq},0.00)`);
+  grad.addColorStop(0.20, `rgba(${rq},${gq},${bq},0.10)`);
+  grad.addColorStop(0.65, `rgba(${rq},${gq},${bq},0.42)`);
+  grad.addColorStop(1.00, `rgba(${rq},${gq},${bq},0.98)`);
+
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 2, w, 4);
+
+  // Bright compact head
+  ctx.fillStyle = `rgba(${rq},${gq},${bq},0.95)`;
+  ctx.beginPath();
+  ctx.ellipse(w - 4, h / 2, 3.0, 2.0, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  particleSpriteCache.set(key, c);
+  return c;
 }
 
 function startParticles() {
@@ -673,9 +708,8 @@ function startParticles() {
 
             if (p.trail.length < 2) continue;
 
-            // Fast straight head/tail particle:
-            // one straight particle, tail is faint and head is bright.
-            // No per-particle gradient. Much faster.
+            // Fast Windy-like particle:
+            // draw a cached gradient sprite as one straight head-tail particle.
             const nTrail = p.trail.length;
             const qTail = p.trail[0];
             const qHead = p.trail[nTrail - 1];
@@ -685,33 +719,23 @@ function startParticles() {
 
             const dx = ptHead.x - ptTail.x;
             const dy = ptHead.y - ptTail.y;
-            const len2 = dx * dx + dy * dy;
+            const len = Math.sqrt(dx * dx + dy * dy);
 
-            if (len2 > 1.0) {
+            if (len > 1.5) {
                 const baseColor = currentParticleColor(vec.speed);
+                const sprite = particleGradientSprite(baseColor);
 
-                // split point: tail 60%, head 40%
-                const midX = ptTail.x + dx * 0.58;
-                const midY = ptTail.y + dy * 0.58;
+                const drawLen = Math.max(10, Math.min(70, len));
+                const drawWidth = currentVar === "current" ? 4.0 : 3.2;
+                const ang = Math.atan2(dy, dx);
 
-                particleCtx.lineCap = "round";
-
-                // faint tail
-                particleCtx.strokeStyle = colorWithAlpha(baseColor, 0.22);
-                particleCtx.lineWidth = 1.05;
-                particleCtx.beginPath();
-                particleCtx.moveTo(ptTail.x, ptTail.y);
-                particleCtx.lineTo(midX, midY);
-                particleCtx.stroke();
-
-                // bright head
-                particleCtx.strokeStyle = colorWithAlpha(baseColor, 0.95);
-                particleCtx.lineWidth = 1.45;
-                particleCtx.beginPath();
-                particleCtx.moveTo(midX, midY);
-                particleCtx.lineTo(ptHead.x, ptHead.y);
-                particleCtx.stroke();
+                particleCtx.save();
+                particleCtx.translate(ptHead.x, ptHead.y);
+                particleCtx.rotate(ang);
+                particleCtx.drawImage(sprite, -drawLen, -drawWidth * 0.5, drawLen, drawWidth);
+                particleCtx.restore();
             }
+        }
 
         particleAnimId = requestAnimationFrame(step);
     }
@@ -1001,12 +1025,4 @@ function setBaseMap(name) {
 
 // KOP_ZOOM_PARTICLE_SPEED_01
 
-// KOP_TEST_PARTICLE_TRAIL_ZOOM_01
-
-// KOP_TEST_WINDY_PARTICLE_TRAIL_01
-
-// KOP_TEST_FAST_WINDY_TRAIL_01
-
-// KOP_TEST_STRAIGHT_GRADIENT_PARTICLE_01
-
-// KOP_TEST_FAST_HEAD_TAIL_PARTICLE_01
+// KOP_TEST_GRADIENT_SPRITE_PARTICLE_01
