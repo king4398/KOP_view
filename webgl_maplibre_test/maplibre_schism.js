@@ -550,21 +550,15 @@ function particleFlowScale(){
 }
 
 function particleTrailLength(){
-  if(!map) return 24;
+  if(!map) return 22;
 
   const z = map.getZoom();
 
-  // Straight gradient particle:
+  // straight head/tail particle:
   // zoom out: longer
   // zoom in: shorter
-  //
-  // zoom 4~5  -> 36~42
-  // zoom 6    -> 32
-  // zoom 7    -> 26
-  // zoom 8    -> 21
-  // zoom 9+   -> 18
-  const extra = Math.round(Math.max(0, 9.0 - z) * 4.8);
-  return Math.max(18, Math.min(42, 18 + extra));
+  const extra = Math.round(Math.max(0, 8.8 - z) * 3.8);
+  return Math.max(16, Math.min(34, 16 + extra));
 }
 
 function colorWithAlpha(color, alpha){
@@ -679,8 +673,9 @@ function startParticles() {
 
             if (p.trail.length < 2) continue;
 
-            // Straight Windy-like particle:
-            // one gradient line per particle: faint tail -> bright head.
+            // Fast straight head/tail particle:
+            // one straight particle, tail is faint and head is bright.
+            // No per-particle gradient. Much faster.
             const nTrail = p.trail.length;
             const qTail = p.trail[0];
             const qHead = p.trail[nTrail - 1];
@@ -693,25 +688,30 @@ function startParticles() {
             const len2 = dx * dx + dy * dy;
 
             if (len2 > 1.0) {
-                const rgb = rgbPartsFromColor(currentParticleColor(vec.speed));
+                const baseColor = currentParticleColor(vec.speed);
 
-                const grad = particleCtx.createLinearGradient(
-                    ptTail.x, ptTail.y,
-                    ptHead.x, ptHead.y
-                );
+                // split point: tail 60%, head 40%
+                const midX = ptTail.x + dx * 0.58;
+                const midY = ptTail.y + dy * 0.58;
 
-                grad.addColorStop(0.00, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.05)`);
-                grad.addColorStop(0.35, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.22)`);
-                grad.addColorStop(1.00, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.96)`);
+                particleCtx.lineCap = "round";
 
-                particleCtx.strokeStyle = grad;
-                particleCtx.lineWidth = 1.45;
+                // faint tail
+                particleCtx.strokeStyle = colorWithAlpha(baseColor, 0.22);
+                particleCtx.lineWidth = 1.05;
                 particleCtx.beginPath();
                 particleCtx.moveTo(ptTail.x, ptTail.y);
+                particleCtx.lineTo(midX, midY);
+                particleCtx.stroke();
+
+                // bright head
+                particleCtx.strokeStyle = colorWithAlpha(baseColor, 0.95);
+                particleCtx.lineWidth = 1.45;
+                particleCtx.beginPath();
+                particleCtx.moveTo(midX, midY);
                 particleCtx.lineTo(ptHead.x, ptHead.y);
                 particleCtx.stroke();
             }
-        }
 
         particleAnimId = requestAnimationFrame(step);
     }
@@ -1008,3 +1008,5 @@ function setBaseMap(name) {
 // KOP_TEST_FAST_WINDY_TRAIL_01
 
 // KOP_TEST_STRAIGHT_GRADIENT_PARTICLE_01
+
+// KOP_TEST_FAST_HEAD_TAIL_PARTICLE_01
