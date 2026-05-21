@@ -550,16 +550,37 @@ function particleFlowScale(){
 }
 
 function particleTrailLength(){
-  if(!map) return 10;
+  if(!map) return 18;
 
   const z = map.getZoom();
 
-  // zoomed out: longer trails so particles remain visible
-  // zoom 4~5: about 18~20
-  // zoom 7: about 11
-  // zoom 9+: 8
-  const extra = Math.round(Math.max(0, 8.5 - z) * 2.4);
-  return Math.max(8, Math.min(22, 8 + extra));
+  // Windy-like longer trails:
+  // zoomed out: long trails
+  // normal: medium trails
+  // zoomed in: shorter but still visible
+  //
+  // approx:
+  // zoom 4~5  -> 32~34
+  // zoom 6    -> 28
+  // zoom 7    -> 22
+  // zoom 8    -> 17
+  // zoom 9+   -> 13
+  const extra = Math.round(Math.max(0, 9.5 - z) * 4.2);
+  return Math.max(13, Math.min(34, 13 + extra));
+}
+
+function colorWithAlpha(color, alpha){
+  const m = String(color || "").match(/rgba?\(([^)]+)\)/);
+  if(!m) return color;
+
+  const p = m[1].split(",").map(s => s.trim());
+  if(p.length < 3) return color;
+
+  return `rgba(${p[0]},${p[1]},${p[2]},${alpha})`;
+}
+
+function particleTrailColor(speed, alpha){
+  return colorWithAlpha(currentParticleColor(speed), alpha);
 }
 
 function startParticles() {
@@ -646,21 +667,38 @@ function startParticles() {
 
             if (p.trail.length < 2) continue;
 
-            particleCtx.strokeStyle = currentParticleColor(vec.speed);
-            particleCtx.beginPath();
+            // Windy-like trail: faint tail, bright head.
+            const nTrail = p.trail.length;
+            for (let i = 1; i < nTrail; i++) {
+                const q0 = p.trail[i - 1];
+                const q1 = p.trail[i];
 
-            for (let i = 0; i < p.trail.length; i++) {
-                const q = p.trail[i];
-                const pt = map.project([q.lon, q.lat]);
+                const pt0 = map.project([q0.lon, q0.lat]);
+                const pt1 = map.project([q1.lon, q1.lat]);
 
-                if (i === 0) {
-                    particleCtx.moveTo(pt.x, pt.y);
-                } else {
-                    particleCtx.lineTo(pt.x, pt.y);
-                }
+                const f = i / Math.max(1, nTrail - 1);
+
+                // tail -> head alpha/width
+                const alpha = 0.10 + 0.82 * Math.pow(f, 1.35);
+                const width = 0.55 + 0.95 * Math.pow(f, 1.20);
+
+                particleCtx.strokeStyle = particleTrailColor(vec.speed, alpha);
+                particleCtx.lineWidth = width;
+                particleCtx.beginPath();
+                particleCtx.moveTo(pt0.x, pt0.y);
+                particleCtx.lineTo(pt1.x, pt1.y);
+                particleCtx.stroke();
             }
 
-            particleCtx.stroke();
+            // small bright head cap
+            if (nTrail >= 2) {
+                const q = p.trail[nTrail - 1];
+                const pt = map.project([q.lon, q.lat]);
+                particleCtx.fillStyle = particleTrailColor(vec.speed, 0.95);
+                particleCtx.beginPath();
+                particleCtx.arc(pt.x, pt.y, 1.1, 0, Math.PI * 2);
+                particleCtx.fill();
+            }
         }
 
         particleAnimId = requestAnimationFrame(step);
@@ -952,3 +990,5 @@ function setBaseMap(name) {
 // KOP_ZOOM_PARTICLE_SPEED_01
 
 // KOP_TEST_PARTICLE_TRAIL_ZOOM_01
+
+// KOP_TEST_WINDY_PARTICLE_TRAIL_01
