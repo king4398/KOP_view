@@ -455,22 +455,10 @@ function resetParticles(){
 
     const n = effectiveParticleCount ? effectiveParticleCount() : particleCount;
 
-    // 1차: 현재 화면을 격자로 나눠 균일하게 배치
-    const seeds = buildGridSeedPoints(n);
-
-    for(let i = 0; i < seeds.length && particles.length < n; i++){
-        const p = {};
-        resetParticle(p, seeds[i]);
-        particles.push(p);
-    }
-
-    // 2차: 유효 셀이 부족한 경우 랜덤으로 보충
-    let guard = 0;
-    while(particles.length < n && guard < n * 3){
+    for(let i = 0; i < n; i++){
         const p = {};
         resetParticle(p);
         particles.push(p);
-        guard++;
     }
 }
 
@@ -661,17 +649,7 @@ function particleFlowScale(){
 }
 
 function particleTrailLength(){
-  if(!map) return 10;
-
-  const z = map.getZoom();
-
-  // shorter trail memory to match 50% shorter visible particles
-  // zoom 4~5  -> 10~12
-  // zoom 6    -> 11
-  // zoom 7    -> 10
-  // zoom 8+   -> 8~9
-  const extra = Math.round(Math.max(0, 8.5 - z) * 1.2);
-  return Math.max(8, Math.min(12, 8 + extra));
+  return 3;
 }
 
 const particleSpriteCache = new Map();
@@ -764,6 +742,16 @@ function speedBasedParticleDrawLength(spd){
   return minLen + (maxLen - minLen) * t;
 }
 
+function colorWithAlpha(color, alpha){
+    const m = String(color || "").match(/rgba?\(([^)]+)\)/);
+    if(!m) return color;
+
+    const p = m[1].split(",").map(s => s.trim());
+    if(p.length < 3) return color;
+
+    return `rgba(${p[0]},${p[1]},${p[2]},${alpha})`;
+}
+
 function startParticles() {
     if (particleAnimId !== null) {
         cancelAnimationFrame(particleAnimId);
@@ -789,7 +777,7 @@ function startParticles() {
         // remove only part of the previous frame so particles disappear smoothly.
         // Larger alpha = faster fade. 0.22 is quick enough to avoid heavy smearing.
         particleCtx.globalCompositeOperation = "destination-out";
-        particleCtx.fillStyle = "rgba(0,0,0,0.16)";
+        particleCtx.fillStyle = "rgba(0,0,0,0.10)";
         particleCtx.fillRect(0, 0, width, height);
 
         particleCtx.globalCompositeOperation = "source-over";
@@ -851,37 +839,70 @@ function startParticles() {
 
             if (p.trail.length < 2) continue;
 
-            // Fast Windy-like particle:
-            // draw a cached gradient sprite as one straight head-tail particle.
+            // Windy-like short segment:
+            // Draw only a short segment each frame. Previous segments remain
+            // briefly through canvas soft-fade, so the flow looks continuous.
             const nTrail = p.trail.length;
-            const qTail = p.trail[0];
             const qHead = p.trail[nTrail - 1];
+            const qPrev = p.trail[Math.max(0, nTrail - 2)];
 
-            const ptTail = map.project([qTail.lon, qTail.lat]);
             const ptHead = map.project([qHead.lon, qHead.lat]);
+            const ptPrev = map.project([qPrev.lon, qPrev.lat]);
 
-            const dx = ptHead.x - ptTail.x;
-            const dy = ptHead.y - ptTail.y;
-            const len = Math.sqrt(dx * dx + dy * dy);
+            let dx = ptHead.x - ptPrev.x;
+            let dy = ptHead.y - ptPrev.y;
+            let len = Math.sqrt(dx * dx + dy * dy);
 
-            if (Number.isFinite(len) && len > 0.05) {
-                const baseColor = currentParticleColor(vec.speed);
+            // If actual movement is too tiny, use velocity direction so
+            // low-speed particles still appear, but remain short.
+            if(!Number.isFinite(len) || len < 0.05){
+                const latRad2 = p.lat * Math.PI / 180.0;
+                let coslat2 = Math.cos(latRad2);
+                if(Math.abs(coslat2) < 1e-6) coslat2 = 1e-6;
 
-                // fade-in for newly reset particles
+                dx = vec.u / coslat2;
+                dy = vec.v;
+                len = Math.sqrt(dx * dx + dy * dy);
+            }
+
+            if(Number.isFinite(len) && len > 0.0){
+                dx /= len;
+                dy /= len;
+
+                // speedBasedParticleDrawLength keeps speed-dependent length.
+                // Short segment uses only part of that length; fade history
+                // makes it look continuous.
+                const segLen = Math.max(2.0, speedBasedParticleDrawLength(vec.speed) * 0.65);
+
+                const x0 = ptHead.x - dx * segLen;
+                const y0 = ptHead.y - dy * segLen;
+                const x1 = ptHead.x;
+                const y1 = ptHead.y;
+
                 p.fadeAge = (p.fadeAge || 0) + 1;
                 const fadeFactor = Math.min(1.0, p.fadeAge / 18.0);
 
-                const sprite = particleGradientSprite(baseColor, fadeFactor);
+                const baseColor = currentParticleColor(vec.speed);
+                const r = currentSpeedRange ? currentSpeedRange() : {vmin:0, vmax:1};
+                let tSpeed = (vec.speed - r.vmin) / Math.max(1e-12, r.vmax - r.vmin);
+                if(!Number.isFinite(tSpeed)) tSpeed = 0.0;
+                tSpeed = Math.max(0.0, Math.min(1.0, tSpeed));
 
-                const drawLen = speedBasedParticleDrawLength(vec.speed);
-                const drawWidth = currentVar === "current" ? 3.0 : 2.3;
-                const ang = Math.atan2(dy, dx);
+                // overlay particles: light gray/white but not too strong
+                // current particles: a bit stronger because they are colored
+                const alphaBase = currentVar === "current"
+                    ? (0.32 + 0.36 * tSpeed)
+                    : (0.22 + 0.18 * tSpeed);
 
-                particleCtx.save();
-                particleCtx.translate(ptHead.x, ptHead.y);
-                particleCtx.rotate(ang);
-                particleCtx.drawImage(sprite, -drawLen, -drawWidth * 0.5, drawLen, drawWidth);
-                particleCtx.restore();
+                particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor);
+                particleCtx.lineWidth = currentVar === "current"
+                    ? (1.05 + 0.65 * tSpeed)
+                    : (0.95 + 0.45 * tSpeed);
+
+                particleCtx.beginPath();
+                particleCtx.moveTo(x0, y0);
+                particleCtx.lineTo(x1, y1);
+                particleCtx.stroke();
             }
         }
 
@@ -1208,3 +1229,5 @@ function setBaseMap(name) {
 // KOP_TEST_PARTICLE_SOFT_GRAY_225_055_01
 
 // KOP_TEST_PARTICLE_LENGTH_HALF_01
+
+// KOP_TEST_WINDY_SHORT_SEGMENT_01
