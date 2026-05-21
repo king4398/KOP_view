@@ -340,11 +340,8 @@ function isMobileLayout(){
 
 function effectiveParticleCount(){
   const n = Number(particleCount || 0);
-
-  // Test viewer only:
-  // Longer particles need a bit more density to avoid bald patches.
-  if(isMobileLayout()) return Math.max(450, Math.round(n * 0.45));
-  return Math.round(n * 1.25);
+  if(isMobileLayout()) return Math.max(250, Math.round(n * 0.32));
+  return n;
 }
 
 function resetParticle(p) {
@@ -553,20 +550,22 @@ function particleFlowScale(){
 }
 
 function particleTrailLength(){
-  if(!map) return 18;
+  if(!map) return 26;
 
   const z = map.getZoom();
 
-  // With fade accumulation, each frame leaves history.
-  // So individual particle length can be shorter and cleaner.
+  // Gradient-sprite particles:
+  // zoom out: longer particles
+  // normal: medium
+  // zoom in: shorter
   //
-  // zoom 4~5  -> 24~28
-  // zoom 6    -> 23
-  // zoom 7    -> 19
-  // zoom 8    -> 17
-  // zoom 9+   -> 14
-  const extra = Math.round(Math.max(0, 8.5 - z) * 2.6);
-  return Math.max(14, Math.min(28, 14 + extra));
+  // zoom 4~5  -> 38~42
+  // zoom 6    -> 34
+  // zoom 7    -> 28
+  // zoom 8    -> 23
+  // zoom 9+   -> 20
+  const extra = Math.round(Math.max(0, 9.0 - z) * 4.4);
+  return Math.max(20, Math.min(42, 20 + extra));
 }
 
 const particleSpriteCache = new Map();
@@ -596,8 +595,8 @@ function particleGradientSprite(color){
 
   if(particleSpriteCache.has(key)) return particleSpriteCache.get(key);
 
-  const w = 112;
-  const h = 10;
+  const w = 96;
+  const h = 8;
 
   const c = document.createElement("canvas");
   c.width = w;
@@ -608,17 +607,17 @@ function particleGradientSprite(color){
 
   const grad = ctx.createLinearGradient(0, 0, w, 0);
   grad.addColorStop(0.00, `rgba(${rq},${gq},${bq},0.00)`);
-  grad.addColorStop(0.25, `rgba(${rq},${gq},${bq},0.10)`);
-  grad.addColorStop(0.70, `rgba(${rq},${gq},${bq},0.38)`);
-  grad.addColorStop(1.00, `rgba(${rq},${gq},${bq},0.88)`);
+  grad.addColorStop(0.20, `rgba(${rq},${gq},${bq},0.10)`);
+  grad.addColorStop(0.65, `rgba(${rq},${gq},${bq},0.42)`);
+  grad.addColorStop(1.00, `rgba(${rq},${gq},${bq},0.98)`);
 
   ctx.fillStyle = grad;
-  ctx.fillRect(0, 3, w, 4);
+  ctx.fillRect(0, 2, w, 4);
 
   // Bright compact head
   ctx.fillStyle = `rgba(${rq},${gq},${bq},0.95)`;
   ctx.beginPath();
-  ctx.ellipse(w - 4, h / 2, 2.6, 1.7, 0, 0, Math.PI * 2);
+  ctx.ellipse(w - 4, h / 2, 3.0, 2.0, 0, 0, Math.PI * 2);
   ctx.fill();
 
   particleSpriteCache.set(key, c);
@@ -646,14 +645,11 @@ function startParticles() {
         const width = rect.width;
         const height = rect.height;
 
-        // Windy-like accumulation:
-        // Do not fully clear every frame. Fade previous particles gradually.
-        // This fills sparse/bald patches without exploding particle count.
-        particleCtx.globalCompositeOperation = "destination-in";
-        particleCtx.fillStyle = "rgba(0,0,0,0.88)";
-        particleCtx.fillRect(0, 0, width, height);
-
+        // Important:
+        // Clear and redraw all particle trails from lon/lat each frame.
+        // This keeps particles attached to the map during pan/zoom.
         particleCtx.globalCompositeOperation = "source-over";
+        particleCtx.clearRect(0, 0, width, height);
         particleCtx.lineWidth = 1.2;
         particleCtx.lineCap = "round";
 
@@ -729,8 +725,8 @@ function startParticles() {
                 const baseColor = currentParticleColor(vec.speed);
                 const sprite = particleGradientSprite(baseColor);
 
-                const drawLen = Math.max(12, Math.min(82, len));
-                const drawWidth = currentVar === "current" ? 3.0 : 2.4;
+                const drawLen = Math.max(10, Math.min(70, len));
+                const drawWidth = currentVar === "current" ? 4.0 : 3.2;
                 const ang = Math.atan2(dy, dx);
 
                 particleCtx.save();
@@ -1030,7 +1026,3 @@ function setBaseMap(name) {
 // KOP_ZOOM_PARTICLE_SPEED_01
 
 // KOP_TEST_GRADIENT_SPRITE_PARTICLE_01
-
-// KOP_TEST_PARTICLE_DENSITY_SMOOTH_01
-
-// KOP_TEST_PARTICLE_FADE_ACCUMULATION_01
