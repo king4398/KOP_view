@@ -339,25 +339,13 @@ function isMobileLayout(){
 }
 
 function zoomOutParticleDensityMultiplier(){
-  if(!map) return 1.0;
-
-  const z = map.getZoom();
-
-  // zoomed out: fewer particles for cleaner large-scale view
-  // z <= 5 : 0.70x
-  // z = 7  : about 0.85x
-  // z >= 9 : 1.00x
-  if(z <= 5.0) return 0.70;
-  if(z >= 9.0) return 1.00;
-
-  return 0.70 + (z - 5.0) * (0.30 / 4.0);
+  return 1.0;
 }
 
 function effectiveParticleCount(){
   const n = Number(particleCount || 0);
-  const base = isMobileLayout() ? Math.max(250, Math.round(n * 0.32)) : n;
-  const mul = zoomOutParticleDensityMultiplier();
-  return Math.max(250, Math.round(base * mul));
+  if(isMobileLayout()) return Math.max(250, Math.round(n * 0.32));
+  return n;
 }
 
 function resetParticle(p, ll=null) {
@@ -732,6 +720,38 @@ function particleGradientSprite(color, fadeAlpha=1.0){
   return c;
 }
 
+function speedBasedParticleDrawLength(spd){
+  const r = currentSpeedRange ? currentSpeedRange() : {vmin:0, vmax:1};
+  const vmin = Number.isFinite(r.vmin) ? r.vmin : 0.0;
+  const vmax = Number.isFinite(r.vmax) && r.vmax > vmin ? r.vmax : 1.0;
+
+  let t = (spd - vmin) / (vmax - vmin);
+  if(!Number.isFinite(t)) t = 0.0;
+  t = Math.max(0.0, Math.min(1.0, t));
+
+  // emphasize stronger currents, but keep weak currents visible
+  t = Math.pow(t, 0.75);
+
+  // base length by speed
+  let minLen = 7.0;
+  let maxLen = 36.0;
+
+  // zoomed-out view should be cleaner/shorter
+  if(map){
+    const z = map.getZoom();
+    if(z <= 5.0){
+      minLen *= 0.70;
+      maxLen *= 0.70;
+    } else if(z < 9.0){
+      const f = 0.70 + (z - 5.0) * (0.30 / 4.0);
+      minLen *= f;
+      maxLen *= f;
+    }
+  }
+
+  return minLen + (maxLen - minLen) * t;
+}
+
 function startParticles() {
     if (particleAnimId !== null) {
         cancelAnimationFrame(particleAnimId);
@@ -841,7 +861,7 @@ function startParticles() {
 
                 const sprite = particleGradientSprite(baseColor, fadeFactor);
 
-                const drawLen = Math.max(8, Math.min(34, len));
+                const drawLen = speedBasedParticleDrawLength(vec.speed);
                 const drawWidth = currentVar === "current" ? 3.0 : 2.3;
                 const ang = Math.atan2(dy, dx);
 
@@ -1166,3 +1186,5 @@ function setBaseMap(name) {
 // KOP_TEST_PARTICLE_COUNT_SAME_AS_MAIN_01
 
 // KOP_TEST_ZOOMOUT_SHORTER_LESS_01
+
+// KOP_TEST_SPEED_BASED_PARTICLE_LENGTH_01
