@@ -10,7 +10,7 @@ const CONFIG = {
   lookupOffsetsUrl: DATA_ROOT + "lookup_offsets.bin",
   lookupTrianglesUrl: DATA_ROOT + "lookup_triangles.bin",
   flowScale: 0.005,
-  overlayParticleColor: "rgba(175,175,175,0.62)"
+  overlayParticleColor: "rgba(245,245,245,0.46)"
 };
 
 const els = {
@@ -795,35 +795,7 @@ function drawMeshOverlayOnParticleCanvas(){
 
 
 function stopParticles(){ particleRunning=false; if(particleAnimId!==null){ cancelAnimationFrame(particleAnimId); particleAnimId=null; } clearCurrentCanvas(); }
-function installParticleMoveStabilizer(){
-  if(!map || map.__particleMoveStabilizerInstalled) return;
-  map.__particleMoveStabilizerInstalled = true;
-
-  function pauseForMove(){
-    if(!shouldDrawCurrentParticles()) return;
-    particleRunning = false;
-    if(particleAnimId !== null){
-      cancelAnimationFrame(particleAnimId);
-      particleAnimId = null;
-    }
-    clearCurrentCanvas();
-  }
-
-  function resumeAfterMove(){
-    if(!shouldDrawCurrentParticles()) return;
-    resizeParticleCanvas();
-    clearCurrentCanvas();
-    resetParticles();
-    startParticles();
-  }
-
-  map.on("movestart", pauseForMove);
-  map.on("zoomstart", pauseForMove);
-  map.on("moveend", resumeAfterMove);
-  map.on("zoomend", resumeAfterMove);
-}
-
-function setupEvents(){ els.currentOverlay.checked=true; els.currentOverlay.dataset.userTouched=""; els.currentOverlay.addEventListener("change",()=>{els.currentOverlay.dataset.userTouched="1"; updateCurrentOverlayAvailability(); setFrame(currentFrame);}); els.meshOverlay.addEventListener("change",()=>map.triggerRepaint()); els.varSelect.addEventListener("change",e=>{currentVar=e.target.value; updateCurrentOverlayAvailability(); updateLegend(); setFrame(currentFrame); map.triggerRepaint();}); els.playBtn.addEventListener("click",()=>{ if(timer===null){els.playBtn.textContent="❚❚"; startTimer();} else {els.playBtn.textContent="▶"; clearInterval(timer); timer=null;} }); els.frameSlider.addEventListener("input",e=>setFrame(e.target.value)); els.speedSelect.addEventListener("change",e=>{ speed=parseFloat(e.target.value); if(timer!==null) startTimer(); }); els.opacitySlider.addEventListener("input",()=>map.triggerRepaint()); els.densitySelect.addEventListener("change",e=>{ particleCount=parseInt(e.target.value); resetParticles(); clearCurrentCanvas(); }); map.on("moveend",()=>resetParticles()); installParticleMoveStabilizer();
+function setupEvents(){ els.currentOverlay.checked=true; els.currentOverlay.dataset.userTouched=""; els.currentOverlay.addEventListener("change",()=>{els.currentOverlay.dataset.userTouched="1"; updateCurrentOverlayAvailability(); setFrame(currentFrame);}); els.meshOverlay.addEventListener("change",()=>map.triggerRepaint()); els.varSelect.addEventListener("change",e=>{currentVar=e.target.value; updateCurrentOverlayAvailability(); updateLegend(); setFrame(currentFrame); map.triggerRepaint();}); els.playBtn.addEventListener("click",()=>{ if(timer===null){els.playBtn.textContent="❚❚"; startTimer();} else {els.playBtn.textContent="▶"; clearInterval(timer); timer=null;} }); els.frameSlider.addEventListener("input",e=>setFrame(e.target.value)); els.speedSelect.addEventListener("change",e=>{ speed=parseFloat(e.target.value); if(timer!==null) startTimer(); }); els.opacitySlider.addEventListener("input",()=>map.triggerRepaint()); els.densitySelect.addEventListener("change",e=>{ particleCount=parseInt(e.target.value); resetParticles(); clearCurrentCanvas(); }); map.on("moveend",()=>{ resetParticles(); clearCurrentCanvas(); if(shouldDrawCurrentParticles()) startParticles(); }); map.on("zoomend",()=>{ resetParticles(); clearCurrentCanvas(); if(shouldDrawCurrentParticles()) startParticles(); });
 }
 
 
@@ -1068,3 +1040,7 @@ function setBaseMap(name) {
 // KOP_TEST_PARTICLE_FADE_IN_01
 
 // KOP_TEST_TUNE_GRAY_SHORTER_STABLE_01
+
+// KOP_TEST_WHITE_ALPHA_KEEP_FLOW_01
+
+// KOP_TEST_MOVE_RESET_ONLY_01
