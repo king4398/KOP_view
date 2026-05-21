@@ -83,7 +83,6 @@ async function fetchFloat16AsFloat32(url, expectedLen){
 }
 
 
-
 function fmtLegendNumber(x, digits=1){
   const n = Number(x);
   if(!Number.isFinite(n)) return String(x);
@@ -160,8 +159,6 @@ vec3 smoothJet(float t) {
     if (t < 0.80) return mix(c3, c4, (t - 0.60) / 0.20);
     return mix(c4, c5, (t - 0.80) / 0.20);
 }
-
-
 
 
 vec3 ylgnbu(float t) {
@@ -381,74 +378,6 @@ function resetParticle(p, ll=null) {
     // Geographic trail. This makes particles stick to the map during pan/zoom.
     p.trail = [{ lon: p.lon, lat: p.lat }];
 }
-function randomValidPointInBox(west, east, south, north, tries=40){
-    if(!(west < east && south < north)) return null;
-
-    for(let i = 0; i < tries; i++){
-        const lon = west + Math.random() * (east - west);
-        const lat = south + Math.random() * (north - south);
-        if(vectorAt(lon, lat)) return {lon, lat};
-    }
-
-    return null;
-}
-
-function buildGridSeedPoints(targetCount){
-    const pts = [];
-    if(!map || !lookupMeta || !currentU || !currentV) return pts;
-
-    const g = getLookupBounds();
-    const b = map.getBounds();
-
-    const west  = Math.max(g.lonMin, b.getWest());
-    const east  = Math.min(g.lonMax, b.getEast());
-    const south = Math.max(g.latMin, b.getSouth());
-    const north = Math.min(g.latMax, b.getNorth());
-
-    if(!(west < east && south < north)) return pts;
-
-    // 화면 비율 기준으로 grid 구성
-    const rect = map.getContainer().getBoundingClientRect();
-    const aspect = Math.max(0.5, Math.min(2.5, rect.width / Math.max(1, rect.height)));
-
-    // targetCount에 비례해서 적당한 격자 수 계산
-    // 너무 촘촘하면 초기화가 느려지므로 상한 제한
-    const cols = Math.max(12, Math.min(80, Math.round(Math.sqrt(targetCount * aspect))));
-    const rows = Math.max(8,  Math.min(60, Math.round(targetCount / cols)));
-
-    const cellW = (east - west) / cols;
-    const cellH = (north - south) / rows;
-
-    // 셀 순서가 줄무늬처럼 보이지 않게 섞음
-    const cells = [];
-    for(let iy = 0; iy < rows; iy++){
-        for(let ix = 0; ix < cols; ix++){
-            cells.push([ix, iy]);
-        }
-    }
-
-    for(let i = cells.length - 1; i > 0; i--){
-        const j = Math.floor(Math.random() * (i + 1));
-        const tmp = cells[i];
-        cells[i] = cells[j];
-        cells[j] = tmp;
-    }
-
-    for(const [ix, iy] of cells){
-        if(pts.length >= targetCount) break;
-
-        const x0 = west + ix * cellW;
-        const x1 = x0 + cellW;
-        const y0 = south + iy * cellH;
-        const y1 = y0 + cellH;
-
-        const p = randomValidPointInBox(x0, x1, y0, y1, 30);
-        if(p) pts.push(p);
-    }
-
-    return pts;
-}
-
 function resetParticles(){
     particles = [];
     if(!currentU || !currentV) return;
@@ -461,177 +390,6 @@ function resetParticles(){
         particles.push(p);
     }
 }
-
-let frozenParticleView = null;
-
-
-
-function lockParticleCanvasToScreen() {
-    if (!particleCanvas) return;
-
-    particleCanvas.style.position = "absolute";
-    particleCanvas.style.left = "0";
-    particleCanvas.style.top = "0";
-    particleCanvas.style.transform = "none";
-    particleCanvas.style.visibility = "visible";
-}
-
-function freezeParticleProjection() {
-    if (!map) return;
-
-    lockParticleCanvasToScreen();
-
-    const c = map.getCenter();
-    const centerMerc = maplibregl.MercatorCoordinate.fromLngLat({
-        lng: c.lng,
-        lat: c.lat
-    });
-
-    const canvas = map.getCanvas();
-
-    frozenParticleView = {
-        centerX: centerMerc.x,
-        centerY: centerMerc.y,
-        zoom: map.getZoom(),
-        width: canvas.clientWidth,
-        height: canvas.clientHeight,
-        worldSize: 512.0 * Math.pow(2.0, map.getZoom())
-    };
-}
-
-function unfreezeParticleProjectionAndReset() {
-    frozenParticleView = null;
-
-    resizeParticleCanvas();
-    clearCurrentCanvas();
-    resetParticles();
-
-    if (shouldDrawCurrentParticles()) {
-        startParticles();
-    }
-}
-
-function projectParticlePoint(lon, lat) {
-    if (frozenParticleView) {
-        const mc = maplibregl.MercatorCoordinate.fromLngLat({
-            lng: lon,
-            lat: lat
-        });
-
-        return {
-            x: (mc.x - frozenParticleView.centerX) * frozenParticleView.worldSize + frozenParticleView.width * 0.5,
-            y: (mc.y - frozenParticleView.centerY) * frozenParticleView.worldSize + frozenParticleView.height * 0.5
-        };
-    }
-
-    return map.project([lon, lat]);
-}
-
-
-let particleSnapshotCanvas = null;
-let particleSnapshotCtx = null;
-let particleSnapshotActive = false;
-
-function ensureParticleSnapshotCanvas() {
-    if (!map) return null;
-
-    if (particleSnapshotCanvas) return particleSnapshotCanvas;
-
-    const container = map.getContainer();
-
-    particleSnapshotCanvas = document.createElement("canvas");
-    particleSnapshotCanvas.id = "particle-snapshot-canvas";
-    particleSnapshotCanvas.style.position = "absolute";
-    particleSnapshotCanvas.style.left = "0";
-    particleSnapshotCanvas.style.top = "0";
-    particleSnapshotCanvas.style.width = "100%";
-    particleSnapshotCanvas.style.height = "100%";
-    particleSnapshotCanvas.style.pointerEvents = "none";
-    particleSnapshotCanvas.style.zIndex = "21";
-    particleSnapshotCanvas.style.display = "none";
-    particleSnapshotCanvas.style.transform = "none";
-
-    container.appendChild(particleSnapshotCanvas);
-    particleSnapshotCtx = particleSnapshotCanvas.getContext("2d");
-
-    return particleSnapshotCanvas;
-}
-
-function resizeParticleSnapshotCanvas() {
-    if (!map || !particleSnapshotCanvas || !particleSnapshotCtx) return;
-
-    const rect = map.getContainer().getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-
-    particleSnapshotCanvas.width = Math.max(1, Math.round(rect.width * dpr));
-    particleSnapshotCanvas.height = Math.max(1, Math.round(rect.height * dpr));
-    particleSnapshotCanvas.style.width = Math.round(rect.width) + "px";
-    particleSnapshotCanvas.style.height = Math.round(rect.height) + "px";
-    particleSnapshotCanvas.style.left = "0";
-    particleSnapshotCanvas.style.top = "0";
-    particleSnapshotCanvas.style.transform = "none";
-
-    particleSnapshotCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-
-function pauseParticlesOnly() {
-    particleRunning = false;
-
-    if (particleAnimId !== null) {
-        cancelAnimationFrame(particleAnimId);
-        particleAnimId = null;
-    }
-}
-
-function captureParticleSnapshotForMove() {
-    if (!particleCanvas || !map) return;
-
-    ensureParticleSnapshotCanvas();
-    resizeParticleSnapshotCanvas();
-
-    const rect = map.getContainer().getBoundingClientRect();
-
-    particleSnapshotCtx.clearRect(0, 0, rect.width, rect.height);
-
-    try {
-        particleSnapshotCtx.drawImage(particleCanvas, 0, 0, rect.width, rect.height);
-    } catch (e) {
-        console.warn("[particle snapshot] drawImage failed", e);
-        return;
-    }
-
-    particleSnapshotCanvas.style.display = "block";
-    particleSnapshotCanvas.style.visibility = "visible";
-
-    particleSnapshotActive = true;
-
-    // Stop real particle calculation and hide the live canvas.
-    // Snapshot stays fixed on screen during drag/zoom.
-    pauseParticlesOnly();
-
-    particleCanvas.style.visibility = "hidden";
-}
-
-function releaseParticleSnapshotAfterMove() {
-    particleSnapshotActive = false;
-
-    if (particleSnapshotCanvas) {
-        particleSnapshotCanvas.style.display = "none";
-    }
-
-    if (particleCanvas) {
-        particleCanvas.style.visibility = "visible";
-    }
-
-    resizeParticleCanvas();
-    clearCurrentCanvas();
-    resetParticles();
-
-    if (shouldDrawCurrentParticles()) {
-        startParticles();
-    }
-}
-
 
 function particleFlowScale(){
   const base = CONFIG.flowScale; // default: 0.005
@@ -650,63 +408,6 @@ function particleFlowScale(){
 
 function particleTrailLength(){
   return 3;
-}
-
-const particleSpriteCache = new Map();
-
-function rgbPartsFromColor(color){
-  const m = String(color || "").match(/rgba?\(([^)]+)\)/);
-  if(!m) return [238,238,238];
-
-  const p = m[1].split(",").map(s => s.trim());
-  if(p.length < 3) return [238,238,238];
-
-  return [
-    Math.max(0, Math.min(255, Number(p[0]) || 238)),
-    Math.max(0, Math.min(255, Number(p[1]) || 238)),
-    Math.max(0, Math.min(255, Number(p[2]) || 238))
-  ];
-}
-
-function particleGradientSprite(color, fadeAlpha=1.0){
-  const rgb = rgbPartsFromColor(color);
-  const aq = Math.max(0.20, Math.min(1.0, Math.round(fadeAlpha * 4) / 4));
-
-  // Quantize color a little so current-speed colors do not create too many sprites.
-  const rq = Math.round(rgb[0] / 16) * 16;
-  const gq = Math.round(rgb[1] / 16) * 16;
-  const bq = Math.round(rgb[2] / 16) * 16;
-  const key = `${rq},${gq},${bq},${aq}`;
-
-  if(particleSpriteCache.has(key)) return particleSpriteCache.get(key);
-
-  const w = 96;
-  const h = 8;
-
-  const c = document.createElement("canvas");
-  c.width = w;
-  c.height = h;
-
-  const ctx = c.getContext("2d");
-  ctx.clearRect(0, 0, w, h);
-
-  const grad = ctx.createLinearGradient(0, 0, w, 0);
-  grad.addColorStop(0.00, `rgba(${rq},${gq},${bq},${0.00 * aq})`);
-  grad.addColorStop(0.20, `rgba(${rq},${gq},${bq},${0.16 * aq})`);
-  grad.addColorStop(0.65, `rgba(${rq},${gq},${bq},${0.52 * aq})`);
-  grad.addColorStop(1.00, `rgba(${rq},${gq},${bq},${0.55 * aq})`);
-
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 2, w, 4);
-
-  // Bright compact head
-  ctx.fillStyle = `rgba(${rq},${gq},${bq},${0.45 * aq})`;
-  ctx.beginPath();
-  ctx.ellipse(w - 4, h / 2, 3.0, 2.0, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  particleSpriteCache.set(key, c);
-  return c;
 }
 
 function speedBasedParticleDrawLength(spd){
@@ -790,7 +491,7 @@ function startParticles() {
 
         // Soft fade instead of hard clear:
         // remove only part of the previous frame so particles disappear smoothly.
-        // Larger alpha = faster fade. 0.22 is quick enough to avoid heavy smearing.
+        // Larger alpha = faster fade. 0.10 leaves a short Windy-like trail.
         particleCtx.globalCompositeOperation = "destination-out";
         particleCtx.fillStyle = "rgba(0,0,0,0.10)";
         particleCtx.fillRect(0, 0, width, height);
@@ -975,7 +676,59 @@ function drawMeshOverlayOnParticleCanvas(){
 
 
 function stopParticles(){ particleRunning=false; if(particleAnimId!==null){ cancelAnimationFrame(particleAnimId); particleAnimId=null; } clearCurrentCanvas(); }
-function setupEvents(){ els.currentOverlay.checked=true; els.currentOverlay.dataset.userTouched=""; els.currentOverlay.addEventListener("change",()=>{els.currentOverlay.dataset.userTouched="1"; updateCurrentOverlayAvailability(); setFrame(currentFrame);}); els.meshOverlay.addEventListener("change",()=>map.triggerRepaint()); els.varSelect.addEventListener("change",e=>{currentVar=e.target.value; updateCurrentOverlayAvailability(); updateLegend(); setFrame(currentFrame); map.triggerRepaint();}); els.playBtn.addEventListener("click",()=>{ if(timer===null){els.playBtn.textContent="❚❚"; startTimer();} else {els.playBtn.textContent="▶"; clearInterval(timer); timer=null;} }); els.frameSlider.addEventListener("input",e=>setFrame(e.target.value)); els.speedSelect.addEventListener("change",e=>{ speed=parseFloat(e.target.value); if(timer!==null) startTimer(); }); els.opacitySlider.addEventListener("input",()=>map.triggerRepaint()); els.densitySelect.addEventListener("change",e=>{ particleCount=parseInt(e.target.value); resetParticles(); clearCurrentCanvas(); }); map.on("moveend",()=>{ resetParticles(); clearCurrentCanvas(); if(shouldDrawCurrentParticles()) startParticles(); }); map.on("zoomend",()=>{ resetParticles(); clearCurrentCanvas(); if(shouldDrawCurrentParticles()) startParticles(); });
+function setupEvents(){
+    els.currentOverlay.checked = true;
+    els.currentOverlay.dataset.userTouched = "";
+
+    els.currentOverlay.addEventListener("change", () => {
+        els.currentOverlay.dataset.userTouched = "1";
+        updateCurrentOverlayAvailability();
+        setFrame(currentFrame);
+    });
+
+    els.meshOverlay.addEventListener("change", () => map.triggerRepaint());
+
+    els.varSelect.addEventListener("change", e => {
+        currentVar = e.target.value;
+        updateCurrentOverlayAvailability();
+        updateLegend();
+        setFrame(currentFrame);
+        map.triggerRepaint();
+    });
+
+    els.playBtn.addEventListener("click", () => {
+        if(timer === null){
+            els.playBtn.textContent = "❚❚";
+            startTimer();
+        } else {
+            els.playBtn.textContent = "▶";
+            clearInterval(timer);
+            timer = null;
+        }
+    });
+
+    els.frameSlider.addEventListener("input", e => setFrame(e.target.value));
+
+    els.speedSelect.addEventListener("change", e => {
+        speed = parseFloat(e.target.value);
+        if(timer !== null) startTimer();
+    });
+
+    els.opacitySlider.addEventListener("input", () => map.triggerRepaint());
+
+    els.densitySelect.addEventListener("change", e => {
+        particleCount = parseInt(e.target.value);
+        resetParticles();
+        clearCurrentCanvas();
+    });
+
+    function resetParticleViewOnly(){
+        resetParticles();
+        clearCurrentCanvas();
+    }
+
+    map.on("moveend", resetParticleViewOnly);
+    map.on("zoomend", resetParticleViewOnly);
 }
 
 
@@ -1022,8 +775,6 @@ function makeMapStyle() {
 function initMap(){ const b=meta.bounds; const south=b[0][0], west=b[0][1], north=b[1][0], east=b[1][1]; map=new maplibregl.Map({container:"map",style:makeMapStyle(),center:[(west+east)/2,(south+north)/2],zoom:7,minZoom:3,maxZoom:14,dragRotate:false,pitchWithRotate:false,renderWorldCopies:false,attributionControl:true}); map.addControl(new maplibregl.NavigationControl({visualizePitch:false}),"top-left"); map.fitBounds([[west,south],[east,north]],{padding:20,duration:0}); }
 async function boot(){ setStatus("Loading metadata..."); meta=await fetchJson(CONFIG.metaUrl); meta.variables=meta.variables||{}; meta.variables.salinity=meta.variables.salinity||{name:"Salinity",units:"psu",vmin:25,vmax:35}; meta.variables.salinity.vmin=25; meta.variables.salinity.vmax=35; meta.variables=meta.variables||{}; meta.variables.salinity=meta.variables.salinity||{name:"Salinity",units:"psu",vmin:25,vmax:35}; meta.variables.salinity.vmin=25; meta.variables.salinity.vmax=35; lookupMeta=await fetchJson(CONFIG.lookupMetaUrl); els.frameSlider.max=frameCount()-1; setStatus("Loading mesh and lookup..."); [nodesLonLat,elems,meshEdges,lookupOffsets,lookupTriangles]=await Promise.all([fetchFloat32(CONFIG.nodesUrl,meta.node_count*2),fetchUint32(CONFIG.elemsUrl,meta.index_count),fetchUint32(CONFIG.edgesUrl),fetchUint32(CONFIG.lookupOffsetsUrl),fetchUint32(CONFIG.lookupTrianglesUrl)]); initMap(); map.on("load",async()=>{ setStatus("Preparing WebGL layer..."); buildMercatorNodes(); initParticleCanvas(); map.addLayer(makeSchismLayer()); setupEvents(); updateCurrentOverlayAvailability(); updateLegend(); await setFrame(0); setStatus(`Ready: ${meta.node_count.toLocaleString()} nodes, ${meta.triangle_count.toLocaleString()} triangles`); }); }
 boot().catch(err=>{ console.error(err); setStatus("ERROR: "+err.message); alert(err.message); });
-
-
 
 
 function setBaseMap(name) {
@@ -1146,16 +897,6 @@ function setBaseMap(name) {
 // KOP_ELEVATION_SIMPLE_BWR_PARTICLE238
 
 
-
-
-
-
-
-
-
-
-
-
 (function removeParticleSnapshotArtifacts() {
     const badIds = [
         "kop-particle-fixed-snapshot",
@@ -1250,3 +991,5 @@ function setBaseMap(name) {
 // KOP_TEST_WINDY_SHORT_SEGMENT_01
 
 // KOP_TEST_ZOOMOUT_PARTICLE_WIDTH_01
+
+// KOP_TEST_PARTICLE_OPTIMIZED_01
