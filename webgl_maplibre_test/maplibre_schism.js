@@ -339,13 +339,25 @@ function isMobileLayout(){
 }
 
 function zoomOutParticleDensityMultiplier(){
-  return 1.0;
+  if(!map) return 1.0;
+
+  const z = map.getZoom();
+
+  // zoomed out: half density for cleaner overview
+  // z <= 5 : 0.50x
+  // z = 7  : 0.75x
+  // z >= 9 : 1.00x
+  if(z <= 5.0) return 0.50;
+  if(z >= 9.0) return 1.00;
+
+  return 0.50 + (z - 5.0) * (0.50 / 4.0);
 }
 
 function effectiveParticleCount(){
   const n = Number(particleCount || 0);
-  if(isMobileLayout()) return Math.max(250, Math.round(n * 0.32));
-  return n;
+  const base = isMobileLayout() ? Math.max(250, Math.round(n * 0.32)) : n;
+  const mul = zoomOutParticleDensityMultiplier();
+  return Math.max(250, Math.round(base * mul));
 }
 
 function resetParticle(p, ll=null) {
@@ -729,24 +741,25 @@ function speedBasedParticleDrawLength(spd){
   if(!Number.isFinite(t)) t = 0.0;
   t = Math.max(0.0, Math.min(1.0, t));
 
-  // emphasize stronger currents, but keep weak currents visible
+  // Still make high-speed particles visibly longer
   t = Math.pow(t, 0.75);
 
-  // base length by speed
   let minLen = 7.0;
   let maxLen = 36.0;
 
-  // zoomed-out view should be cleaner/shorter
   if(map){
     const z = map.getZoom();
-    if(z <= 5.0){
-      minLen *= 0.70;
-      maxLen *= 0.70;
-    } else if(z < 9.0){
-      const f = 0.70 + (z - 5.0) * (0.30 / 4.0);
-      minLen *= f;
-      maxLen *= f;
-    }
+
+    // zoomed out: reduce high-speed length much more strongly
+    // z <= 5 : 0.50x length
+    // z = 7  : 0.75x length
+    // z >= 9 : 1.00x length
+    let f = 1.0;
+    if(z <= 5.0) f = 0.50;
+    else if(z < 9.0) f = 0.50 + (z - 5.0) * (0.50 / 4.0);
+
+    minLen *= f;
+    maxLen *= f;
   }
 
   return minLen + (maxLen - minLen) * t;
@@ -1188,3 +1201,5 @@ function setBaseMap(name) {
 // KOP_TEST_ZOOMOUT_SHORTER_LESS_01
 
 // KOP_TEST_SPEED_BASED_PARTICLE_LENGTH_01
+
+// KOP_TEST_ZOOMOUT_HALF_LENGTH_DENSITY_01
