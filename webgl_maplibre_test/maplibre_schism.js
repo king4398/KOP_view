@@ -645,11 +645,14 @@ function startParticles() {
         const width = rect.width;
         const height = rect.height;
 
-        // Important:
-        // Clear and redraw all particle trails from lon/lat each frame.
-        // This keeps particles attached to the map during pan/zoom.
+        // Soft fade instead of hard clear:
+        // remove only part of the previous frame so particles disappear smoothly.
+        // Larger alpha = faster fade. 0.22 is quick enough to avoid heavy smearing.
+        particleCtx.globalCompositeOperation = "destination-out";
+        particleCtx.fillStyle = "rgba(0,0,0,0.22)";
+        particleCtx.fillRect(0, 0, width, height);
+
         particleCtx.globalCompositeOperation = "source-over";
-        particleCtx.clearRect(0, 0, width, height);
         particleCtx.lineWidth = 1.2;
         particleCtx.lineCap = "round";
 
@@ -1028,3 +1031,5 @@ function setBaseMap(name) {
 // KOP_TEST_GRADIENT_SPRITE_PARTICLE_01
 
 // KOP_TEST_REDUCE_FLICKER_01
+
+// KOP_TEST_PARTICLE_SOFT_FADE_01
