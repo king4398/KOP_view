@@ -717,13 +717,13 @@ function particleGradientSprite(color, fadeAlpha=1.0){
   grad.addColorStop(0.00, `rgba(${rq},${gq},${bq},${0.00 * aq})`);
   grad.addColorStop(0.20, `rgba(${rq},${gq},${bq},${0.16 * aq})`);
   grad.addColorStop(0.65, `rgba(${rq},${gq},${bq},${0.52 * aq})`);
-  grad.addColorStop(1.00, `rgba(${rq},${gq},${bq},${0.95 * aq})`);
+  grad.addColorStop(1.00, `rgba(${rq},${gq},${bq},${0.55 * aq})`);
 
   ctx.fillStyle = grad;
   ctx.fillRect(0, 2, w, 4);
 
   // Bright compact head
-  ctx.fillStyle = `rgba(${rq},${gq},${bq},${0.82 * aq})`;
+  ctx.fillStyle = `rgba(${rq},${gq},${bq},${0.45 * aq})`;
   ctx.beginPath();
   ctx.ellipse(w - 4, h / 2, 3.0, 2.0, 0, 0, Math.PI * 2);
   ctx.fill();
@@ -1203,3 +1203,5 @@ function setBaseMap(name) {
 // KOP_TEST_SPEED_BASED_PARTICLE_LENGTH_01
 
 // KOP_TEST_ZOOMOUT_HALF_LENGTH_DENSITY_01
+
+// KOP_TEST_PARTICLE_HEAD_ALPHA_01
