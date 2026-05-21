@@ -339,28 +339,13 @@ function isMobileLayout(){
 }
 
 function zoomOutParticleDensityMultiplier(){
-  if(!map) return 1.0;
-
-  const z = map.getZoom();
-
-  // zoomed out: more particles to avoid sparse/bald patches
-  // z <= 5 : 1.50x
-  // z = 7  : about 1.25x
-  // z >= 9 : 1.00x
-  if(z <= 5.0) return 1.50;
-  if(z >= 9.0) return 1.00;
-
-  return 1.0 + (9.0 - z) * (0.50 / 4.0);
+  return 1.0;
 }
 
 function effectiveParticleCount(){
   const n = Number(particleCount || 0);
-
-  // Same base density as main viewer, but test viewer increases density when zoomed out.
-  const base = isMobileLayout() ? Math.max(250, Math.round(n * 0.32)) : n;
-  const mul = zoomOutParticleDensityMultiplier();
-
-  return Math.max(250, Math.round(base * mul));
+  if(isMobileLayout()) return Math.max(250, Math.round(n * 0.32));
+  return n;
 }
 
 function resetParticle(p, ll=null) {
@@ -1165,3 +1150,5 @@ function setBaseMap(name) {
 // KOP_TEST_ZOOMOUT_PARTICLE_DENSITY_150_01
 
 // KOP_TEST_LOW_SPEED_PARTICLES_VISIBLE_01
+
+// KOP_TEST_PARTICLE_COUNT_SAME_AS_MAIN_01
