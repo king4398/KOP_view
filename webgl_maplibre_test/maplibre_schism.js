@@ -550,23 +550,16 @@ function particleFlowScale(){
 }
 
 function particleTrailLength(){
-  if(!map) return 18;
+  if(!map) return 16;
 
   const z = map.getZoom();
 
-  // Windy-like longer trails:
-  // zoomed out: long trails
-  // normal: medium trails
-  // zoomed in: shorter but still visible
-  //
-  // approx:
-  // zoom 4~5  -> 32~34
-  // zoom 6    -> 28
-  // zoom 7    -> 22
-  // zoom 8    -> 17
-  // zoom 9+   -> 13
-  const extra = Math.round(Math.max(0, 9.5 - z) * 4.2);
-  return Math.max(13, Math.min(34, 13 + extra));
+  // Lightweight longer trails:
+  // zoom out: 20~24
+  // normal: 14~18
+  // zoom in: 10~12
+  const extra = Math.round(Math.max(0, 8.5 - z) * 2.6);
+  return Math.max(10, Math.min(24, 10 + extra));
 }
 
 function colorWithAlpha(color, alpha){
@@ -667,37 +660,44 @@ function startParticles() {
 
             if (p.trail.length < 2) continue;
 
-            // Windy-like trail: faint tail, bright head.
+            // Lightweight Windy-like trail:
+            // draw one faint full trail, then a bright short head segment.
             const nTrail = p.trail.length;
-            for (let i = 1; i < nTrail; i++) {
-                const q0 = p.trail[i - 1];
-                const q1 = p.trail[i];
+            const baseColor = currentParticleColor(vec.speed);
 
-                const pt0 = map.project([q0.lon, q0.lat]);
-                const pt1 = map.project([q1.lon, q1.lat]);
+            particleCtx.strokeStyle = colorWithAlpha(baseColor, 0.42);
+            particleCtx.lineWidth = 1.0;
+            particleCtx.beginPath();
 
-                const f = i / Math.max(1, nTrail - 1);
-
-                // tail -> head alpha/width
-                const alpha = 0.10 + 0.82 * Math.pow(f, 1.35);
-                const width = 0.55 + 0.95 * Math.pow(f, 1.20);
-
-                particleCtx.strokeStyle = particleTrailColor(vec.speed, alpha);
-                particleCtx.lineWidth = width;
-                particleCtx.beginPath();
-                particleCtx.moveTo(pt0.x, pt0.y);
-                particleCtx.lineTo(pt1.x, pt1.y);
-                particleCtx.stroke();
-            }
-
-            // small bright head cap
-            if (nTrail >= 2) {
-                const q = p.trail[nTrail - 1];
+            for (let i = 0; i < nTrail; i++) {
+                const q = p.trail[i];
                 const pt = map.project([q.lon, q.lat]);
-                particleCtx.fillStyle = particleTrailColor(vec.speed, 0.95);
+
+                if (i === 0) {
+                    particleCtx.moveTo(pt.x, pt.y);
+                } else {
+                    particleCtx.lineTo(pt.x, pt.y);
+                }
+            }
+            particleCtx.stroke();
+
+            // bright head: only last 2~3 points, cheap but direction is clear
+            if (nTrail >= 3) {
+                particleCtx.strokeStyle = colorWithAlpha(baseColor, 0.95);
+                particleCtx.lineWidth = 1.7;
                 particleCtx.beginPath();
-                particleCtx.arc(pt.x, pt.y, 1.1, 0, Math.PI * 2);
-                particleCtx.fill();
+
+                const start = Math.max(0, nTrail - 3);
+                for (let i = start; i < nTrail; i++) {
+                    const q = p.trail[i];
+                    const pt = map.project([q.lon, q.lat]);
+                    if (i === start) {
+                        particleCtx.moveTo(pt.x, pt.y);
+                    } else {
+                        particleCtx.lineTo(pt.x, pt.y);
+                    }
+                }
+                particleCtx.stroke();
             }
         }
 
@@ -992,3 +992,5 @@ function setBaseMap(name) {
 // KOP_TEST_PARTICLE_TRAIL_ZOOM_01
 
 // KOP_TEST_WINDY_PARTICLE_TRAIL_01
+
+// KOP_TEST_FAST_WINDY_TRAIL_01
