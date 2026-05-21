@@ -340,6 +340,9 @@ function isMobileLayout(){
 
 function effectiveParticleCount(){
   const n = Number(particleCount || 0);
+
+  // Test viewer: use the same particle count as the main viewer.
+  // PC keeps full density. Mobile keeps the main mobile reduction.
   if(isMobileLayout()) return Math.max(250, Math.round(n * 0.32));
   return n;
 }
@@ -1140,3 +1143,5 @@ function setBaseMap(name) {
 // KOP_TEST_MOVE_RESET_ONLY_01
 
 // KOP_TEST_GRID_PARTICLE_DISTRIBUTION_01
+
+// KOP_TEST_PARTICLE_COUNT_ORIGINAL_01
