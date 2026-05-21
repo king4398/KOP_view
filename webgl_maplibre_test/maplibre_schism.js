@@ -340,8 +340,11 @@ function isMobileLayout(){
 
 function effectiveParticleCount(){
   const n = Number(particleCount || 0);
-  if(isMobileLayout()) return Math.max(250, Math.round(n * 0.32));
-  return n;
+
+  // Test viewer only:
+  // Longer particles need a bit more density to avoid bald patches.
+  if(isMobileLayout()) return Math.max(450, Math.round(n * 0.45));
+  return Math.round(n * 1.25);
 }
 
 function resetParticle(p) {
@@ -550,22 +553,21 @@ function particleFlowScale(){
 }
 
 function particleTrailLength(){
-  if(!map) return 26;
+  if(!map) return 22;
 
   const z = map.getZoom();
 
-  // Gradient-sprite particles:
-  // zoom out: longer particles
-  // normal: medium
+  // Balanced gradient-sprite particles:
+  // zoom out: visible but not too sparse
   // zoom in: shorter
   //
-  // zoom 4~5  -> 38~42
-  // zoom 6    -> 34
-  // zoom 7    -> 28
-  // zoom 8    -> 23
-  // zoom 9+   -> 20
-  const extra = Math.round(Math.max(0, 9.0 - z) * 4.4);
-  return Math.max(20, Math.min(42, 20 + extra));
+  // zoom 4~5  -> 30~34
+  // zoom 6    -> 28
+  // zoom 7    -> 23
+  // zoom 8    -> 20
+  // zoom 9+   -> 17
+  const extra = Math.round(Math.max(0, 8.8 - z) * 3.3);
+  return Math.max(17, Math.min(34, 17 + extra));
 }
 
 const particleSpriteCache = new Map();
@@ -595,8 +597,8 @@ function particleGradientSprite(color){
 
   if(particleSpriteCache.has(key)) return particleSpriteCache.get(key);
 
-  const w = 96;
-  const h = 8;
+  const w = 112;
+  const h = 10;
 
   const c = document.createElement("canvas");
   c.width = w;
@@ -606,18 +608,18 @@ function particleGradientSprite(color){
   ctx.clearRect(0, 0, w, h);
 
   const grad = ctx.createLinearGradient(0, 0, w, 0);
-  grad.addColorStop(0.00, `rgba(${rq},${gq},${bq},0.00)`);
-  grad.addColorStop(0.20, `rgba(${rq},${gq},${bq},0.10)`);
-  grad.addColorStop(0.65, `rgba(${rq},${gq},${bq},0.42)`);
-  grad.addColorStop(1.00, `rgba(${rq},${gq},${bq},0.98)`);
+  grad.addColorStop(0.00, `rgba(${rq},${gq},${bq},0.03)`);
+  grad.addColorStop(0.20, `rgba(${rq},${gq},${bq},0.14)`);
+  grad.addColorStop(0.68, `rgba(${rq},${gq},${bq},0.50)`);
+  grad.addColorStop(1.00, `rgba(${rq},${gq},${bq},0.92)`);
 
   ctx.fillStyle = grad;
-  ctx.fillRect(0, 2, w, 4);
+  ctx.fillRect(0, 3, w, 4);
 
   // Bright compact head
   ctx.fillStyle = `rgba(${rq},${gq},${bq},0.95)`;
   ctx.beginPath();
-  ctx.ellipse(w - 4, h / 2, 3.0, 2.0, 0, 0, Math.PI * 2);
+  ctx.ellipse(w - 4, h / 2, 2.6, 1.7, 0, 0, Math.PI * 2);
   ctx.fill();
 
   particleSpriteCache.set(key, c);
@@ -725,8 +727,8 @@ function startParticles() {
                 const baseColor = currentParticleColor(vec.speed);
                 const sprite = particleGradientSprite(baseColor);
 
-                const drawLen = Math.max(10, Math.min(70, len));
-                const drawWidth = currentVar === "current" ? 4.0 : 3.2;
+                const drawLen = Math.max(12, Math.min(82, len));
+                const drawWidth = currentVar === "current" ? 3.4 : 2.8;
                 const ang = Math.atan2(dy, dx);
 
                 particleCtx.save();
@@ -1026,3 +1028,5 @@ function setBaseMap(name) {
 // KOP_ZOOM_PARTICLE_SPEED_01
 
 // KOP_TEST_GRADIENT_SPRITE_PARTICLE_01
+
+// KOP_TEST_PARTICLE_DENSITY_SMOOTH_01
