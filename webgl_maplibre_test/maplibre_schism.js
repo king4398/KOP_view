@@ -550,16 +550,21 @@ function particleFlowScale(){
 }
 
 function particleTrailLength(){
-  if(!map) return 16;
+  if(!map) return 24;
 
   const z = map.getZoom();
 
-  // Lightweight longer trails:
-  // zoom out: 20~24
-  // normal: 14~18
-  // zoom in: 10~12
-  const extra = Math.round(Math.max(0, 8.5 - z) * 2.6);
-  return Math.max(10, Math.min(24, 10 + extra));
+  // Straight gradient particle:
+  // zoom out: longer
+  // zoom in: shorter
+  //
+  // zoom 4~5  -> 36~42
+  // zoom 6    -> 32
+  // zoom 7    -> 26
+  // zoom 8    -> 21
+  // zoom 9+   -> 18
+  const extra = Math.round(Math.max(0, 9.0 - z) * 4.8);
+  return Math.max(18, Math.min(42, 18 + extra));
 }
 
 function colorWithAlpha(color, alpha){
@@ -574,6 +579,20 @@ function colorWithAlpha(color, alpha){
 
 function particleTrailColor(speed, alpha){
   return colorWithAlpha(currentParticleColor(speed), alpha);
+}
+
+function rgbPartsFromColor(color){
+  const m = String(color || "").match(/rgba?\(([^)]+)\)/);
+  if(!m) return [238,238,238];
+
+  const p = m[1].split(",").map(s => s.trim());
+  if(p.length < 3) return [238,238,238];
+
+  return [
+    Number(p[0]) || 238,
+    Number(p[1]) || 238,
+    Number(p[2]) || 238
+  ];
 }
 
 function startParticles() {
@@ -660,43 +679,36 @@ function startParticles() {
 
             if (p.trail.length < 2) continue;
 
-            // Lightweight Windy-like trail:
-            // draw one faint full trail, then a bright short head segment.
+            // Straight Windy-like particle:
+            // one gradient line per particle: faint tail -> bright head.
             const nTrail = p.trail.length;
-            const baseColor = currentParticleColor(vec.speed);
+            const qTail = p.trail[0];
+            const qHead = p.trail[nTrail - 1];
 
-            particleCtx.strokeStyle = colorWithAlpha(baseColor, 0.42);
-            particleCtx.lineWidth = 1.0;
-            particleCtx.beginPath();
+            const ptTail = map.project([qTail.lon, qTail.lat]);
+            const ptHead = map.project([qHead.lon, qHead.lat]);
 
-            for (let i = 0; i < nTrail; i++) {
-                const q = p.trail[i];
-                const pt = map.project([q.lon, q.lat]);
+            const dx = ptHead.x - ptTail.x;
+            const dy = ptHead.y - ptTail.y;
+            const len2 = dx * dx + dy * dy;
 
-                if (i === 0) {
-                    particleCtx.moveTo(pt.x, pt.y);
-                } else {
-                    particleCtx.lineTo(pt.x, pt.y);
-                }
-            }
-            particleCtx.stroke();
+            if (len2 > 1.0) {
+                const rgb = rgbPartsFromColor(currentParticleColor(vec.speed));
 
-            // bright head: only last 2~3 points, cheap but direction is clear
-            if (nTrail >= 3) {
-                particleCtx.strokeStyle = colorWithAlpha(baseColor, 0.95);
-                particleCtx.lineWidth = 1.7;
+                const grad = particleCtx.createLinearGradient(
+                    ptTail.x, ptTail.y,
+                    ptHead.x, ptHead.y
+                );
+
+                grad.addColorStop(0.00, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.05)`);
+                grad.addColorStop(0.35, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.22)`);
+                grad.addColorStop(1.00, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.96)`);
+
+                particleCtx.strokeStyle = grad;
+                particleCtx.lineWidth = 1.45;
                 particleCtx.beginPath();
-
-                const start = Math.max(0, nTrail - 3);
-                for (let i = start; i < nTrail; i++) {
-                    const q = p.trail[i];
-                    const pt = map.project([q.lon, q.lat]);
-                    if (i === start) {
-                        particleCtx.moveTo(pt.x, pt.y);
-                    } else {
-                        particleCtx.lineTo(pt.x, pt.y);
-                    }
-                }
+                particleCtx.moveTo(ptTail.x, ptTail.y);
+                particleCtx.lineTo(ptHead.x, ptHead.y);
                 particleCtx.stroke();
             }
         }
@@ -994,3 +1006,5 @@ function setBaseMap(name) {
 // KOP_TEST_WINDY_PARTICLE_TRAIL_01
 
 // KOP_TEST_FAST_WINDY_TRAIL_01
+
+// KOP_TEST_STRAIGHT_GRADIENT_PARTICLE_01
