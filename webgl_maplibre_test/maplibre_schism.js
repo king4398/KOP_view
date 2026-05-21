@@ -339,13 +339,25 @@ function isMobileLayout(){
 }
 
 function zoomOutParticleDensityMultiplier(){
-  return 1.0;
+  if(!map) return 1.0;
+
+  const z = map.getZoom();
+
+  // zoomed out: fewer particles for cleaner large-scale view
+  // z <= 5 : 0.70x
+  // z = 7  : about 0.85x
+  // z >= 9 : 1.00x
+  if(z <= 5.0) return 0.70;
+  if(z >= 9.0) return 1.00;
+
+  return 0.70 + (z - 5.0) * (0.30 / 4.0);
 }
 
 function effectiveParticleCount(){
   const n = Number(particleCount || 0);
-  if(isMobileLayout()) return Math.max(250, Math.round(n * 0.32));
-  return n;
+  const base = isMobileLayout() ? Math.max(250, Math.round(n * 0.32)) : n;
+  const mul = zoomOutParticleDensityMultiplier();
+  return Math.max(250, Math.round(base * mul));
 }
 
 function resetParticle(p, ll=null) {
@@ -653,14 +665,14 @@ function particleTrailLength(){
 
   const z = map.getZoom();
 
-  // 30% shorter than previous gradient-sprite version.
-  // zoom 4~5  -> 26~30
-  // zoom 6    -> 24
-  // zoom 7    -> 20
-  // zoom 8    -> 17
+  // zoomed out: 30% shorter trails
+  // zoom 4~5  -> 18~21
+  // zoom 6    -> 20
+  // zoom 7    -> 18
+  // zoom 8    -> 16
   // zoom 9+   -> 14
-  const extra = Math.round(Math.max(0, 8.8 - z) * 2.8);
-  return Math.max(14, Math.min(30, 14 + extra));
+  const extra = Math.round(Math.max(0, 8.8 - z) * 2.0);
+  return Math.max(14, Math.min(21, 14 + extra));
 }
 
 const particleSpriteCache = new Map();
@@ -829,7 +841,7 @@ function startParticles() {
 
                 const sprite = particleGradientSprite(baseColor, fadeFactor);
 
-                const drawLen = Math.max(12, Math.min(48, len));
+                const drawLen = Math.max(8, Math.min(34, len));
                 const drawWidth = currentVar === "current" ? 3.0 : 2.3;
                 const ang = Math.atan2(dy, dx);
 
@@ -1152,3 +1164,5 @@ function setBaseMap(name) {
 // KOP_TEST_LOW_SPEED_PARTICLES_VISIBLE_01
 
 // KOP_TEST_PARTICLE_COUNT_SAME_AS_MAIN_01
+
+// KOP_TEST_ZOOMOUT_SHORTER_LESS_01
