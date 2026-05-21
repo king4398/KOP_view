@@ -661,18 +661,17 @@ function particleFlowScale(){
 }
 
 function particleTrailLength(){
-  if(!map) return 18;
+  if(!map) return 10;
 
   const z = map.getZoom();
 
-  // zoomed out: 30% shorter trails
-  // zoom 4~5  -> 18~21
-  // zoom 6    -> 20
-  // zoom 7    -> 18
-  // zoom 8    -> 16
-  // zoom 9+   -> 14
-  const extra = Math.round(Math.max(0, 8.8 - z) * 2.0);
-  return Math.max(14, Math.min(21, 14 + extra));
+  // shorter trail memory to match 50% shorter visible particles
+  // zoom 4~5  -> 10~12
+  // zoom 6    -> 11
+  // zoom 7    -> 10
+  // zoom 8+   -> 8~9
+  const extra = Math.round(Math.max(0, 8.5 - z) * 1.2);
+  return Math.max(8, Math.min(12, 8 + extra));
 }
 
 const particleSpriteCache = new Map();
@@ -741,19 +740,19 @@ function speedBasedParticleDrawLength(spd){
   if(!Number.isFinite(t)) t = 0.0;
   t = Math.max(0.0, Math.min(1.0, t));
 
-  // Still make high-speed particles visibly longer
+  // high-speed particles are still longer, but total length is reduced by 50%
   t = Math.pow(t, 0.75);
 
-  let minLen = 7.0;
-  let maxLen = 36.0;
+  let minLen = 3.5;
+  let maxLen = 18.0;
 
   if(map){
     const z = map.getZoom();
 
-    // zoomed out: reduce high-speed length much more strongly
-    // z <= 5 : 0.50x length
-    // z = 7  : 0.75x length
-    // z >= 9 : 1.00x length
+    // zoomed out: still keep overview cleaner
+    // z <= 5 : 0.50x
+    // z = 7  : 0.75x
+    // z >= 9 : 1.00x
     let f = 1.0;
     if(z <= 5.0) f = 0.50;
     else if(z < 9.0) f = 0.50 + (z - 5.0) * (0.50 / 4.0);
@@ -1207,3 +1206,5 @@ function setBaseMap(name) {
 // KOP_TEST_PARTICLE_HEAD_ALPHA_01
 
 // KOP_TEST_PARTICLE_SOFT_GRAY_225_055_01
+
+// KOP_TEST_PARTICLE_LENGTH_HALF_01
