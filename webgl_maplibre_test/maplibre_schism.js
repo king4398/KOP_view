@@ -10,7 +10,7 @@ const CONFIG = {
   lookupOffsetsUrl: DATA_ROOT + "lookup_offsets.bin",
   lookupTrianglesUrl: DATA_ROOT + "lookup_triangles.bin",
   flowScale: 0.005,
-  overlayParticleColor: "rgba(238,238,238,0.90)"
+  overlayParticleColor: "rgba(175,175,175,0.62)"
 };
 
 const els = {
@@ -551,22 +551,18 @@ function particleFlowScale(){
 }
 
 function particleTrailLength(){
-  if(!map) return 26;
+  if(!map) return 18;
 
   const z = map.getZoom();
 
-  // Gradient-sprite particles:
-  // zoom out: longer particles
-  // normal: medium
-  // zoom in: shorter
-  //
-  // zoom 4~5  -> 38~42
-  // zoom 6    -> 34
-  // zoom 7    -> 28
-  // zoom 8    -> 23
-  // zoom 9+   -> 20
-  const extra = Math.round(Math.max(0, 9.0 - z) * 4.4);
-  return Math.max(20, Math.min(42, 20 + extra));
+  // 30% shorter than previous gradient-sprite version.
+  // zoom 4~5  -> 26~30
+  // zoom 6    -> 24
+  // zoom 7    -> 20
+  // zoom 8    -> 17
+  // zoom 9+   -> 14
+  const extra = Math.round(Math.max(0, 8.8 - z) * 2.8);
+  return Math.max(14, Math.min(30, 14 + extra));
 }
 
 const particleSpriteCache = new Map();
@@ -651,7 +647,7 @@ function startParticles() {
         // remove only part of the previous frame so particles disappear smoothly.
         // Larger alpha = faster fade. 0.22 is quick enough to avoid heavy smearing.
         particleCtx.globalCompositeOperation = "destination-out";
-        particleCtx.fillStyle = "rgba(0,0,0,0.22)";
+        particleCtx.fillStyle = "rgba(0,0,0,0.16)";
         particleCtx.fillRect(0, 0, width, height);
 
         particleCtx.globalCompositeOperation = "source-over";
@@ -735,8 +731,8 @@ function startParticles() {
 
                 const sprite = particleGradientSprite(baseColor, fadeFactor);
 
-                const drawLen = Math.max(10, Math.min(62, len));
-                const drawWidth = currentVar === "current" ? 4.0 : 3.2;
+                const drawLen = Math.max(8, Math.min(48, len));
+                const drawWidth = currentVar === "current" ? 3.0 : 2.3;
                 const ang = Math.atan2(dy, dx);
 
                 particleCtx.save();
@@ -799,7 +795,35 @@ function drawMeshOverlayOnParticleCanvas(){
 
 
 function stopParticles(){ particleRunning=false; if(particleAnimId!==null){ cancelAnimationFrame(particleAnimId); particleAnimId=null; } clearCurrentCanvas(); }
-function setupEvents(){ els.currentOverlay.checked=true; els.currentOverlay.dataset.userTouched=""; els.currentOverlay.addEventListener("change",()=>{els.currentOverlay.dataset.userTouched="1"; updateCurrentOverlayAvailability(); setFrame(currentFrame);}); els.meshOverlay.addEventListener("change",()=>map.triggerRepaint()); els.varSelect.addEventListener("change",e=>{currentVar=e.target.value; updateCurrentOverlayAvailability(); updateLegend(); setFrame(currentFrame); map.triggerRepaint();}); els.playBtn.addEventListener("click",()=>{ if(timer===null){els.playBtn.textContent="❚❚"; startTimer();} else {els.playBtn.textContent="▶"; clearInterval(timer); timer=null;} }); els.frameSlider.addEventListener("input",e=>setFrame(e.target.value)); els.speedSelect.addEventListener("change",e=>{ speed=parseFloat(e.target.value); if(timer!==null) startTimer(); }); els.opacitySlider.addEventListener("input",()=>map.triggerRepaint()); els.densitySelect.addEventListener("change",e=>{ particleCount=parseInt(e.target.value); resetParticles(); clearCurrentCanvas(); }); map.on("moveend",()=>resetParticles());
+function installParticleMoveStabilizer(){
+  if(!map || map.__particleMoveStabilizerInstalled) return;
+  map.__particleMoveStabilizerInstalled = true;
+
+  function pauseForMove(){
+    if(!shouldDrawCurrentParticles()) return;
+    particleRunning = false;
+    if(particleAnimId !== null){
+      cancelAnimationFrame(particleAnimId);
+      particleAnimId = null;
+    }
+    clearCurrentCanvas();
+  }
+
+  function resumeAfterMove(){
+    if(!shouldDrawCurrentParticles()) return;
+    resizeParticleCanvas();
+    clearCurrentCanvas();
+    resetParticles();
+    startParticles();
+  }
+
+  map.on("movestart", pauseForMove);
+  map.on("zoomstart", pauseForMove);
+  map.on("moveend", resumeAfterMove);
+  map.on("zoomend", resumeAfterMove);
+}
+
+function setupEvents(){ els.currentOverlay.checked=true; els.currentOverlay.dataset.userTouched=""; els.currentOverlay.addEventListener("change",()=>{els.currentOverlay.dataset.userTouched="1"; updateCurrentOverlayAvailability(); setFrame(currentFrame);}); els.meshOverlay.addEventListener("change",()=>map.triggerRepaint()); els.varSelect.addEventListener("change",e=>{currentVar=e.target.value; updateCurrentOverlayAvailability(); updateLegend(); setFrame(currentFrame); map.triggerRepaint();}); els.playBtn.addEventListener("click",()=>{ if(timer===null){els.playBtn.textContent="❚❚"; startTimer();} else {els.playBtn.textContent="▶"; clearInterval(timer); timer=null;} }); els.frameSlider.addEventListener("input",e=>setFrame(e.target.value)); els.speedSelect.addEventListener("change",e=>{ speed=parseFloat(e.target.value); if(timer!==null) startTimer(); }); els.opacitySlider.addEventListener("input",()=>map.triggerRepaint()); els.densitySelect.addEventListener("change",e=>{ particleCount=parseInt(e.target.value); resetParticles(); clearCurrentCanvas(); }); map.on("moveend",()=>resetParticles()); installParticleMoveStabilizer();
 }
 
 
@@ -1042,3 +1066,5 @@ function setBaseMap(name) {
 // KOP_TEST_PARTICLE_SOFT_FADE_01
 
 // KOP_TEST_PARTICLE_FADE_IN_01
+
+// KOP_TEST_TUNE_GRAY_SHORTER_STABLE_01
