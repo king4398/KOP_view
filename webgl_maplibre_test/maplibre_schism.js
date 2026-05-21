@@ -344,25 +344,119 @@ function effectiveParticleCount(){
   return n;
 }
 
-function resetParticle(p) {
-    const ll = randomValidPoint();
+function resetParticle(p, ll=null) {
+    const pos = ll || randomValidPoint();
 
-    if (!ll) {
+    if (!pos) {
         p.lon = meta.bounds[0][1];
         p.lat = meta.bounds[0][0];
     } else {
-        p.lon = ll.lon;
-        p.lat = ll.lat;
+        p.lon = pos.lon;
+        p.lat = pos.lat;
     }
 
-    p.age = Math.floor(Math.random() * 100);
-    p.fadeAge = 0;
-    p.maxAge = 150 + Math.floor(Math.random() * 120);
+    // 길어진 gradient particle은 자주 죽으면 깜빡임/빈공간이 커져서 수명 조금 길게
+    p.age = Math.floor(Math.random() * 80);
+    p.maxAge = 170 + Math.floor(Math.random() * 140);
+
+    // fade-in용
+    p.fadeAge = Math.floor(Math.random() * 10);
 
     // Geographic trail. This makes particles stick to the map during pan/zoom.
     p.trail = [{ lon: p.lon, lat: p.lat }];
 }
-function resetParticles(){ particles=[]; if(!currentU||!currentV) return; const n=effectiveParticleCount(); for(let i=0;i<n;i++){ const p={}; resetParticle(p); particles.push(p); } }
+function randomValidPointInBox(west, east, south, north, tries=40){
+    if(!(west < east && south < north)) return null;
+
+    for(let i = 0; i < tries; i++){
+        const lon = west + Math.random() * (east - west);
+        const lat = south + Math.random() * (north - south);
+        if(vectorAt(lon, lat)) return {lon, lat};
+    }
+
+    return null;
+}
+
+function buildGridSeedPoints(targetCount){
+    const pts = [];
+    if(!map || !lookupMeta || !currentU || !currentV) return pts;
+
+    const g = getLookupBounds();
+    const b = map.getBounds();
+
+    const west  = Math.max(g.lonMin, b.getWest());
+    const east  = Math.min(g.lonMax, b.getEast());
+    const south = Math.max(g.latMin, b.getSouth());
+    const north = Math.min(g.latMax, b.getNorth());
+
+    if(!(west < east && south < north)) return pts;
+
+    // 화면 비율 기준으로 grid 구성
+    const rect = map.getContainer().getBoundingClientRect();
+    const aspect = Math.max(0.5, Math.min(2.5, rect.width / Math.max(1, rect.height)));
+
+    // targetCount에 비례해서 적당한 격자 수 계산
+    // 너무 촘촘하면 초기화가 느려지므로 상한 제한
+    const cols = Math.max(12, Math.min(80, Math.round(Math.sqrt(targetCount * aspect))));
+    const rows = Math.max(8,  Math.min(60, Math.round(targetCount / cols)));
+
+    const cellW = (east - west) / cols;
+    const cellH = (north - south) / rows;
+
+    // 셀 순서가 줄무늬처럼 보이지 않게 섞음
+    const cells = [];
+    for(let iy = 0; iy < rows; iy++){
+        for(let ix = 0; ix < cols; ix++){
+            cells.push([ix, iy]);
+        }
+    }
+
+    for(let i = cells.length - 1; i > 0; i--){
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = cells[i];
+        cells[i] = cells[j];
+        cells[j] = tmp;
+    }
+
+    for(const [ix, iy] of cells){
+        if(pts.length >= targetCount) break;
+
+        const x0 = west + ix * cellW;
+        const x1 = x0 + cellW;
+        const y0 = south + iy * cellH;
+        const y1 = y0 + cellH;
+
+        const p = randomValidPointInBox(x0, x1, y0, y1, 30);
+        if(p) pts.push(p);
+    }
+
+    return pts;
+}
+
+function resetParticles(){
+    particles = [];
+    if(!currentU || !currentV) return;
+
+    const n = effectiveParticleCount ? effectiveParticleCount() : particleCount;
+
+    // 1차: 현재 화면을 격자로 나눠 균일하게 배치
+    const seeds = buildGridSeedPoints(n);
+
+    for(let i = 0; i < seeds.length && particles.length < n; i++){
+        const p = {};
+        resetParticle(p, seeds[i]);
+        particles.push(p);
+    }
+
+    // 2차: 유효 셀이 부족한 경우 랜덤으로 보충
+    let guard = 0;
+    while(particles.length < n && guard < n * 3){
+        const p = {};
+        resetParticle(p);
+        particles.push(p);
+        guard++;
+    }
+}
 
 let frozenParticleView = null;
 
@@ -1044,3 +1138,5 @@ function setBaseMap(name) {
 // KOP_TEST_WHITE_ALPHA_KEEP_FLOW_01
 
 // KOP_TEST_MOVE_RESET_ONLY_01
+
+// KOP_TEST_GRID_PARTICLE_DISTRIBUTION_01
