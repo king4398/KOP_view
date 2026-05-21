@@ -10,7 +10,7 @@ const CONFIG = {
   lookupOffsetsUrl: DATA_ROOT + "lookup_offsets.bin",
   lookupTrianglesUrl: DATA_ROOT + "lookup_triangles.bin",
   flowScale: 0.005,
-  overlayParticleColor: "rgba(238,238,238,0.90)"
+  overlayParticleColor: "rgba(235,235,235,0.55)"
 };
 
 const els = {
@@ -81,7 +81,6 @@ async function fetchFloat16AsFloat32(url, expectedLen){
   }
   return out;
 }
-
 
 
 function fmtLegendNumber(x, digits=1){
@@ -160,8 +159,6 @@ vec3 smoothJet(float t) {
     if (t < 0.80) return mix(c3, c4, (t - 0.60) / 0.20);
     return mix(c4, c5, (t - 0.80) / 0.20);
 }
-
-
 
 
 vec3 ylgnbu(float t) {
@@ -338,201 +335,61 @@ function isMobileLayout(){
   return document.body && document.body.classList && document.body.classList.contains("device-mobile");
 }
 
-function effectiveParticleCount(){
-  const n = Number(particleCount || 0);
-  if(isMobileLayout()) return Math.max(250, Math.round(n * 0.32));
-  return n;
+function zoomOutParticleDensityMultiplier(){
+  if(!map) return 1.0;
+
+  const z = map.getZoom();
+
+  // zoomed out: half density for cleaner overview
+  // z <= 5 : 0.50x
+  // z = 7  : 0.75x
+  // z >= 9 : 1.00x
+  if(z <= 5.0) return 0.50;
+  if(z >= 9.0) return 1.00;
+
+  return 0.50 + (z - 5.0) * (0.50 / 4.0);
 }
 
-function resetParticle(p) {
-    const ll = randomValidPoint();
+function effectiveParticleCount(){
+  const n = Number(particleCount || 0);
+  const base = isMobileLayout() ? Math.max(250, Math.round(n * 0.32)) : n;
+  const mul = zoomOutParticleDensityMultiplier();
+  return Math.max(250, Math.round(base * mul));
+}
 
-    if (!ll) {
+function resetParticle(p, ll=null) {
+    const pos = ll || randomValidPoint();
+
+    if (!pos) {
         p.lon = meta.bounds[0][1];
         p.lat = meta.bounds[0][0];
     } else {
-        p.lon = ll.lon;
-        p.lat = ll.lat;
+        p.lon = pos.lon;
+        p.lat = pos.lat;
     }
 
-    p.age = Math.floor(Math.random() * 100);
-    p.maxAge = 80 + Math.floor(Math.random() * 80);
+    // 길어진 gradient particle은 자주 죽으면 깜빡임/빈공간이 커져서 수명 조금 길게
+    p.age = Math.floor(Math.random() * 80);
+    p.maxAge = 170 + Math.floor(Math.random() * 140);
+
+    // fade-in용
+    p.fadeAge = Math.floor(Math.random() * 10);
 
     // Geographic trail. This makes particles stick to the map during pan/zoom.
     p.trail = [{ lon: p.lon, lat: p.lat }];
 }
-function resetParticles(){ particles=[]; if(!currentU||!currentV) return; const n=effectiveParticleCount(); for(let i=0;i<n;i++){ const p={}; resetParticle(p); particles.push(p); } }
+function resetParticles(){
+    particles = [];
+    if(!currentU || !currentV) return;
 
-let frozenParticleView = null;
+    const n = effectiveParticleCount ? effectiveParticleCount() : particleCount;
 
-
-
-function lockParticleCanvasToScreen() {
-    if (!particleCanvas) return;
-
-    particleCanvas.style.position = "absolute";
-    particleCanvas.style.left = "0";
-    particleCanvas.style.top = "0";
-    particleCanvas.style.transform = "none";
-    particleCanvas.style.visibility = "visible";
-}
-
-function freezeParticleProjection() {
-    if (!map) return;
-
-    lockParticleCanvasToScreen();
-
-    const c = map.getCenter();
-    const centerMerc = maplibregl.MercatorCoordinate.fromLngLat({
-        lng: c.lng,
-        lat: c.lat
-    });
-
-    const canvas = map.getCanvas();
-
-    frozenParticleView = {
-        centerX: centerMerc.x,
-        centerY: centerMerc.y,
-        zoom: map.getZoom(),
-        width: canvas.clientWidth,
-        height: canvas.clientHeight,
-        worldSize: 512.0 * Math.pow(2.0, map.getZoom())
-    };
-}
-
-function unfreezeParticleProjectionAndReset() {
-    frozenParticleView = null;
-
-    resizeParticleCanvas();
-    clearCurrentCanvas();
-    resetParticles();
-
-    if (shouldDrawCurrentParticles()) {
-        startParticles();
+    for(let i = 0; i < n; i++){
+        const p = {};
+        resetParticle(p);
+        particles.push(p);
     }
 }
-
-function projectParticlePoint(lon, lat) {
-    if (frozenParticleView) {
-        const mc = maplibregl.MercatorCoordinate.fromLngLat({
-            lng: lon,
-            lat: lat
-        });
-
-        return {
-            x: (mc.x - frozenParticleView.centerX) * frozenParticleView.worldSize + frozenParticleView.width * 0.5,
-            y: (mc.y - frozenParticleView.centerY) * frozenParticleView.worldSize + frozenParticleView.height * 0.5
-        };
-    }
-
-    return map.project([lon, lat]);
-}
-
-
-let particleSnapshotCanvas = null;
-let particleSnapshotCtx = null;
-let particleSnapshotActive = false;
-
-function ensureParticleSnapshotCanvas() {
-    if (!map) return null;
-
-    if (particleSnapshotCanvas) return particleSnapshotCanvas;
-
-    const container = map.getContainer();
-
-    particleSnapshotCanvas = document.createElement("canvas");
-    particleSnapshotCanvas.id = "particle-snapshot-canvas";
-    particleSnapshotCanvas.style.position = "absolute";
-    particleSnapshotCanvas.style.left = "0";
-    particleSnapshotCanvas.style.top = "0";
-    particleSnapshotCanvas.style.width = "100%";
-    particleSnapshotCanvas.style.height = "100%";
-    particleSnapshotCanvas.style.pointerEvents = "none";
-    particleSnapshotCanvas.style.zIndex = "21";
-    particleSnapshotCanvas.style.display = "none";
-    particleSnapshotCanvas.style.transform = "none";
-
-    container.appendChild(particleSnapshotCanvas);
-    particleSnapshotCtx = particleSnapshotCanvas.getContext("2d");
-
-    return particleSnapshotCanvas;
-}
-
-function resizeParticleSnapshotCanvas() {
-    if (!map || !particleSnapshotCanvas || !particleSnapshotCtx) return;
-
-    const rect = map.getContainer().getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-
-    particleSnapshotCanvas.width = Math.max(1, Math.round(rect.width * dpr));
-    particleSnapshotCanvas.height = Math.max(1, Math.round(rect.height * dpr));
-    particleSnapshotCanvas.style.width = Math.round(rect.width) + "px";
-    particleSnapshotCanvas.style.height = Math.round(rect.height) + "px";
-    particleSnapshotCanvas.style.left = "0";
-    particleSnapshotCanvas.style.top = "0";
-    particleSnapshotCanvas.style.transform = "none";
-
-    particleSnapshotCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-
-function pauseParticlesOnly() {
-    particleRunning = false;
-
-    if (particleAnimId !== null) {
-        cancelAnimationFrame(particleAnimId);
-        particleAnimId = null;
-    }
-}
-
-function captureParticleSnapshotForMove() {
-    if (!particleCanvas || !map) return;
-
-    ensureParticleSnapshotCanvas();
-    resizeParticleSnapshotCanvas();
-
-    const rect = map.getContainer().getBoundingClientRect();
-
-    particleSnapshotCtx.clearRect(0, 0, rect.width, rect.height);
-
-    try {
-        particleSnapshotCtx.drawImage(particleCanvas, 0, 0, rect.width, rect.height);
-    } catch (e) {
-        console.warn("[particle snapshot] drawImage failed", e);
-        return;
-    }
-
-    particleSnapshotCanvas.style.display = "block";
-    particleSnapshotCanvas.style.visibility = "visible";
-
-    particleSnapshotActive = true;
-
-    // Stop real particle calculation and hide the live canvas.
-    // Snapshot stays fixed on screen during drag/zoom.
-    pauseParticlesOnly();
-
-    particleCanvas.style.visibility = "hidden";
-}
-
-function releaseParticleSnapshotAfterMove() {
-    particleSnapshotActive = false;
-
-    if (particleSnapshotCanvas) {
-        particleSnapshotCanvas.style.display = "none";
-    }
-
-    if (particleCanvas) {
-        particleCanvas.style.visibility = "visible";
-    }
-
-    resizeParticleCanvas();
-    clearCurrentCanvas();
-    resetParticles();
-
-    if (shouldDrawCurrentParticles()) {
-        startParticles();
-    }
-}
-
 
 function particleFlowScale(){
   const base = CONFIG.flowScale; // default: 0.005
@@ -549,6 +406,68 @@ function particleFlowScale(){
   return Math.max(base * 0.20, base * factor);
 }
 
+function particleTrailLength(){
+  return 3;
+}
+
+function speedBasedParticleDrawLength(spd){
+  const r = currentSpeedRange ? currentSpeedRange() : {vmin:0, vmax:1};
+  const vmin = Number.isFinite(r.vmin) ? r.vmin : 0.0;
+  const vmax = Number.isFinite(r.vmax) && r.vmax > vmin ? r.vmax : 1.0;
+
+  let t = (spd - vmin) / (vmax - vmin);
+  if(!Number.isFinite(t)) t = 0.0;
+  t = Math.max(0.0, Math.min(1.0, t));
+
+  // high-speed particles are still longer, but total length is reduced by 50%
+  t = Math.pow(t, 0.75);
+
+  let minLen = 3.5;
+  let maxLen = 18.0;
+
+  if(map){
+    const z = map.getZoom();
+
+    // zoomed out: still keep overview cleaner
+    // z <= 5 : 0.50x
+    // z = 7  : 0.75x
+    // z >= 9 : 1.00x
+    let f = 1.0;
+    if(z <= 5.0) f = 0.50;
+    else if(z < 9.0) f = 0.50 + (z - 5.0) * (0.50 / 4.0);
+
+    minLen *= f;
+    maxLen *= f;
+  }
+
+  return minLen + (maxLen - minLen) * t;
+}
+
+function colorWithAlpha(color, alpha){
+    const m = String(color || "").match(/rgba?\(([^)]+)\)/);
+    if(!m) return color;
+
+    const p = m[1].split(",").map(s => s.trim());
+    if(p.length < 3) return color;
+
+    return `rgba(${p[0]},${p[1]},${p[2]},${alpha})`;
+}
+
+function zoomOutParticleWidthMultiplier(){
+  if(!map) return 1.0;
+
+  const z = map.getZoom();
+
+  // zoomed out: thinner lines
+  // z <= 5 : 0.55x
+  // z = 7  : about 0.75x
+  // z >= 9 : 1.00x
+  if(z <= 5.0) return 0.55;
+  if(z >= 9.0) return 1.00;
+
+  return 0.55 + (z - 5.0) * (0.45 / 4.0);
+}
+
 function startParticles() {
     if (particleAnimId !== null) {
         cancelAnimationFrame(particleAnimId);
@@ -558,7 +477,6 @@ function startParticles() {
     particleRunning = true;
     resetParticles();
 
-    const TRAIL_LEN = 8;
 
     function step() {
         if (!particleRunning || !shouldDrawCurrentParticles()) {
@@ -566,15 +484,19 @@ function startParticles() {
             return;
         }
 
+        const trailLen = particleTrailLength();
         const rect = map.getContainer().getBoundingClientRect();
         const width = rect.width;
         const height = rect.height;
 
-        // Important:
-        // Clear and redraw all particle trails from lon/lat each frame.
-        // This keeps particles attached to the map during pan/zoom.
+        // Soft fade instead of hard clear:
+        // remove only part of the previous frame so particles disappear smoothly.
+        // Larger alpha = faster fade. 0.10 leaves a short Windy-like trail.
+        particleCtx.globalCompositeOperation = "destination-out";
+        particleCtx.fillStyle = "rgba(0,0,0,0.10)";
+        particleCtx.fillRect(0, 0, width, height);
+
         particleCtx.globalCompositeOperation = "source-over";
-        particleCtx.clearRect(0, 0, width, height);
         particleCtx.lineWidth = 1.2;
         particleCtx.lineCap = "round";
 
@@ -617,7 +539,7 @@ function startParticles() {
             if (!p.trail) p.trail = [];
             p.trail.push({ lon: p.lon, lat: p.lat });
 
-            if (p.trail.length > TRAIL_LEN) {
+            if (p.trail.length > trailLen) {
                 p.trail.shift();
             }
 
@@ -633,21 +555,73 @@ function startParticles() {
 
             if (p.trail.length < 2) continue;
 
-            particleCtx.strokeStyle = currentParticleColor(vec.speed);
-            particleCtx.beginPath();
+            // Windy-like short segment:
+            // Draw only a short segment each frame. Previous segments remain
+            // briefly through canvas soft-fade, so the flow looks continuous.
+            const nTrail = p.trail.length;
+            const qHead = p.trail[nTrail - 1];
+            const qPrev = p.trail[Math.max(0, nTrail - 2)];
 
-            for (let i = 0; i < p.trail.length; i++) {
-                const q = p.trail[i];
-                const pt = map.project([q.lon, q.lat]);
+            const ptHead = map.project([qHead.lon, qHead.lat]);
+            const ptPrev = map.project([qPrev.lon, qPrev.lat]);
 
-                if (i === 0) {
-                    particleCtx.moveTo(pt.x, pt.y);
-                } else {
-                    particleCtx.lineTo(pt.x, pt.y);
-                }
+            let dx = ptHead.x - ptPrev.x;
+            let dy = ptHead.y - ptPrev.y;
+            let len = Math.sqrt(dx * dx + dy * dy);
+
+            // If actual movement is too tiny, use velocity direction so
+            // low-speed particles still appear, but remain short.
+            if(!Number.isFinite(len) || len < 0.05){
+                const latRad2 = p.lat * Math.PI / 180.0;
+                let coslat2 = Math.cos(latRad2);
+                if(Math.abs(coslat2) < 1e-6) coslat2 = 1e-6;
+
+                dx = vec.u / coslat2;
+                dy = vec.v;
+                len = Math.sqrt(dx * dx + dy * dy);
             }
 
-            particleCtx.stroke();
+            if(Number.isFinite(len) && len > 0.0){
+                dx /= len;
+                dy /= len;
+
+                // speedBasedParticleDrawLength keeps speed-dependent length.
+                // Short segment uses only part of that length; fade history
+                // makes it look continuous.
+                const segLen = Math.max(2.0, speedBasedParticleDrawLength(vec.speed) * 0.65);
+
+                const x0 = ptHead.x - dx * segLen;
+                const y0 = ptHead.y - dy * segLen;
+                const x1 = ptHead.x;
+                const y1 = ptHead.y;
+
+                p.fadeAge = (p.fadeAge || 0) + 1;
+                const fadeFactor = Math.min(1.0, p.fadeAge / 18.0);
+
+                const baseColor = currentParticleColor(vec.speed);
+                const r = currentSpeedRange ? currentSpeedRange() : {vmin:0, vmax:1};
+                let tSpeed = (vec.speed - r.vmin) / Math.max(1e-12, r.vmax - r.vmin);
+                if(!Number.isFinite(tSpeed)) tSpeed = 0.0;
+                tSpeed = Math.max(0.0, Math.min(1.0, tSpeed));
+
+                // overlay particles: light gray/white but not too strong
+                // current particles: a bit stronger because they are colored
+                const alphaBase = currentVar === "current"
+                    ? (0.32 + 0.36 * tSpeed)
+                    : (0.22 + 0.18 * tSpeed);
+
+                particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor);
+                const widthMul = zoomOutParticleWidthMultiplier();
+
+                particleCtx.lineWidth = currentVar === "current"
+                    ? (1.05 + 0.65 * tSpeed) * widthMul
+                    : (0.95 + 0.45 * tSpeed) * widthMul;
+
+                particleCtx.beginPath();
+                particleCtx.moveTo(x0, y0);
+                particleCtx.lineTo(x1, y1);
+                particleCtx.stroke();
+            }
         }
 
         particleAnimId = requestAnimationFrame(step);
@@ -702,7 +676,59 @@ function drawMeshOverlayOnParticleCanvas(){
 
 
 function stopParticles(){ particleRunning=false; if(particleAnimId!==null){ cancelAnimationFrame(particleAnimId); particleAnimId=null; } clearCurrentCanvas(); }
-function setupEvents(){ els.currentOverlay.checked=true; els.currentOverlay.dataset.userTouched=""; els.currentOverlay.addEventListener("change",()=>{els.currentOverlay.dataset.userTouched="1"; updateCurrentOverlayAvailability(); setFrame(currentFrame);}); els.meshOverlay.addEventListener("change",()=>map.triggerRepaint()); els.varSelect.addEventListener("change",e=>{currentVar=e.target.value; updateCurrentOverlayAvailability(); updateLegend(); setFrame(currentFrame); map.triggerRepaint();}); els.playBtn.addEventListener("click",()=>{ if(timer===null){els.playBtn.textContent="❚❚"; startTimer();} else {els.playBtn.textContent="▶"; clearInterval(timer); timer=null;} }); els.frameSlider.addEventListener("input",e=>setFrame(e.target.value)); els.speedSelect.addEventListener("change",e=>{ speed=parseFloat(e.target.value); if(timer!==null) startTimer(); }); els.opacitySlider.addEventListener("input",()=>map.triggerRepaint()); els.densitySelect.addEventListener("change",e=>{ particleCount=parseInt(e.target.value); resetParticles(); clearCurrentCanvas(); }); map.on("moveend",()=>resetParticles());
+function setupEvents(){
+    els.currentOverlay.checked = true;
+    els.currentOverlay.dataset.userTouched = "";
+
+    els.currentOverlay.addEventListener("change", () => {
+        els.currentOverlay.dataset.userTouched = "1";
+        updateCurrentOverlayAvailability();
+        setFrame(currentFrame);
+    });
+
+    els.meshOverlay.addEventListener("change", () => map.triggerRepaint());
+
+    els.varSelect.addEventListener("change", e => {
+        currentVar = e.target.value;
+        updateCurrentOverlayAvailability();
+        updateLegend();
+        setFrame(currentFrame);
+        map.triggerRepaint();
+    });
+
+    els.playBtn.addEventListener("click", () => {
+        if(timer === null){
+            els.playBtn.textContent = "❚❚";
+            startTimer();
+        } else {
+            els.playBtn.textContent = "▶";
+            clearInterval(timer);
+            timer = null;
+        }
+    });
+
+    els.frameSlider.addEventListener("input", e => setFrame(e.target.value));
+
+    els.speedSelect.addEventListener("change", e => {
+        speed = parseFloat(e.target.value);
+        if(timer !== null) startTimer();
+    });
+
+    els.opacitySlider.addEventListener("input", () => map.triggerRepaint());
+
+    els.densitySelect.addEventListener("change", e => {
+        particleCount = parseInt(e.target.value);
+        resetParticles();
+        clearCurrentCanvas();
+    });
+
+    function resetParticleViewOnly(){
+        resetParticles();
+        clearCurrentCanvas();
+    }
+
+    map.on("moveend", resetParticleViewOnly);
+    map.on("zoomend", resetParticleViewOnly);
 }
 
 
@@ -749,8 +775,6 @@ function makeMapStyle() {
 function initMap(){ const b=meta.bounds; const south=b[0][0], west=b[0][1], north=b[1][0], east=b[1][1]; map=new maplibregl.Map({container:"map",style:makeMapStyle(),center:[(west+east)/2,(south+north)/2],zoom:7,minZoom:3,maxZoom:14,dragRotate:false,pitchWithRotate:false,renderWorldCopies:false,attributionControl:true}); map.addControl(new maplibregl.NavigationControl({visualizePitch:false}),"top-left"); map.fitBounds([[west,south],[east,north]],{padding:20,duration:0}); }
 async function boot(){ setStatus("Loading metadata..."); meta=await fetchJson(CONFIG.metaUrl); meta.variables=meta.variables||{}; meta.variables.salinity=meta.variables.salinity||{name:"Salinity",units:"psu",vmin:25,vmax:35}; meta.variables.salinity.vmin=25; meta.variables.salinity.vmax=35; meta.variables=meta.variables||{}; meta.variables.salinity=meta.variables.salinity||{name:"Salinity",units:"psu",vmin:25,vmax:35}; meta.variables.salinity.vmin=25; meta.variables.salinity.vmax=35; lookupMeta=await fetchJson(CONFIG.lookupMetaUrl); els.frameSlider.max=frameCount()-1; setStatus("Loading mesh and lookup..."); [nodesLonLat,elems,meshEdges,lookupOffsets,lookupTriangles]=await Promise.all([fetchFloat32(CONFIG.nodesUrl,meta.node_count*2),fetchUint32(CONFIG.elemsUrl,meta.index_count),fetchUint32(CONFIG.edgesUrl),fetchUint32(CONFIG.lookupOffsetsUrl),fetchUint32(CONFIG.lookupTrianglesUrl)]); initMap(); map.on("load",async()=>{ setStatus("Preparing WebGL layer..."); buildMercatorNodes(); initParticleCanvas(); map.addLayer(makeSchismLayer()); setupEvents(); updateCurrentOverlayAvailability(); updateLegend(); await setFrame(0); setStatus(`Ready: ${meta.node_count.toLocaleString()} nodes, ${meta.triangle_count.toLocaleString()} triangles`); }); }
 boot().catch(err=>{ console.error(err); setStatus("ERROR: "+err.message); alert(err.message); });
-
-
 
 
 function setBaseMap(name) {
@@ -873,16 +897,6 @@ function setBaseMap(name) {
 // KOP_ELEVATION_SIMPLE_BWR_PARTICLE238
 
 
-
-
-
-
-
-
-
-
-
-
 (function removeParticleSnapshotArtifacts() {
     const badIds = [
         "kop-particle-fixed-snapshot",
@@ -937,3 +951,51 @@ function setBaseMap(name) {
 // KOP_SALINITY_YLGNBU_25_35_01
 
 // KOP_ZOOM_PARTICLE_SPEED_01
+
+// KOP_TEST_GRADIENT_SPRITE_PARTICLE_01
+
+// KOP_TEST_REDUCE_FLICKER_01
+
+// KOP_TEST_PARTICLE_SOFT_FADE_01
+
+// KOP_TEST_PARTICLE_FADE_IN_01
+
+// KOP_TEST_TUNE_GRAY_SHORTER_STABLE_01
+
+// KOP_TEST_WHITE_ALPHA_KEEP_FLOW_01
+
+// KOP_TEST_MOVE_RESET_ONLY_01
+
+// KOP_TEST_GRID_PARTICLE_DISTRIBUTION_01
+
+// KOP_TEST_PARTICLE_COUNT_ORIGINAL_01
+
+// KOP_TEST_ZOOMOUT_PARTICLE_DENSITY_150_01
+
+// KOP_TEST_LOW_SPEED_PARTICLES_VISIBLE_01
+
+// KOP_TEST_PARTICLE_COUNT_SAME_AS_MAIN_01
+
+// KOP_TEST_ZOOMOUT_SHORTER_LESS_01
+
+// KOP_TEST_SPEED_BASED_PARTICLE_LENGTH_01
+
+// KOP_TEST_ZOOMOUT_HALF_LENGTH_DENSITY_01
+
+// KOP_TEST_PARTICLE_HEAD_ALPHA_01
+
+// KOP_TEST_PARTICLE_SOFT_GRAY_225_055_01
+
+// KOP_TEST_PARTICLE_LENGTH_HALF_01
+
+// KOP_TEST_WINDY_SHORT_SEGMENT_01
+
+// KOP_TEST_ZOOMOUT_PARTICLE_WIDTH_01
+
+// KOP_TEST_PARTICLE_OPTIMIZED_01
+
+// KOP_TEST_PARTICLE_ALPHA_050_01
+
+// KOP_TEST_PARTICLE_COLOR_235_055_01
+
+// KOP_APPLY_TEST_PARTICLES_TO_MAIN_01
