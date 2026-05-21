@@ -10,7 +10,7 @@ const CONFIG = {
   lookupOffsetsUrl: DATA_ROOT + "lookup_offsets.bin",
   lookupTrianglesUrl: DATA_ROOT + "lookup_triangles.bin",
   flowScale: 0.005,
-  overlayParticleColor: "rgba(225,225,225,0.50)"
+  overlayParticleColor: "rgba(235,235,235,0.55)"
 };
 
 const els = {
@@ -995,3 +995,5 @@ function setBaseMap(name) {
 // KOP_TEST_PARTICLE_OPTIMIZED_01
 
 // KOP_TEST_PARTICLE_ALPHA_050_01
+
+// KOP_TEST_PARTICLE_COLOR_235_055_01
