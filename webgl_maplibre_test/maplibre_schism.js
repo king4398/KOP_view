@@ -356,6 +356,7 @@ function resetParticle(p) {
     }
 
     p.age = Math.floor(Math.random() * 100);
+    p.fadeAge = 0;
     p.maxAge = 150 + Math.floor(Math.random() * 120);
 
     // Geographic trail. This makes particles stick to the map during pan/zoom.
@@ -584,14 +585,15 @@ function rgbPartsFromColor(color){
   ];
 }
 
-function particleGradientSprite(color){
+function particleGradientSprite(color, fadeAlpha=1.0){
   const rgb = rgbPartsFromColor(color);
+  const aq = Math.max(0.20, Math.min(1.0, Math.round(fadeAlpha * 4) / 4));
 
   // Quantize color a little so current-speed colors do not create too many sprites.
   const rq = Math.round(rgb[0] / 16) * 16;
   const gq = Math.round(rgb[1] / 16) * 16;
   const bq = Math.round(rgb[2] / 16) * 16;
-  const key = `${rq},${gq},${bq}`;
+  const key = `${rq},${gq},${bq},${aq}`;
 
   if(particleSpriteCache.has(key)) return particleSpriteCache.get(key);
 
@@ -606,16 +608,16 @@ function particleGradientSprite(color){
   ctx.clearRect(0, 0, w, h);
 
   const grad = ctx.createLinearGradient(0, 0, w, 0);
-  grad.addColorStop(0.00, `rgba(${rq},${gq},${bq},0.00)`);
-  grad.addColorStop(0.20, `rgba(${rq},${gq},${bq},0.16)`);
-  grad.addColorStop(0.65, `rgba(${rq},${gq},${bq},0.52)`);
-  grad.addColorStop(1.00, `rgba(${rq},${gq},${bq},0.95)`);
+  grad.addColorStop(0.00, `rgba(${rq},${gq},${bq},${0.00 * aq})`);
+  grad.addColorStop(0.20, `rgba(${rq},${gq},${bq},${0.16 * aq})`);
+  grad.addColorStop(0.65, `rgba(${rq},${gq},${bq},${0.52 * aq})`);
+  grad.addColorStop(1.00, `rgba(${rq},${gq},${bq},${0.95 * aq})`);
 
   ctx.fillStyle = grad;
   ctx.fillRect(0, 2, w, 4);
 
   // Bright compact head
-  ctx.fillStyle = `rgba(${rq},${gq},${bq},0.82)`;
+  ctx.fillStyle = `rgba(${rq},${gq},${bq},${0.82 * aq})`;
   ctx.beginPath();
   ctx.ellipse(w - 4, h / 2, 3.0, 2.0, 0, 0, Math.PI * 2);
   ctx.fill();
@@ -726,7 +728,12 @@ function startParticles() {
 
             if (len > 1.5) {
                 const baseColor = currentParticleColor(vec.speed);
-                const sprite = particleGradientSprite(baseColor);
+
+                // fade-in for newly reset particles
+                p.fadeAge = (p.fadeAge || 0) + 1;
+                const fadeFactor = Math.min(1.0, p.fadeAge / 18.0);
+
+                const sprite = particleGradientSprite(baseColor, fadeFactor);
 
                 const drawLen = Math.max(10, Math.min(62, len));
                 const drawWidth = currentVar === "current" ? 4.0 : 3.2;
@@ -1033,3 +1040,5 @@ function setBaseMap(name) {
 // KOP_TEST_REDUCE_FLICKER_01
 
 // KOP_TEST_PARTICLE_SOFT_FADE_01
+
+// KOP_TEST_PARTICLE_FADE_IN_01
