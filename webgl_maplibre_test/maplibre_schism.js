@@ -356,7 +356,7 @@ function resetParticle(p) {
     }
 
     p.age = Math.floor(Math.random() * 100);
-    p.maxAge = 80 + Math.floor(Math.random() * 80);
+    p.maxAge = 150 + Math.floor(Math.random() * 120);
 
     // Geographic trail. This makes particles stick to the map during pan/zoom.
     p.trail = [{ lon: p.lon, lat: p.lat }];
@@ -607,15 +607,15 @@ function particleGradientSprite(color){
 
   const grad = ctx.createLinearGradient(0, 0, w, 0);
   grad.addColorStop(0.00, `rgba(${rq},${gq},${bq},0.00)`);
-  grad.addColorStop(0.20, `rgba(${rq},${gq},${bq},0.10)`);
-  grad.addColorStop(0.65, `rgba(${rq},${gq},${bq},0.42)`);
-  grad.addColorStop(1.00, `rgba(${rq},${gq},${bq},0.98)`);
+  grad.addColorStop(0.20, `rgba(${rq},${gq},${bq},0.16)`);
+  grad.addColorStop(0.65, `rgba(${rq},${gq},${bq},0.52)`);
+  grad.addColorStop(1.00, `rgba(${rq},${gq},${bq},0.95)`);
 
   ctx.fillStyle = grad;
   ctx.fillRect(0, 2, w, 4);
 
   // Bright compact head
-  ctx.fillStyle = `rgba(${rq},${gq},${bq},0.95)`;
+  ctx.fillStyle = `rgba(${rq},${gq},${bq},0.82)`;
   ctx.beginPath();
   ctx.ellipse(w - 4, h / 2, 3.0, 2.0, 0, 0, Math.PI * 2);
   ctx.fill();
@@ -725,7 +725,7 @@ function startParticles() {
                 const baseColor = currentParticleColor(vec.speed);
                 const sprite = particleGradientSprite(baseColor);
 
-                const drawLen = Math.max(10, Math.min(70, len));
+                const drawLen = Math.max(10, Math.min(62, len));
                 const drawWidth = currentVar === "current" ? 4.0 : 3.2;
                 const ang = Math.atan2(dy, dx);
 
@@ -1026,3 +1026,5 @@ function setBaseMap(name) {
 // KOP_ZOOM_PARTICLE_SPEED_01
 
 // KOP_TEST_GRADIENT_SPRITE_PARTICLE_01
+
+// KOP_TEST_REDUCE_FLICKER_01
