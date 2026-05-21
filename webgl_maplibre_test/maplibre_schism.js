@@ -338,13 +338,29 @@ function isMobileLayout(){
   return document.body && document.body.classList && document.body.classList.contains("device-mobile");
 }
 
+function zoomOutParticleDensityMultiplier(){
+  if(!map) return 1.0;
+
+  const z = map.getZoom();
+
+  // zoomed out: more particles to avoid sparse/bald patches
+  // z <= 5 : 1.50x
+  // z = 7  : about 1.25x
+  // z >= 9 : 1.00x
+  if(z <= 5.0) return 1.50;
+  if(z >= 9.0) return 1.00;
+
+  return 1.0 + (9.0 - z) * (0.50 / 4.0);
+}
+
 function effectiveParticleCount(){
   const n = Number(particleCount || 0);
 
-  // Test viewer: use the same particle count as the main viewer.
-  // PC keeps full density. Mobile keeps the main mobile reduction.
-  if(isMobileLayout()) return Math.max(250, Math.round(n * 0.32));
-  return n;
+  // Same base density as main viewer, but test viewer increases density when zoomed out.
+  const base = isMobileLayout() ? Math.max(250, Math.round(n * 0.32)) : n;
+  const mul = zoomOutParticleDensityMultiplier();
+
+  return Math.max(250, Math.round(base * mul));
 }
 
 function resetParticle(p, ll=null) {
@@ -1145,3 +1161,5 @@ function setBaseMap(name) {
 // KOP_TEST_GRID_PARTICLE_DISTRIBUTION_01
 
 // KOP_TEST_PARTICLE_COUNT_ORIGINAL_01
+
+// KOP_TEST_ZOOMOUT_PARTICLE_DENSITY_150_01
