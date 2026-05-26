@@ -23,7 +23,6 @@ const els = {
 let map, meta, lookupMeta, nodesLonLat, nodesMerc, elems, meshEdges, lookupOffsets, lookupTriangles;
 let currentVar = "temperature", currentFrame = 0, speed = 1.0, timer = null;
 let scalarCache = new Map(), scalarLoading = new Map(), currentCache = new Map(), currentU = null, currentV = null;
-let particleMapInteracting = false;
 let particleCanvas, particleCtx, particleAnimId = null, particleRunning = false, particleCount = 2800, particles = [];
 
 const GLState = { gl:null, scalarProgram:null, meshProgram:null, nodeBuffer:null, valueBuffer:null, elemBuffer:null, meshNodeBuffer:null, meshEdgeBuffer:null,
@@ -341,15 +340,14 @@ function zoomOutParticleDensityMultiplier(){
 
   const z = map.getZoom();
 
-  // zoomed out: +50% density from previous overview setting.
-  // close-up view stays unchanged to avoid clutter.
-  // z <= 5 : 1.35x
-  // z = 7  : about 1.175x
+  // zoomed out: half density for cleaner overview
+  // z <= 5 : 0.50x
+  // z = 7  : 0.75x
   // z >= 9 : 1.00x
-  if(z <= 5.0) return 1.35;
+  if(z <= 5.0) return 0.50;
   if(z >= 9.0) return 1.00;
 
-  return 1.35 - (z - 5.0) * (0.35 / 4.0);
+  return 0.50 + (z - 5.0) * (0.50 / 4.0);
 }
 
 function effectiveParticleCount(){
@@ -359,82 +357,25 @@ function effectiveParticleCount(){
   return Math.max(250, Math.round(base * mul));
 }
 
-function screenPointInsideCanvas(x, y, margin=80){
-    if(!map) return false;
-    const rect = map.getContainer().getBoundingClientRect();
-    return (
-        x >= -margin && x <= rect.width + margin &&
-        y >= -margin && y <= rect.height + margin
-    );
-}
+function resetParticle(p, ll=null) {
+    const pos = ll || randomValidPoint();
 
-function vectorAtScreen(x, y){
-    if(!map) return null;
-    const ll = map.unproject([x, y]);
-    return vectorAt(ll.lng, ll.lat);
-}
-
-function randomValidScreenPoint(){
-    if(!map) return null;
-
-    const rect = map.getContainer().getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-
-    // First try screen-space random points. This gives a Windy-like
-    // viewport distribution and avoids lon/lat projection jitter.
-    for(let i = 0; i < 500; i++){
-        const x = Math.random() * width;
-        const y = Math.random() * height;
-        if(vectorAtScreen(x, y)) return {x, y};
-    }
-
-    // Fallback to existing geographic sampler.
-    const ll = randomValidPoint();
-    if(!ll) return null;
-    const pt = map.project([ll.lon, ll.lat]);
-    return {x: pt.x, y: pt.y};
-}
-
-function reconcileParticleCount(){
-    if(!particles) return;
-
-    const target = effectiveParticleCount ? effectiveParticleCount() : particleCount;
-
-    if(particles.length > target){
-        particles.length = target;
-        return;
-    }
-
-    while(particles.length < target){
-        const p = {};
-        resetParticle(p);
-        particles.push(p);
-    }
-}
-
-function resetParticle(p) {
-    const ll = randomValidPoint();
-
-    if (!ll) {
+    if (!pos) {
         p.lon = meta.bounds[0][1];
         p.lat = meta.bounds[0][0];
     } else {
-        p.lon = ll.lon;
-        p.lat = ll.lat;
+        p.lon = pos.lon;
+        p.lat = pos.lat;
     }
 
+    // 길어진 gradient particle은 자주 죽으면 깜빡임/빈공간이 커져서 수명 조금 길게
     p.age = Math.floor(Math.random() * 80);
     p.maxAge = 170 + Math.floor(Math.random() * 140);
+
+    // fade-in용
     p.fadeAge = Math.floor(Math.random() * 10);
 
-    // cached vector used only during map interaction
-    p.lastU = null;
-    p.lastV = null;
-    p.lastSpeed = null;
-    p.lastTspeed = null;
-
-    // Geographic trail: follows map pan/zoom naturally.
+    // Geographic trail. This makes particles stick to the map during pan/zoom.
     p.trail = [{ lon: p.lon, lat: p.lat }];
 }
 function resetParticles(){
@@ -457,16 +398,11 @@ function particleFlowScale(){
   const z = map.getZoom();
   const refZoom = 7.0;
 
-  // zoomed out: +50% faster than previous overview setting.
-  // z <= 5 : 3.30x
-  // z = 6  : 2.40x
-  // z >= 7 : original zoom-in slowdown logic
-  if(z < refZoom){
-    if(z <= 5.0) return base * 3.30;
-    return base * (1.0 + (refZoom - z) * 1.40);
-  }
-
+  // zoom 7: 100%
+  // zoom 8+: slower on screen as zoom increases
   const factor = Math.pow(0.75, Math.max(0, z - refZoom));
+
+  // do not go below 20% of base speed
   return Math.max(base * 0.20, base * factor);
 }
 
@@ -483,7 +419,7 @@ function speedBasedParticleDrawLength(spd){
   if(!Number.isFinite(t)) t = 0.0;
   t = Math.max(0.0, Math.min(1.0, t));
 
-  // high-speed particles stay longer than low-speed particles
+  // high-speed particles are still longer, but total length is reduced by 50%
   t = Math.pow(t, 0.75);
 
   let minLen = 3.5;
@@ -492,13 +428,13 @@ function speedBasedParticleDrawLength(spd){
   if(map){
     const z = map.getZoom();
 
-    // zoomed out: reduce length by 1/3 from the current test setting.
-    // z <= 5 : 0.90x
-    // z = 7  : about 0.95x
+    // zoomed out: still keep overview cleaner
+    // z <= 5 : 0.50x
+    // z = 7  : 0.75x
     // z >= 9 : 1.00x
     let f = 1.0;
-    if(z <= 5.0) f = 0.90;
-    else if(z < 9.0) f = 0.90 + (z - 5.0) * (0.10 / 4.0);
+    if(z <= 5.0) f = 0.50;
+    else if(z < 9.0) f = 0.50 + (z - 5.0) * (0.50 / 4.0);
 
     minLen *= f;
     maxLen *= f;
@@ -522,14 +458,14 @@ function zoomOutParticleWidthMultiplier(){
 
   const z = map.getZoom();
 
-  // zoomed out: much thinner lines.
-  // z <= 5 : 0.45x
-  // z = 7  : about 0.68x
+  // zoomed out: thinner lines
+  // z <= 5 : 0.55x
+  // z = 7  : about 0.75x
   // z >= 9 : 1.00x
-  if(z <= 5.0) return 0.45;
+  if(z <= 5.0) return 0.55;
   if(z >= 9.0) return 1.00;
 
-  return 0.45 + (z - 5.0) * (0.55 / 4.0);
+  return 0.55 + (z - 5.0) * (0.45 / 4.0);
 }
 
 function startParticles() {
@@ -574,38 +510,11 @@ function startParticles() {
                 continue;
             }
 
-            let vec = null;
+            const vec = vectorAt(p.lon, p.lat);
 
-            if (!particleMapInteracting) {
-                // Normal mode: sample current field from current lon/lat.
-                vec = vectorAt(p.lon, p.lat);
-
-                if (!vec || !Number.isFinite(vec.u) || !Number.isFinite(vec.v)) {
-                    resetParticle(p);
-                    continue;
-                }
-
-                p.lastU = vec.u;
-                p.lastV = vec.v;
-                p.lastSpeed = vec.speed;
-
-                const r = currentSpeedRange ? currentSpeedRange() : {vmin:0, vmax:1};
-                let ts = (vec.speed - r.vmin) / Math.max(1e-12, r.vmax - r.vmin);
-                if(!Number.isFinite(ts)) ts = 0.0;
-                p.lastTspeed = Math.max(0.0, Math.min(1.0, ts));
-            } else {
-                // During pan/zoom:
-                // Do NOT resample vector field.
-                // Keep flowing with the last computed vector.
-                if(!Number.isFinite(p.lastU) || !Number.isFinite(p.lastV)){
-                    continue;
-                }
-
-                vec = {
-                    u: p.lastU,
-                    v: p.lastV,
-                    speed: Number.isFinite(p.lastSpeed) ? p.lastSpeed : Math.hypot(p.lastU, p.lastV)
-                };
+            if (!vec || !Number.isFinite(vec.u) || !Number.isFinite(vec.v)) {
+                resetParticle(p);
+                continue;
             }
 
             const latRad = p.lat * Math.PI / 180.0;
@@ -616,12 +525,11 @@ function startParticles() {
             const newLon = p.lon + (vec.u * dt) / coslat;
             const newLat = p.lat + vec.v * dt;
 
-            if (!particleMapInteracting) {
-                const vec2 = vectorAt(newLon, newLat);
-                if (!vec2) {
-                    resetParticle(p);
-                    continue;
-                }
+            const vec2 = vectorAt(newLon, newLat);
+
+            if (!vec2) {
+                resetParticle(p);
+                continue;
             }
 
             p.lon = newLon;
@@ -638,17 +546,18 @@ function startParticles() {
             const head = map.project([p.lon, p.lat]);
 
             if (
-                head.x < -120 || head.x > width + 120 ||
-                head.y < -120 || head.y > height + 120
+                head.x < -80 || head.x > width + 80 ||
+                head.y < -80 || head.y > height + 80
             ) {
-                if (!particleMapInteracting) {
-                    resetParticle(p);
-                }
+                resetParticle(p);
                 continue;
             }
 
             if (p.trail.length < 2) continue;
 
+            // Windy-like short segment:
+            // Draw only a short segment each frame. Previous segments remain
+            // briefly through canvas soft-fade, so the flow looks continuous.
             const nTrail = p.trail.length;
             const qHead = p.trail[nTrail - 1];
             const qPrev = p.trail[Math.max(0, nTrail - 2)];
@@ -660,74 +569,59 @@ function startParticles() {
             let dy = ptHead.y - ptPrev.y;
             let len = Math.sqrt(dx * dx + dy * dy);
 
+            // If actual movement is too tiny, use velocity direction so
+            // low-speed particles still appear, but remain short.
             if(!Number.isFinite(len) || len < 0.05){
                 const latRad2 = p.lat * Math.PI / 180.0;
                 let coslat2 = Math.cos(latRad2);
                 if(Math.abs(coslat2) < 1e-6) coslat2 = 1e-6;
 
-                const dirLon = p.lon + (vec.u * dt) / coslat2;
-                const dirLat = p.lat + vec.v * dt;
-                const dirPt = map.project([dirLon, dirLat]);
-
-                dx = dirPt.x - ptHead.x;
-                dy = dirPt.y - ptHead.y;
+                dx = vec.u / coslat2;
+                dy = vec.v;
                 len = Math.sqrt(dx * dx + dy * dy);
             }
 
-            if(!Number.isFinite(len) || len <= 0.0){
-                continue;
-            }
+            if(Number.isFinite(len) && len > 0.0){
+                dx /= len;
+                dy /= len;
 
-            dx /= len;
-            dy /= len;
+                // speedBasedParticleDrawLength keeps speed-dependent length.
+                // Short segment uses only part of that length; fade history
+                // makes it look continuous.
+                const segLen = Math.max(2.0, speedBasedParticleDrawLength(vec.speed) * 0.65);
 
-            const segLen = Math.max(2.0, speedBasedParticleDrawLength(vec.speed) * 0.65);
+                const x0 = ptHead.x - dx * segLen;
+                const y0 = ptHead.y - dy * segLen;
+                const x1 = ptHead.x;
+                const y1 = ptHead.y;
 
-            const x1 = ptHead.x;
-            const y1 = ptHead.y;
-            const x0 = x1 - dx * segLen;
-            const y0 = y1 - dy * segLen;
+                p.fadeAge = (p.fadeAge || 0) + 1;
+                const fadeFactor = Math.min(1.0, p.fadeAge / 18.0);
 
-            p.fadeAge = (p.fadeAge || 0) + 1;
-            const fadeFactor = Math.min(1.0, p.fadeAge / 18.0);
-
-            const baseColor = currentParticleColor(vec.speed);
-
-            const r = currentSpeedRange ? currentSpeedRange() : {vmin:0, vmax:1};
-            let tSpeed = Number.isFinite(p.lastTspeed) ? p.lastTspeed : 0.0;
-            if(!particleMapInteracting){
-                tSpeed = (vec.speed - r.vmin) / Math.max(1e-12, r.vmax - r.vmin);
+                const baseColor = currentParticleColor(vec.speed);
+                const r = currentSpeedRange ? currentSpeedRange() : {vmin:0, vmax:1};
+                let tSpeed = (vec.speed - r.vmin) / Math.max(1e-12, r.vmax - r.vmin);
                 if(!Number.isFinite(tSpeed)) tSpeed = 0.0;
                 tSpeed = Math.max(0.0, Math.min(1.0, tSpeed));
-                p.lastTspeed = tSpeed;
+
+                // overlay particles: light gray/white but not too strong
+                // current particles: a bit stronger because they are colored
+                const alphaBase = currentVar === "current"
+                    ? (0.32 + 0.36 * tSpeed)
+                    : (0.22 + 0.18 * tSpeed);
+
+                particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor);
+                const widthMul = zoomOutParticleWidthMultiplier();
+
+                particleCtx.lineWidth = currentVar === "current"
+                    ? (1.05 + 0.65 * tSpeed) * widthMul
+                    : (0.95 + 0.45 * tSpeed) * widthMul;
+
+                particleCtx.beginPath();
+                particleCtx.moveTo(x0, y0);
+                particleCtx.lineTo(x1, y1);
+                particleCtx.stroke();
             }
-
-            const alphaBase = currentVar === "current"
-                ? (0.32 + 0.36 * tSpeed)
-                : (0.22 + 0.18 * tSpeed);
-
-            const widthMul = zoomOutParticleWidthMultiplier();
-
-            const lineW = currentVar === "current"
-                ? (1.05 + 0.65 * tSpeed) * widthMul
-                : (0.95 + 0.45 * tSpeed) * widthMul;
-
-            const xm = x0 + (x1 - x0) * 0.62;
-            const ym = y0 + (y1 - y0) * 0.62;
-
-            particleCtx.lineWidth = lineW * 0.72;
-            particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor * 0.30);
-            particleCtx.beginPath();
-            particleCtx.moveTo(x0, y0);
-            particleCtx.lineTo(xm, ym);
-            particleCtx.stroke();
-
-            particleCtx.lineWidth = lineW;
-            particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor * 0.82);
-            particleCtx.beginPath();
-            particleCtx.moveTo(xm, ym);
-            particleCtx.lineTo(x1, y1);
-            particleCtx.stroke();
         }
 
         particleAnimId = requestAnimationFrame(step);
@@ -828,21 +722,13 @@ function setupEvents(){
         clearCurrentCanvas();
     });
 
-    function beginMapInteraction(){
-        particleMapInteracting = true;
-    }
-
-    function endMapInteraction(){
-        particleMapInteracting = false;
-        clearCurrentCanvas();
+    function resetParticleViewOnly(){
         resetParticles();
-        reconcileParticleCount();
+        clearCurrentCanvas();
     }
 
-    map.on("movestart", beginMapInteraction);
-    map.on("zoomstart", beginMapInteraction);
-    map.on("moveend", endMapInteraction);
-    map.on("zoomend", endMapInteraction);
+    map.on("moveend", resetParticleViewOnly);
+    map.on("zoomend", resetParticleViewOnly);
 }
 
 
@@ -1112,12 +998,6 @@ function setBaseMap(name) {
 
 // KOP_TEST_PARTICLE_COLOR_235_055_01
 
-// KOP_TEST_ZOOMOUT_SPEED_LENGTH_UP_01
+// KOP_APPLY_TEST_PARTICLES_TO_MAIN_01
 
-// KOP_TEST_WINDYLIKE_ZOOM_MOVE_01
-
-// KOP_TEST_SCREEN_SPACE_PARTICLES_01
-
-// KOP_TEST_PARTICLE_LEN_COUNT_SPEED_150_01
-
-// KOP_TEST_GEO_CACHED_MOVE_RECALC_AFTER_01
+// KOP_TEST_RESET_FROM_MAIN_01
