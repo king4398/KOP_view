@@ -357,26 +357,79 @@ function effectiveParticleCount(){
   return Math.max(250, Math.round(base * mul));
 }
 
-function resetParticle(p, ll=null) {
-    const pos = ll || randomValidPoint();
+function screenPointInsideCanvas(x, y, margin=80){
+    if(!map) return false;
+    const rect = map.getContainer().getBoundingClientRect();
+    return (
+        x >= -margin && x <= rect.width + margin &&
+        y >= -margin && y <= rect.height + margin
+    );
+}
 
-    if (!pos) {
-        p.lon = meta.bounds[0][1];
-        p.lat = meta.bounds[0][0];
-    } else {
-        p.lon = pos.lon;
-        p.lat = pos.lat;
+function vectorAtScreen(x, y){
+    if(!map) return null;
+    const ll = map.unproject([x, y]);
+    return vectorAt(ll.lng, ll.lat);
+}
+
+function randomValidScreenPoint(){
+    if(!map) return null;
+
+    const rect = map.getContainer().getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+
+    // First try screen-space random points. This gives a Windy-like
+    // viewport distribution and avoids lon/lat projection jitter.
+    for(let i = 0; i < 500; i++){
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        if(vectorAtScreen(x, y)) return {x, y};
     }
 
-    // 길어진 gradient particle은 자주 죽으면 깜빡임/빈공간이 커져서 수명 조금 길게
+    // Fallback to existing geographic sampler.
+    const ll = randomValidPoint();
+    if(!ll) return null;
+    const pt = map.project([ll.lon, ll.lat]);
+    return {x: pt.x, y: pt.y};
+}
+
+function reconcileParticleCount(){
+    if(!particles) return;
+
+    const target = effectiveParticleCount ? effectiveParticleCount() : particleCount;
+
+    if(particles.length > target){
+        particles.length = target;
+        return;
+    }
+
+    while(particles.length < target){
+        const p = {};
+        resetParticle(p);
+        particles.push(p);
+    }
+}
+
+function resetParticle(p) {
+    const sp = randomValidScreenPoint();
+
+    if (!sp) {
+        const rect = map ? map.getContainer().getBoundingClientRect() : {width:1, height:1};
+        p.x = rect.width * 0.5;
+        p.y = rect.height * 0.5;
+    } else {
+        p.x = sp.x;
+        p.y = sp.y;
+    }
+
     p.age = Math.floor(Math.random() * 80);
     p.maxAge = 170 + Math.floor(Math.random() * 140);
-
-    // fade-in용
     p.fadeAge = Math.floor(Math.random() * 10);
 
-    // Geographic trail. This makes particles stick to the map during pan/zoom.
-    p.trail = [{ lon: p.lon, lat: p.lat }];
+    // Screen-space trail.
+    // The particle itself is attached to viewport coordinates.
+    p.trail = [{ x: p.x, y: p.y }];
 }
 function resetParticles(){
     particles = [];
@@ -464,14 +517,14 @@ function zoomOutParticleWidthMultiplier(){
 
   const z = map.getZoom();
 
-  // zoomed out: slightly thinner, but not too weak.
-  // z <= 5 : 0.70x
-  // z = 7  : about 0.85x
+  // zoomed out: much thinner lines.
+  // z <= 5 : 0.45x
+  // z = 7  : about 0.68x
   // z >= 9 : 1.00x
-  if(z <= 5.0) return 0.70;
+  if(z <= 5.0) return 0.45;
   if(z >= 9.0) return 1.00;
 
-  return 0.70 + (z - 5.0) * (0.30 / 4.0);
+  return 0.45 + (z - 5.0) * (0.55 / 4.0);
 }
 
 function startParticles() {
@@ -516,132 +569,121 @@ function startParticles() {
                 continue;
             }
 
-            const vec = vectorAt(p.lon, p.lat);
+            if (!screenPointInsideCanvas(p.x, p.y, 100)) {
+                resetParticle(p);
+                continue;
+            }
+
+            const ll = map.unproject([p.x, p.y]);
+            const vec = vectorAt(ll.lng, ll.lat);
 
             if (!vec || !Number.isFinite(vec.u) || !Number.isFinite(vec.v)) {
                 resetParticle(p);
                 continue;
             }
 
-            const latRad = p.lat * Math.PI / 180.0;
+            const latRad = ll.lat * Math.PI / 180.0;
             let coslat = Math.cos(latRad);
             if (Math.abs(coslat) < 1e-6) coslat = 1e-6;
 
             const dt = particleFlowScale();
-            const newLon = p.lon + (vec.u * dt) / coslat;
-            const newLat = p.lat + vec.v * dt;
 
-            const vec2 = vectorAt(newLon, newLat);
+            // Estimate screen-space velocity by projecting a small
+            // geographic velocity step from the current screen point.
+            const nextLon = ll.lng + (vec.u * dt) / coslat;
+            const nextLat = ll.lat + vec.v * dt;
+            const nextPt = map.project([nextLon, nextLat]);
 
-            if (!vec2) {
+            let dx = nextPt.x - p.x;
+            let dy = nextPt.y - p.y;
+            let len = Math.sqrt(dx * dx + dy * dy);
+
+            // If actual screen movement is too tiny, use local velocity
+            // direction so low-speed particles still have a visible direction.
+            if(!Number.isFinite(len) || len < 0.05){
+                dx = vec.u / coslat;
+                dy = vec.v;
+                len = Math.sqrt(dx * dx + dy * dy);
+            }
+
+            if(!Number.isFinite(len) || len <= 0.0){
                 resetParticle(p);
                 continue;
             }
 
-            p.lon = newLon;
-            p.lat = newLat;
+            dx /= len;
+            dy /= len;
+
+            // Move particle in screen coordinates.
+            // This is the key difference from lon/lat particles:
+            // map pan/zoom no longer shakes particle positions.
+            const moveLen = Math.max(0.25, len);
+            p.x += dx * moveLen;
+            p.y += dy * moveLen;
             p.age += 1;
 
             if (!p.trail) p.trail = [];
-            p.trail.push({ lon: p.lon, lat: p.lat });
+            p.trail.push({ x: p.x, y: p.y });
 
             if (p.trail.length > trailLen) {
                 p.trail.shift();
             }
 
-            const head = map.project([p.lon, p.lat]);
-
-            if (
-                head.x < -80 || head.x > width + 80 ||
-                head.y < -80 || head.y > height + 80
-            ) {
+            if (!screenPointInsideCanvas(p.x, p.y, 100)) {
                 resetParticle(p);
                 continue;
             }
 
             if (p.trail.length < 2) continue;
 
-            // Windy-like short segment:
-            // Draw only a short segment each frame. Previous segments remain
-            // briefly through canvas soft-fade, so the flow looks continuous.
             const nTrail = p.trail.length;
             const qHead = p.trail[nTrail - 1];
-            const qPrev = p.trail[Math.max(0, nTrail - 2)];
 
-            const ptHead = map.project([qHead.lon, qHead.lat]);
-            const ptPrev = map.project([qPrev.lon, qPrev.lat]);
+            // Use velocity direction for drawing, not old map.project()
+            // geographic trail. This keeps direction stable while panning.
+            const segLen = Math.max(2.0, speedBasedParticleDrawLength(vec.speed) * 0.65);
 
-            let dx = ptHead.x - ptPrev.x;
-            let dy = ptHead.y - ptPrev.y;
-            let len = Math.sqrt(dx * dx + dy * dy);
+            const x1 = qHead.x;
+            const y1 = qHead.y;
+            const x0 = x1 - dx * segLen;
+            const y0 = y1 - dy * segLen;
 
-            // If actual movement is too tiny, use velocity direction so
-            // low-speed particles still appear, but remain short.
-            if(!Number.isFinite(len) || len < 0.05){
-                const latRad2 = p.lat * Math.PI / 180.0;
-                let coslat2 = Math.cos(latRad2);
-                if(Math.abs(coslat2) < 1e-6) coslat2 = 1e-6;
+            p.fadeAge = (p.fadeAge || 0) + 1;
+            const fadeFactor = Math.min(1.0, p.fadeAge / 18.0);
 
-                dx = vec.u / coslat2;
-                dy = vec.v;
-                len = Math.sqrt(dx * dx + dy * dy);
-            }
+            const baseColor = currentParticleColor(vec.speed);
+            const r = currentSpeedRange ? currentSpeedRange() : {vmin:0, vmax:1};
+            let tSpeed = (vec.speed - r.vmin) / Math.max(1e-12, r.vmax - r.vmin);
+            if(!Number.isFinite(tSpeed)) tSpeed = 0.0;
+            tSpeed = Math.max(0.0, Math.min(1.0, tSpeed));
 
-            if(Number.isFinite(len) && len > 0.0){
-                dx /= len;
-                dy /= len;
+            const alphaBase = currentVar === "current"
+                ? (0.32 + 0.36 * tSpeed)
+                : (0.22 + 0.18 * tSpeed);
 
-                // speedBasedParticleDrawLength keeps speed-dependent length.
-                // Short segment uses only part of that length; fade history
-                // makes it look continuous.
-                const segLen = Math.max(2.0, speedBasedParticleDrawLength(vec.speed) * 0.65);
+            const widthMul = zoomOutParticleWidthMultiplier();
 
-                const x0 = ptHead.x - dx * segLen;
-                const y0 = ptHead.y - dy * segLen;
-                const x1 = ptHead.x;
-                const y1 = ptHead.y;
+            const lineW = currentVar === "current"
+                ? (1.05 + 0.65 * tSpeed) * widthMul
+                : (0.95 + 0.45 * tSpeed) * widthMul;
 
-                p.fadeAge = (p.fadeAge || 0) + 1;
-                const fadeFactor = Math.min(1.0, p.fadeAge / 18.0);
+            // Head/tail split, cheap and directional.
+            const xm = x0 + (x1 - x0) * 0.62;
+            const ym = y0 + (y1 - y0) * 0.62;
 
-                const baseColor = currentParticleColor(vec.speed);
-                const r = currentSpeedRange ? currentSpeedRange() : {vmin:0, vmax:1};
-                let tSpeed = (vec.speed - r.vmin) / Math.max(1e-12, r.vmax - r.vmin);
-                if(!Number.isFinite(tSpeed)) tSpeed = 0.0;
-                tSpeed = Math.max(0.0, Math.min(1.0, tSpeed));
+            particleCtx.lineWidth = lineW * 0.78;
+            particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor * 0.34);
+            particleCtx.beginPath();
+            particleCtx.moveTo(x0, y0);
+            particleCtx.lineTo(xm, ym);
+            particleCtx.stroke();
 
-                // overlay particles: light gray/white but not too strong
-                // current particles: a bit stronger because they are colored
-                const alphaBase = currentVar === "current"
-                    ? (0.32 + 0.36 * tSpeed)
-                    : (0.22 + 0.18 * tSpeed);
-
-                const widthMul = zoomOutParticleWidthMultiplier();
-
-                const lineW = currentVar === "current"
-                    ? (1.05 + 0.65 * tSpeed) * widthMul
-                    : (0.95 + 0.45 * tSpeed) * widthMul;
-
-                // Head/tail split:
-                // tail is faint, head is brighter. This gives direction
-                // without expensive per-particle gradients.
-                const xm = x0 + (x1 - x0) * 0.62;
-                const ym = y0 + (y1 - y0) * 0.62;
-
-                particleCtx.lineWidth = lineW * 0.82;
-                particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor * 0.42);
-                particleCtx.beginPath();
-                particleCtx.moveTo(x0, y0);
-                particleCtx.lineTo(xm, ym);
-                particleCtx.stroke();
-
-                particleCtx.lineWidth = lineW;
-                particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor * 1.05);
-                particleCtx.beginPath();
-                particleCtx.moveTo(xm, ym);
-                particleCtx.lineTo(x1, y1);
-                particleCtx.stroke();
-            }
+            particleCtx.lineWidth = lineW;
+            particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor * 0.92);
+            particleCtx.beginPath();
+            particleCtx.moveTo(xm, ym);
+            particleCtx.lineTo(x1, y1);
+            particleCtx.stroke();
         }
 
         particleAnimId = requestAnimationFrame(step);
@@ -696,125 +738,6 @@ function drawMeshOverlayOnParticleCanvas(){
 
 
 function stopParticles(){ particleRunning=false; if(particleAnimId!==null){ cancelAnimationFrame(particleAnimId); particleAnimId=null; } clearCurrentCanvas(); }
-let particleMoveSnapshotCanvas = null;
-let particleMoveSnapshotCtx = null;
-let particleMoveSnapshotState = null;
-
-function ensureParticleMoveSnapshotCanvas(){
-    if(!map) return null;
-    if(particleMoveSnapshotCanvas) return particleMoveSnapshotCanvas;
-
-    const container = map.getContainer();
-    particleMoveSnapshotCanvas = document.createElement("canvas");
-    particleMoveSnapshotCanvas.id = "particle-move-snapshot-canvas";
-    particleMoveSnapshotCanvas.style.position = "absolute";
-    particleMoveSnapshotCanvas.style.left = "0";
-    particleMoveSnapshotCanvas.style.top = "0";
-    particleMoveSnapshotCanvas.style.width = "100%";
-    particleMoveSnapshotCanvas.style.height = "100%";
-    particleMoveSnapshotCanvas.style.pointerEvents = "none";
-    particleMoveSnapshotCanvas.style.zIndex = "21";
-    particleMoveSnapshotCanvas.style.display = "none";
-    particleMoveSnapshotCanvas.style.transformOrigin = "50% 50%";
-
-    container.appendChild(particleMoveSnapshotCanvas);
-    particleMoveSnapshotCtx = particleMoveSnapshotCanvas.getContext("2d");
-
-    return particleMoveSnapshotCanvas;
-}
-
-function resizeParticleMoveSnapshotCanvas(){
-    if(!map || !particleMoveSnapshotCanvas || !particleMoveSnapshotCtx) return;
-
-    const rect = map.getContainer().getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-
-    particleMoveSnapshotCanvas.width = Math.max(1, Math.round(rect.width * dpr));
-    particleMoveSnapshotCanvas.height = Math.max(1, Math.round(rect.height * dpr));
-    particleMoveSnapshotCanvas.style.width = Math.round(rect.width) + "px";
-    particleMoveSnapshotCanvas.style.height = Math.round(rect.height) + "px";
-    particleMoveSnapshotCanvas.style.left = "0";
-    particleMoveSnapshotCanvas.style.top = "0";
-    particleMoveSnapshotCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-
-function beginParticleMapMove(){
-    if(!shouldDrawCurrentParticles() || !particleCanvas || !particleCtx || !map) return;
-
-    ensureParticleMoveSnapshotCanvas();
-    resizeParticleMoveSnapshotCanvas();
-
-    const rect = map.getContainer().getBoundingClientRect();
-
-    particleMoveSnapshotCtx.clearRect(0, 0, rect.width, rect.height);
-
-    try {
-        particleMoveSnapshotCtx.drawImage(particleCanvas, 0, 0, rect.width, rect.height);
-    } catch(e) {
-        return;
-    }
-
-    const c = map.getCenter();
-    const mc = maplibregl.MercatorCoordinate.fromLngLat({lng:c.lng, lat:c.lat});
-
-    particleMoveSnapshotState = {
-        centerX: mc.x,
-        centerY: mc.y,
-        zoom: map.getZoom(),
-        width: rect.width,
-        height: rect.height,
-        worldSize: 512.0 * Math.pow(2.0, map.getZoom())
-    };
-
-    particleMoveSnapshotCanvas.style.display = "block";
-    particleMoveSnapshotCanvas.style.visibility = "visible";
-    particleMoveSnapshotCanvas.style.transform = "translate(0px,0px) scale(1)";
-
-    particleCanvas.style.visibility = "hidden";
-
-    particleRunning = false;
-    if(particleAnimId !== null){
-        cancelAnimationFrame(particleAnimId);
-        particleAnimId = null;
-    }
-}
-
-function updateParticleMapMoveTransform(){
-    if(!particleMoveSnapshotCanvas || !particleMoveSnapshotState || !map) return;
-
-    const c = map.getCenter();
-    const mc = maplibregl.MercatorCoordinate.fromLngLat({lng:c.lng, lat:c.lat});
-    const z = map.getZoom();
-
-    const scale = Math.pow(2.0, z - particleMoveSnapshotState.zoom);
-    const dx = (particleMoveSnapshotState.centerX - mc.x) * particleMoveSnapshotState.worldSize * scale;
-    const dy = (particleMoveSnapshotState.centerY - mc.y) * particleMoveSnapshotState.worldSize * scale;
-
-    particleMoveSnapshotCanvas.style.transform =
-        `translate(${dx}px, ${dy}px) scale(${scale})`;
-}
-
-function endParticleMapMove(){
-    if(particleMoveSnapshotCanvas){
-        particleMoveSnapshotCanvas.style.display = "none";
-        particleMoveSnapshotCanvas.style.transform = "translate(0px,0px) scale(1)";
-    }
-
-    particleMoveSnapshotState = null;
-
-    if(particleCanvas){
-        particleCanvas.style.visibility = "visible";
-    }
-
-    resizeParticleCanvas();
-    clearCurrentCanvas();
-    resetParticles();
-
-    if(shouldDrawCurrentParticles()){
-        startParticles();
-    }
-}
-
 function setupEvents(){
     els.currentOverlay.checked = true;
     els.currentOverlay.dataset.userTouched = "";
@@ -861,12 +784,11 @@ function setupEvents(){
         clearCurrentCanvas();
     });
 
-    map.on("movestart", beginParticleMapMove);
-    map.on("zoomstart", beginParticleMapMove);
-    map.on("move", updateParticleMapMoveTransform);
-    map.on("zoom", updateParticleMapMoveTransform);
-    map.on("moveend", endParticleMapMove);
-    map.on("zoomend", endParticleMapMove);
+    // Screen-space particles keep flowing during map movement.
+    // Do not pause, snapshot, or restart animation on move.
+    map.on("zoomend", () => {
+        reconcileParticleCount();
+    });
 }
 
 
@@ -1139,3 +1061,5 @@ function setBaseMap(name) {
 // KOP_TEST_ZOOMOUT_SPEED_LENGTH_UP_01
 
 // KOP_TEST_WINDYLIKE_ZOOM_MOVE_01
+
+// KOP_TEST_SCREEN_SPACE_PARTICLES_01
