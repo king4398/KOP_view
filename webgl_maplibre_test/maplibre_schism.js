@@ -340,14 +340,15 @@ function zoomOutParticleDensityMultiplier(){
 
   const z = map.getZoom();
 
-  // zoomed out: keep enough particles to avoid sparse/bald areas.
-  // z <= 5 : 0.90x
-  // z = 7  : 0.95x
+  // zoomed out: +50% density from previous overview setting.
+  // close-up view stays unchanged to avoid clutter.
+  // z <= 5 : 1.35x
+  // z = 7  : about 1.175x
   // z >= 9 : 1.00x
-  if(z <= 5.0) return 0.90;
+  if(z <= 5.0) return 1.35;
   if(z >= 9.0) return 1.00;
 
-  return 0.90 + (z - 5.0) * (0.10 / 4.0);
+  return 1.35 - (z - 5.0) * (0.35 / 4.0);
 }
 
 function effectiveParticleCount(){
@@ -451,13 +452,13 @@ function particleFlowScale(){
   const z = map.getZoom();
   const refZoom = 7.0;
 
-  // zoomed out: particles looked too slow.
-  // z <= 5 : 2.20x
-  // z = 6  : 1.60x
+  // zoomed out: +50% faster than previous overview setting.
+  // z <= 5 : 3.30x
+  // z = 6  : 2.40x
   // z >= 7 : original zoom-in slowdown logic
   if(z < refZoom){
-    if(z <= 5.0) return base * 2.20;
-    return base * (1.0 + (refZoom - z) * 0.60);
+    if(z <= 5.0) return base * 3.30;
+    return base * (1.0 + (refZoom - z) * 1.40);
   }
 
   const factor = Math.pow(0.75, Math.max(0, z - refZoom));
@@ -486,14 +487,14 @@ function speedBasedParticleDrawLength(spd){
   if(map){
     const z = map.getZoom();
 
-    // zoomed out: long enough to show head/tail,
-    // but still shorter than close-up view.
-    // z <= 5 : 0.90x
-    // z = 7  : 0.95x
+    // zoomed out: +50% longer than previous overview setting.
+    // close-up view stays unchanged.
+    // z <= 5 : 1.35x
+    // z = 7  : about 1.175x
     // z >= 9 : 1.00x
     let f = 1.0;
-    if(z <= 5.0) f = 0.90;
-    else if(z < 9.0) f = 0.90 + (z - 5.0) * (0.10 / 4.0);
+    if(z <= 5.0) f = 1.35;
+    else if(z < 9.0) f = 1.35 - (z - 5.0) * (0.35 / 4.0);
 
     minLen *= f;
     maxLen *= f;
@@ -1063,3 +1064,5 @@ function setBaseMap(name) {
 // KOP_TEST_WINDYLIKE_ZOOM_MOVE_01
 
 // KOP_TEST_SCREEN_SPACE_PARTICLES_01
+
+// KOP_TEST_PARTICLE_LEN_COUNT_SPEED_150_01
