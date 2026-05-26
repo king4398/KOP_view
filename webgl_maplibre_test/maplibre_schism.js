@@ -23,7 +23,6 @@ const els = {
 let map, meta, lookupMeta, nodesLonLat, nodesMerc, elems, meshEdges, lookupOffsets, lookupTriangles;
 let currentVar = "temperature", currentFrame = 0, speed = 1.0, timer = null;
 let scalarCache = new Map(), scalarLoading = new Map(), currentCache = new Map(), currentU = null, currentV = null;
-let particleMapInteracting = false;
 let particleCanvas, particleCtx, particleAnimId = null, particleRunning = false, particleCount = 2800, particles = [];
 
 const GLState = { gl:null, scalarProgram:null, meshProgram:null, nodeBuffer:null, valueBuffer:null, elemBuffer:null, meshNodeBuffer:null, meshEdgeBuffer:null,
@@ -341,15 +340,14 @@ function zoomOutParticleDensityMultiplier(){
 
   const z = map.getZoom();
 
-  // zoomed out: slightly more particles for overview.
-  // max zoom / close-up view stays original.
-  // z <= 5 : 1.20x
-  // z = 7  : 1.10x
+  // zoomed out: keep enough particles to avoid sparse/bald areas.
+  // z <= 5 : 0.90x
+  // z = 7  : 0.95x
   // z >= 9 : 1.00x
-  if(z <= 5.0) return 1.20;
+  if(z <= 5.0) return 0.90;
   if(z >= 9.0) return 1.00;
 
-  return 1.20 - (z - 5.0) * (0.20 / 4.0);
+  return 0.90 + (z - 5.0) * (0.10 / 4.0);
 }
 
 function effectiveParticleCount(){
@@ -519,14 +517,14 @@ function zoomOutParticleWidthMultiplier(){
 
   const z = map.getZoom();
 
-  // zoomed out: much thinner lines so particles do not look too white/thick.
-  // z <= 5 : 0.38x
-  // z = 7  : about 0.69x
+  // zoomed out: much thinner lines.
+  // z <= 5 : 0.45x
+  // z = 7  : about 0.68x
   // z >= 9 : 1.00x
-  if(z <= 5.0) return 0.38;
+  if(z <= 5.0) return 0.45;
   if(z >= 9.0) return 1.00;
 
-  return 0.38 + (z - 5.0) * (0.62 / 4.0);
+  return 0.45 + (z - 5.0) * (0.55 / 4.0);
 }
 
 function startParticles() {
@@ -571,87 +569,55 @@ function startParticles() {
                 continue;
             }
 
-            if (!screenPointInsideCanvas(p.x, p.y, 120)) {
+            if (!screenPointInsideCanvas(p.x, p.y, 100)) {
                 resetParticle(p);
                 continue;
             }
 
-            let vec = null;
-            let dx = Number.isFinite(p.vx) ? p.vx : 0.0;
-            let dy = Number.isFinite(p.vy) ? p.vy : 0.0;
-            let tSpeed = Number.isFinite(p.tSpeed) ? p.tSpeed : 0.5;
-            let drawSpeed = Number.isFinite(p.drawSpeed) ? p.drawSpeed : 0.0;
+            const ll = map.unproject([p.x, p.y]);
+            const vec = vectorAt(ll.lng, ll.lat);
 
-            if (!particleMapInteracting) {
-                // Normal mode:
-                // Current viewport position -> lon/lat -> vector field.
-                const ll = map.unproject([p.x, p.y]);
-                vec = vectorAt(ll.lng, ll.lat);
-
-                if (!vec || !Number.isFinite(vec.u) || !Number.isFinite(vec.v)) {
-                    resetParticle(p);
-                    continue;
-                }
-
-                const latRad = ll.lat * Math.PI / 180.0;
-                let coslat = Math.cos(latRad);
-                if (Math.abs(coslat) < 1e-6) coslat = 1e-6;
-
-                const dt = particleFlowScale();
-
-                const nextLon = ll.lng + (vec.u * dt) / coslat;
-                const nextLat = ll.lat + vec.v * dt;
-                const nextPt = map.project([nextLon, nextLat]);
-
-                dx = nextPt.x - p.x;
-                dy = nextPt.y - p.y;
-
-                let len0 = Math.sqrt(dx * dx + dy * dy);
-
-                if(!Number.isFinite(len0) || len0 < 0.05){
-                    dx = vec.u / coslat;
-                    dy = vec.v;
-                    len0 = Math.sqrt(dx * dx + dy * dy);
-                }
-
-                if(!Number.isFinite(len0) || len0 <= 0.0){
-                    resetParticle(p);
-                    continue;
-                }
-
-                dx /= len0;
-                dy /= len0;
-
-                const r = currentSpeedRange ? currentSpeedRange() : {vmin:0, vmax:1};
-                tSpeed = (vec.speed - r.vmin) / Math.max(1e-12, r.vmax - r.vmin);
-                if(!Number.isFinite(tSpeed)) tSpeed = 0.0;
-                tSpeed = Math.max(0.0, Math.min(1.0, tSpeed));
-
-                drawSpeed = vec.speed;
-
-                // Cache last computed screen-space direction and speed.
-                // During map pan/zoom, we reuse this and do NOT recalc.
-                p.vx = dx;
-                p.vy = dy;
-                p.tSpeed = tSpeed;
-                p.drawSpeed = drawSpeed;
-            } else {
-                // Map is moving/zooming:
-                // Do not unproject/project or resample vector field.
-                // Keep playing the last computed particle movement.
-                let len0 = Math.sqrt(dx * dx + dy * dy);
-                if(!Number.isFinite(len0) || len0 <= 0.0){
-                    resetParticle(p);
-                    continue;
-                }
-                dx /= len0;
-                dy /= len0;
+            if (!vec || !Number.isFinite(vec.u) || !Number.isFinite(vec.v)) {
+                resetParticle(p);
+                continue;
             }
 
-            // Movement amount:
-            // During map interaction, keep the old movement amount.
-            // This avoids the nausea caused by constantly recalculating vectors.
-            const moveLen = Math.max(0.35, speedBasedParticleDrawLength(drawSpeed) * 0.20);
+            const latRad = ll.lat * Math.PI / 180.0;
+            let coslat = Math.cos(latRad);
+            if (Math.abs(coslat) < 1e-6) coslat = 1e-6;
+
+            const dt = particleFlowScale();
+
+            // Estimate screen-space velocity by projecting a small
+            // geographic velocity step from the current screen point.
+            const nextLon = ll.lng + (vec.u * dt) / coslat;
+            const nextLat = ll.lat + vec.v * dt;
+            const nextPt = map.project([nextLon, nextLat]);
+
+            let dx = nextPt.x - p.x;
+            let dy = nextPt.y - p.y;
+            let len = Math.sqrt(dx * dx + dy * dy);
+
+            // If actual screen movement is too tiny, use local velocity
+            // direction so low-speed particles still have a visible direction.
+            if(!Number.isFinite(len) || len < 0.05){
+                dx = vec.u / coslat;
+                dy = vec.v;
+                len = Math.sqrt(dx * dx + dy * dy);
+            }
+
+            if(!Number.isFinite(len) || len <= 0.0){
+                resetParticle(p);
+                continue;
+            }
+
+            dx /= len;
+            dy /= len;
+
+            // Move particle in screen coordinates.
+            // This is the key difference from lon/lat particles:
+            // map pan/zoom no longer shakes particle positions.
+            const moveLen = Math.max(0.25, len);
             p.x += dx * moveLen;
             p.y += dy * moveLen;
             p.age += 1;
@@ -663,16 +629,19 @@ function startParticles() {
                 p.trail.shift();
             }
 
-            if (!screenPointInsideCanvas(p.x, p.y, 120)) {
+            if (!screenPointInsideCanvas(p.x, p.y, 100)) {
                 resetParticle(p);
                 continue;
             }
 
             if (p.trail.length < 2) continue;
 
-            const qHead = p.trail[p.trail.length - 1];
+            const nTrail = p.trail.length;
+            const qHead = p.trail[nTrail - 1];
 
-            const segLen = Math.max(2.0, speedBasedParticleDrawLength(drawSpeed) * 0.65);
+            // Use velocity direction for drawing, not old map.project()
+            // geographic trail. This keeps direction stable while panning.
+            const segLen = Math.max(2.0, speedBasedParticleDrawLength(vec.speed) * 0.65);
 
             const x1 = qHead.x;
             const y1 = qHead.y;
@@ -682,7 +651,11 @@ function startParticles() {
             p.fadeAge = (p.fadeAge || 0) + 1;
             const fadeFactor = Math.min(1.0, p.fadeAge / 18.0);
 
-            const baseColor = currentParticleColor(drawSpeed);
+            const baseColor = currentParticleColor(vec.speed);
+            const r = currentSpeedRange ? currentSpeedRange() : {vmin:0, vmax:1};
+            let tSpeed = (vec.speed - r.vmin) / Math.max(1e-12, r.vmax - r.vmin);
+            if(!Number.isFinite(tSpeed)) tSpeed = 0.0;
+            tSpeed = Math.max(0.0, Math.min(1.0, tSpeed));
 
             const alphaBase = currentVar === "current"
                 ? (0.32 + 0.36 * tSpeed)
@@ -694,18 +667,19 @@ function startParticles() {
                 ? (1.05 + 0.65 * tSpeed) * widthMul
                 : (0.95 + 0.45 * tSpeed) * widthMul;
 
+            // Head/tail split, cheap and directional.
             const xm = x0 + (x1 - x0) * 0.62;
             const ym = y0 + (y1 - y0) * 0.62;
 
-            particleCtx.lineWidth = lineW * 0.72;
-            particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor * 0.30);
+            particleCtx.lineWidth = lineW * 0.78;
+            particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor * 0.34);
             particleCtx.beginPath();
             particleCtx.moveTo(x0, y0);
             particleCtx.lineTo(xm, ym);
             particleCtx.stroke();
 
             particleCtx.lineWidth = lineW;
-            particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor * 0.82);
+            particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor * 0.92);
             particleCtx.beginPath();
             particleCtx.moveTo(xm, ym);
             particleCtx.lineTo(x1, y1);
@@ -810,24 +784,11 @@ function setupEvents(){
         clearCurrentCanvas();
     });
 
-    function beginMapInteraction(){
-        particleMapInteracting = true;
-    }
-
-    function endMapInteraction(){
-        particleMapInteracting = false;
-
-        // Now recalculate for the new viewport.
-        resizeParticleCanvas();
-        clearCurrentCanvas();
-        resetParticles();
+    // Screen-space particles keep flowing during map movement.
+    // Do not pause, snapshot, or restart animation on move.
+    map.on("zoomend", () => {
         reconcileParticleCount();
-    }
-
-    map.on("movestart", beginMapInteraction);
-    map.on("zoomstart", beginMapInteraction);
-    map.on("moveend", endMapInteraction);
-    map.on("zoomend", endMapInteraction);
+    });
 }
 
 
@@ -1102,5 +1063,3 @@ function setBaseMap(name) {
 // KOP_TEST_WINDYLIKE_ZOOM_MOVE_01
 
 // KOP_TEST_SCREEN_SPACE_PARTICLES_01
-
-// KOP_TEST_FREE_RUN_DURING_MAP_MOVE_01
