@@ -87,12 +87,6 @@ button, select, input { font-family:Arial,sans-serif; }
     white-space: nowrap;
   }
 
-  J0px;
-    height: auto;
-    display: block;
-    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.35));
-  }
-
 
   #viewer-badge, .viewer-badge, #schism-viewer-badge {
     display: none !important;
@@ -1931,6 +1925,30 @@ body.device-mobile .maplibregl-ctrl-attrib {
   }
 }
 
+
+/* ===== KOP fixed UST21 logo ===== */
+#ust21-logo-overlay {
+  position: fixed;
+  left: 16px;
+  bottom: 18px;
+  z-index: 61000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  pointer-events: auto;
+  max-width: 150px !important;
+}
+
+#ust21-logo-img {
+  width: 120px !important;
+  max-width: 120px !important;
+  height: auto !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
+}
+
 </style>
 <!-- Google Analytics GA4 -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-E8SJ90WNWD"></script>
@@ -2017,12 +2035,12 @@ body.device-mobile .maplibregl-ctrl-attrib {
   <label><b>Opacity</b></label><input id="opacity-slider" type="range" min="0.1" max="1.0" value="0.82" step="0.05" style="width:110px;">
   <span id="time-label" style="font-size:13px; min-width:180px; display:inline-block;"></span>
 </div></div>
-<script src="maplibre_schism.js?v=test_no_recalc_during_interaction01"></script>
+<script src="maplibre_schism.js?v=test_logo_particles_tune01"></script>
 
   <div id="ust21-logo-overlay">
     <div id="ust21-logo-title">UST21 수치예보팀</div>
     <div id="made-by-nyj" style="display:none; margin:0 0 8px 2px; padding:4px 10px; font-size:13px; font-weight:700; color:#ffffff; background:rgba(0,0,0,0.55); border-radius:8px; text-shadow:0 1px 2px rgba(0,0,0,0.35);">made by nyj</div>
-    <img id="ust21-logo-img" src="assets/ust21.png?v=logo_update_01" alt="UST21 logo" width="120">
+    <img id="ust21-logo-img" src="assets/ust21.png?v=logo_fix_02" alt="UST21 logo" width="120" onerror="this.onerror=null; this.src='../webgl_maplibre/assets/ust21.png?v=logo_fix_02';">
   </div>
 
 

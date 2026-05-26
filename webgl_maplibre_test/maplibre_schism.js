@@ -337,18 +337,18 @@ function isMobileLayout(){
 }
 
 function zoomOutParticleDensityMultiplier(){
-  if(!map) return 1.0;
+  if(!map) return 1.5;
 
   const z = map.getZoom();
 
-  // zoomed out: half density for cleaner overview
-  // z <= 5 : 0.50x
-  // z = 7  : 0.75x
-  // z >= 9 : 1.00x
-  if(z <= 5.0) return 0.50;
-  if(z >= 9.0) return 1.00;
+  // Test tune:
+  // overall particle density +50%.
+  // zoomed-out view gets the full boost.
+  // close-up is slightly limited to avoid over-clutter.
+  if(z <= 5.0) return 1.50;
+  if(z >= 9.0) return 1.25;
 
-  return 0.50 + (z - 5.0) * (0.50 / 4.0);
+  return 1.50 - (z - 5.0) * (0.25 / 4.0);
 }
 
 function effectiveParticleCount(){
@@ -401,19 +401,19 @@ function resetParticles(){
 }
 
 function particleFlowScale(){
-  const base = CONFIG.flowScale * 1.18; // slightly faster than current test
+  const base = CONFIG.flowScale * 1.25;
   if(!map) return base;
 
   const z = map.getZoom();
   const refZoom = 7.0;
 
-  // zoomed-out view still needs a little more movement.
-  // z <= 5 : 1.35x of boosted base
-  // z = 6  : 1.18x of boosted base
+  // More movement in zoomed-out view.
+  // z <= 5 : 1.60x of boosted base
+  // z = 6  : 1.30x of boosted base
   // z >= 7 : original zoom-in slowdown shape
   if(z < refZoom){
-    if(z <= 5.0) return base * 1.35;
-    return base * (1.0 + (refZoom - z) * 0.18);
+    if(z <= 5.0) return base * 1.60;
+    return base * (1.0 + (refZoom - z) * 0.30);
   }
 
   const factor = Math.pow(0.75, Math.max(0, z - refZoom));
@@ -433,23 +433,23 @@ function speedBasedParticleDrawLength(spd){
   if(!Number.isFinite(t)) t = 0.0;
   t = Math.max(0.0, Math.min(1.0, t));
 
-  // keep high-speed particles longer
+  // keep speed-dependent length
   t = Math.pow(t, 0.75);
 
-  let minLen = 4.2;
-  let maxLen = 22.0;
+  // slightly longer than current test
+  let minLen = 4.6;
+  let maxLen = 24.0;
 
   if(map){
     const z = map.getZoom();
 
-    // zoomed out: still shorter than close-up,
-    // but longer than current so head/tail direction is visible.
-    // z <= 5 : 0.72x
-    // z = 7  : 0.86x
-    // z >= 9 : 1.00x
-    let f = 1.0;
-    if(z <= 5.0) f = 0.72;
-    else if(z < 9.0) f = 0.72 + (z - 5.0) * (0.28 / 4.0);
+    // zoomed-out particles were too short.
+    // z <= 5 : 0.95x
+    // z = 7  : about 1.02x
+    // z >= 9 : 1.10x
+    let f = 1.10;
+    if(z <= 5.0) f = 0.95;
+    else if(z < 9.0) f = 0.95 + (z - 5.0) * (0.15 / 4.0);
 
     minLen *= f;
     maxLen *= f;
@@ -474,13 +474,13 @@ function zoomOutParticleWidthMultiplier(){
   const z = map.getZoom();
 
   // zoomed out: thinner lines to avoid strong white/thick look.
-  // z <= 5 : 0.38x
-  // z = 7  : about 0.66x
+  // z <= 5 : 0.34x
+  // z = 7  : about 0.62x
   // z >= 9 : 1.00x
-  if(z <= 5.0) return 0.38;
+  if(z <= 5.0) return 0.34;
   if(z >= 9.0) return 1.00;
 
-  return 0.38 + (z - 5.0) * (0.62 / 4.0);
+  return 0.34 + (z - 5.0) * (0.66 / 4.0);
 }
 
 function startParticles() {
@@ -1085,3 +1085,5 @@ function setBaseMap(name) {
 // KOP_TEST_SIMPLE_WINDY_TUNE_01
 
 // KOP_TEST_NO_RECALC_DURING_INTERACTION_01
+
+// KOP_TEST_LOGO_PARTICLES_TUNE_01
