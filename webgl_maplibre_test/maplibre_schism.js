@@ -392,17 +392,22 @@ function resetParticles(){
 }
 
 function particleFlowScale(){
-  const base = CONFIG.flowScale; // default: 0.005
+  const base = CONFIG.flowScale * 1.18; // slightly faster than current test
   if(!map) return base;
 
   const z = map.getZoom();
   const refZoom = 7.0;
 
-  // zoom 7: 100%
-  // zoom 8+: slower on screen as zoom increases
-  const factor = Math.pow(0.75, Math.max(0, z - refZoom));
+  // zoomed-out view still needs a little more movement.
+  // z <= 5 : 1.35x of boosted base
+  // z = 6  : 1.18x of boosted base
+  // z >= 7 : original zoom-in slowdown shape
+  if(z < refZoom){
+    if(z <= 5.0) return base * 1.35;
+    return base * (1.0 + (refZoom - z) * 0.18);
+  }
 
-  // do not go below 20% of base speed
+  const factor = Math.pow(0.75, Math.max(0, z - refZoom));
   return Math.max(base * 0.20, base * factor);
 }
 
@@ -419,22 +424,23 @@ function speedBasedParticleDrawLength(spd){
   if(!Number.isFinite(t)) t = 0.0;
   t = Math.max(0.0, Math.min(1.0, t));
 
-  // high-speed particles are still longer, but total length is reduced by 50%
+  // keep high-speed particles longer
   t = Math.pow(t, 0.75);
 
-  let minLen = 3.5;
-  let maxLen = 18.0;
+  let minLen = 4.2;
+  let maxLen = 22.0;
 
   if(map){
     const z = map.getZoom();
 
-    // zoomed out: still keep overview cleaner
-    // z <= 5 : 0.50x
-    // z = 7  : 0.75x
+    // zoomed out: still shorter than close-up,
+    // but longer than current so head/tail direction is visible.
+    // z <= 5 : 0.72x
+    // z = 7  : 0.86x
     // z >= 9 : 1.00x
     let f = 1.0;
-    if(z <= 5.0) f = 0.50;
-    else if(z < 9.0) f = 0.50 + (z - 5.0) * (0.50 / 4.0);
+    if(z <= 5.0) f = 0.72;
+    else if(z < 9.0) f = 0.72 + (z - 5.0) * (0.28 / 4.0);
 
     minLen *= f;
     maxLen *= f;
@@ -458,14 +464,14 @@ function zoomOutParticleWidthMultiplier(){
 
   const z = map.getZoom();
 
-  // zoomed out: thinner lines
-  // z <= 5 : 0.55x
-  // z = 7  : about 0.75x
+  // zoomed out: thinner lines to avoid strong white/thick look.
+  // z <= 5 : 0.38x
+  // z = 7  : about 0.66x
   // z >= 9 : 1.00x
-  if(z <= 5.0) return 0.55;
+  if(z <= 5.0) return 0.38;
   if(z >= 9.0) return 1.00;
 
-  return 0.55 + (z - 5.0) * (0.45 / 4.0);
+  return 0.38 + (z - 5.0) * (0.62 / 4.0);
 }
 
 function startParticles() {
@@ -610,15 +616,28 @@ function startParticles() {
                     ? (0.32 + 0.36 * tSpeed)
                     : (0.22 + 0.18 * tSpeed);
 
-                particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor);
                 const widthMul = zoomOutParticleWidthMultiplier();
 
-                particleCtx.lineWidth = currentVar === "current"
+                const lineW = currentVar === "current"
                     ? (1.05 + 0.65 * tSpeed) * widthMul
                     : (0.95 + 0.45 * tSpeed) * widthMul;
 
+                // Cheap head/tail split:
+                // faint tail + brighter head for direction.
+                const xm = x0 + (x1 - x0) * 0.62;
+                const ym = y0 + (y1 - y0) * 0.62;
+
+                particleCtx.lineWidth = lineW * 0.72;
+                particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor * 0.32);
                 particleCtx.beginPath();
                 particleCtx.moveTo(x0, y0);
+                particleCtx.lineTo(xm, ym);
+                particleCtx.stroke();
+
+                particleCtx.lineWidth = lineW;
+                particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor * 0.92);
+                particleCtx.beginPath();
+                particleCtx.moveTo(xm, ym);
                 particleCtx.lineTo(x1, y1);
                 particleCtx.stroke();
             }
@@ -722,13 +741,23 @@ function setupEvents(){
         clearCurrentCanvas();
     });
 
-    function resetParticleViewOnly(){
-        resetParticles();
-        clearCurrentCanvas();
+    let particleResetTimer = null;
+
+    function scheduleParticleResetAfterInteraction(){
+        if(particleResetTimer !== null){
+            clearTimeout(particleResetTimer);
+        }
+
+        // Wait until user actually stops pan/zoom.
+        particleResetTimer = setTimeout(() => {
+            particleResetTimer = null;
+            clearCurrentCanvas();
+            resetParticles();
+        }, 250);
     }
 
-    map.on("moveend", resetParticleViewOnly);
-    map.on("zoomend", resetParticleViewOnly);
+    map.on("moveend", scheduleParticleResetAfterInteraction);
+    map.on("zoomend", scheduleParticleResetAfterInteraction);
 }
 
 
@@ -1001,3 +1030,5 @@ function setBaseMap(name) {
 // KOP_APPLY_TEST_PARTICLES_TO_MAIN_01
 
 // KOP_TEST_RESET_FROM_MAIN_01
+
+// KOP_TEST_SIMPLE_WINDY_TUNE_01
