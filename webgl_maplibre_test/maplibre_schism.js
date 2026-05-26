@@ -340,14 +340,14 @@ function zoomOutParticleDensityMultiplier(){
 
   const z = map.getZoom();
 
-  // zoomed out: half density for cleaner overview
-  // z <= 5 : 0.50x
-  // z = 7  : 0.75x
+  // zoomed out: keep enough particles to avoid sparse/bald areas.
+  // z <= 5 : 0.90x
+  // z = 7  : 0.95x
   // z >= 9 : 1.00x
-  if(z <= 5.0) return 0.50;
+  if(z <= 5.0) return 0.90;
   if(z >= 9.0) return 1.00;
 
-  return 0.50 + (z - 5.0) * (0.50 / 4.0);
+  return 0.90 + (z - 5.0) * (0.10 / 4.0);
 }
 
 function effectiveParticleCount(){
@@ -398,13 +398,13 @@ function particleFlowScale(){
   const z = map.getZoom();
   const refZoom = 7.0;
 
-  // zoomed out: particles felt too slow, so speed them up.
-  // z <= 5 : 1.50x
-  // z = 6  : 1.25x
+  // zoomed out: particles looked too slow.
+  // z <= 5 : 2.20x
+  // z = 6  : 1.60x
   // z >= 7 : original zoom-in slowdown logic
   if(z < refZoom){
-    const f = Math.min(1.50, 1.0 + (refZoom - z) * 0.25);
-    return base * f;
+    if(z <= 5.0) return base * 2.20;
+    return base * (1.0 + (refZoom - z) * 0.60);
   }
 
   const factor = Math.pow(0.75, Math.max(0, z - refZoom));
@@ -424,7 +424,7 @@ function speedBasedParticleDrawLength(spd){
   if(!Number.isFinite(t)) t = 0.0;
   t = Math.max(0.0, Math.min(1.0, t));
 
-  // high-speed particles remain longer than low-speed particles
+  // high-speed particles stay longer than low-speed particles
   t = Math.pow(t, 0.75);
 
   let minLen = 3.5;
@@ -433,14 +433,14 @@ function speedBasedParticleDrawLength(spd){
   if(map){
     const z = map.getZoom();
 
-    // zoomed out: previous value was 0.50x.
-    // Increase it by 50% -> 0.75x.
-    // z <= 5 : 0.75x
-    // z = 7  : about 0.875x
+    // zoomed out: long enough to show head/tail,
+    // but still shorter than close-up view.
+    // z <= 5 : 0.90x
+    // z = 7  : 0.95x
     // z >= 9 : 1.00x
     let f = 1.0;
-    if(z <= 5.0) f = 0.75;
-    else if(z < 9.0) f = 0.75 + (z - 5.0) * (0.25 / 4.0);
+    if(z <= 5.0) f = 0.90;
+    else if(z < 9.0) f = 0.90 + (z - 5.0) * (0.10 / 4.0);
 
     minLen *= f;
     maxLen *= f;
@@ -464,14 +464,14 @@ function zoomOutParticleWidthMultiplier(){
 
   const z = map.getZoom();
 
-  // zoomed out: thinner lines
-  // z <= 5 : 0.55x
-  // z = 7  : about 0.75x
+  // zoomed out: slightly thinner, but not too weak.
+  // z <= 5 : 0.70x
+  // z = 7  : about 0.85x
   // z >= 9 : 1.00x
-  if(z <= 5.0) return 0.55;
+  if(z <= 5.0) return 0.70;
   if(z >= 9.0) return 1.00;
 
-  return 0.55 + (z - 5.0) * (0.45 / 4.0);
+  return 0.70 + (z - 5.0) * (0.30 / 4.0);
 }
 
 function startParticles() {
@@ -616,15 +616,29 @@ function startParticles() {
                     ? (0.32 + 0.36 * tSpeed)
                     : (0.22 + 0.18 * tSpeed);
 
-                particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor);
                 const widthMul = zoomOutParticleWidthMultiplier();
 
-                particleCtx.lineWidth = currentVar === "current"
+                const lineW = currentVar === "current"
                     ? (1.05 + 0.65 * tSpeed) * widthMul
                     : (0.95 + 0.45 * tSpeed) * widthMul;
 
+                // Head/tail split:
+                // tail is faint, head is brighter. This gives direction
+                // without expensive per-particle gradients.
+                const xm = x0 + (x1 - x0) * 0.62;
+                const ym = y0 + (y1 - y0) * 0.62;
+
+                particleCtx.lineWidth = lineW * 0.82;
+                particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor * 0.42);
                 particleCtx.beginPath();
                 particleCtx.moveTo(x0, y0);
+                particleCtx.lineTo(xm, ym);
+                particleCtx.stroke();
+
+                particleCtx.lineWidth = lineW;
+                particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor * 1.05);
+                particleCtx.beginPath();
+                particleCtx.moveTo(xm, ym);
                 particleCtx.lineTo(x1, y1);
                 particleCtx.stroke();
             }
@@ -682,6 +696,125 @@ function drawMeshOverlayOnParticleCanvas(){
 
 
 function stopParticles(){ particleRunning=false; if(particleAnimId!==null){ cancelAnimationFrame(particleAnimId); particleAnimId=null; } clearCurrentCanvas(); }
+let particleMoveSnapshotCanvas = null;
+let particleMoveSnapshotCtx = null;
+let particleMoveSnapshotState = null;
+
+function ensureParticleMoveSnapshotCanvas(){
+    if(!map) return null;
+    if(particleMoveSnapshotCanvas) return particleMoveSnapshotCanvas;
+
+    const container = map.getContainer();
+    particleMoveSnapshotCanvas = document.createElement("canvas");
+    particleMoveSnapshotCanvas.id = "particle-move-snapshot-canvas";
+    particleMoveSnapshotCanvas.style.position = "absolute";
+    particleMoveSnapshotCanvas.style.left = "0";
+    particleMoveSnapshotCanvas.style.top = "0";
+    particleMoveSnapshotCanvas.style.width = "100%";
+    particleMoveSnapshotCanvas.style.height = "100%";
+    particleMoveSnapshotCanvas.style.pointerEvents = "none";
+    particleMoveSnapshotCanvas.style.zIndex = "21";
+    particleMoveSnapshotCanvas.style.display = "none";
+    particleMoveSnapshotCanvas.style.transformOrigin = "50% 50%";
+
+    container.appendChild(particleMoveSnapshotCanvas);
+    particleMoveSnapshotCtx = particleMoveSnapshotCanvas.getContext("2d");
+
+    return particleMoveSnapshotCanvas;
+}
+
+function resizeParticleMoveSnapshotCanvas(){
+    if(!map || !particleMoveSnapshotCanvas || !particleMoveSnapshotCtx) return;
+
+    const rect = map.getContainer().getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    particleMoveSnapshotCanvas.width = Math.max(1, Math.round(rect.width * dpr));
+    particleMoveSnapshotCanvas.height = Math.max(1, Math.round(rect.height * dpr));
+    particleMoveSnapshotCanvas.style.width = Math.round(rect.width) + "px";
+    particleMoveSnapshotCanvas.style.height = Math.round(rect.height) + "px";
+    particleMoveSnapshotCanvas.style.left = "0";
+    particleMoveSnapshotCanvas.style.top = "0";
+    particleMoveSnapshotCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function beginParticleMapMove(){
+    if(!shouldDrawCurrentParticles() || !particleCanvas || !particleCtx || !map) return;
+
+    ensureParticleMoveSnapshotCanvas();
+    resizeParticleMoveSnapshotCanvas();
+
+    const rect = map.getContainer().getBoundingClientRect();
+
+    particleMoveSnapshotCtx.clearRect(0, 0, rect.width, rect.height);
+
+    try {
+        particleMoveSnapshotCtx.drawImage(particleCanvas, 0, 0, rect.width, rect.height);
+    } catch(e) {
+        return;
+    }
+
+    const c = map.getCenter();
+    const mc = maplibregl.MercatorCoordinate.fromLngLat({lng:c.lng, lat:c.lat});
+
+    particleMoveSnapshotState = {
+        centerX: mc.x,
+        centerY: mc.y,
+        zoom: map.getZoom(),
+        width: rect.width,
+        height: rect.height,
+        worldSize: 512.0 * Math.pow(2.0, map.getZoom())
+    };
+
+    particleMoveSnapshotCanvas.style.display = "block";
+    particleMoveSnapshotCanvas.style.visibility = "visible";
+    particleMoveSnapshotCanvas.style.transform = "translate(0px,0px) scale(1)";
+
+    particleCanvas.style.visibility = "hidden";
+
+    particleRunning = false;
+    if(particleAnimId !== null){
+        cancelAnimationFrame(particleAnimId);
+        particleAnimId = null;
+    }
+}
+
+function updateParticleMapMoveTransform(){
+    if(!particleMoveSnapshotCanvas || !particleMoveSnapshotState || !map) return;
+
+    const c = map.getCenter();
+    const mc = maplibregl.MercatorCoordinate.fromLngLat({lng:c.lng, lat:c.lat});
+    const z = map.getZoom();
+
+    const scale = Math.pow(2.0, z - particleMoveSnapshotState.zoom);
+    const dx = (particleMoveSnapshotState.centerX - mc.x) * particleMoveSnapshotState.worldSize * scale;
+    const dy = (particleMoveSnapshotState.centerY - mc.y) * particleMoveSnapshotState.worldSize * scale;
+
+    particleMoveSnapshotCanvas.style.transform =
+        `translate(${dx}px, ${dy}px) scale(${scale})`;
+}
+
+function endParticleMapMove(){
+    if(particleMoveSnapshotCanvas){
+        particleMoveSnapshotCanvas.style.display = "none";
+        particleMoveSnapshotCanvas.style.transform = "translate(0px,0px) scale(1)";
+    }
+
+    particleMoveSnapshotState = null;
+
+    if(particleCanvas){
+        particleCanvas.style.visibility = "visible";
+    }
+
+    resizeParticleCanvas();
+    clearCurrentCanvas();
+    resetParticles();
+
+    if(shouldDrawCurrentParticles()){
+        startParticles();
+    }
+}
+
 function setupEvents(){
     els.currentOverlay.checked = true;
     els.currentOverlay.dataset.userTouched = "";
@@ -728,13 +861,12 @@ function setupEvents(){
         clearCurrentCanvas();
     });
 
-    function resetParticleViewOnly(){
-        resetParticles();
-        clearCurrentCanvas();
-    }
-
-    map.on("moveend", resetParticleViewOnly);
-    map.on("zoomend", resetParticleViewOnly);
+    map.on("movestart", beginParticleMapMove);
+    map.on("zoomstart", beginParticleMapMove);
+    map.on("move", updateParticleMapMoveTransform);
+    map.on("zoom", updateParticleMapMoveTransform);
+    map.on("moveend", endParticleMapMove);
+    map.on("zoomend", endParticleMapMove);
 }
 
 
@@ -1005,3 +1137,5 @@ function setBaseMap(name) {
 // KOP_TEST_PARTICLE_COLOR_235_055_01
 
 // KOP_TEST_ZOOMOUT_SPEED_LENGTH_UP_01
+
+// KOP_TEST_WINDYLIKE_ZOOM_MOVE_01
