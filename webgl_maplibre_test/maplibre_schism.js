@@ -578,12 +578,8 @@ function startParticles() {
             if (!particleMapInteracting) {
                 // Only validate/resample destination in normal mode.
                 // During map interaction, do not trigger resets from transient viewport changes.
-                const vec2 = vectorAt(newLon, newLat);
-                if (!vec2) {
-                    resetParticle(p);
-                    continue;
-                }
-            }
+            // Optimization: removed next-position vectorAt(newLon, newLat) pre-check.
+}
 
             p.lon = newLon;
             p.lat = newLat;
@@ -1087,3 +1083,5 @@ function setBaseMap(name) {
 // KOP_TEST_NO_RECALC_DURING_INTERACTION_01
 
 // KOP_TEST_LOGO_PARTICLES_TUNE_01
+
+// KOP_TEST_REMOVE_VEC2_CHECK_01
