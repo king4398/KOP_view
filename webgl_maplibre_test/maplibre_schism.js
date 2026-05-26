@@ -23,6 +23,7 @@ const els = {
 let map, meta, lookupMeta, nodesLonLat, nodesMerc, elems, meshEdges, lookupOffsets, lookupTriangles;
 let currentVar = "temperature", currentFrame = 0, speed = 1.0, timer = null;
 let scalarCache = new Map(), scalarLoading = new Map(), currentCache = new Map(), currentU = null, currentV = null;
+let particleMapInteracting = false;
 let particleCanvas, particleCtx, particleAnimId = null, particleRunning = false, particleCount = 2800, particles = [];
 
 const GLState = { gl:null, scalarProgram:null, meshProgram:null, nodeBuffer:null, valueBuffer:null, elemBuffer:null, meshNodeBuffer:null, meshEdgeBuffer:null,
@@ -413,24 +414,28 @@ function reconcileParticleCount(){
 }
 
 function resetParticle(p) {
-    const sp = randomValidScreenPoint();
+    const ll = randomValidPoint();
 
-    if (!sp) {
-        const rect = map ? map.getContainer().getBoundingClientRect() : {width:1, height:1};
-        p.x = rect.width * 0.5;
-        p.y = rect.height * 0.5;
+    if (!ll) {
+        p.lon = meta.bounds[0][1];
+        p.lat = meta.bounds[0][0];
     } else {
-        p.x = sp.x;
-        p.y = sp.y;
+        p.lon = ll.lon;
+        p.lat = ll.lat;
     }
 
     p.age = Math.floor(Math.random() * 80);
     p.maxAge = 170 + Math.floor(Math.random() * 140);
     p.fadeAge = Math.floor(Math.random() * 10);
 
-    // Screen-space trail.
-    // The particle itself is attached to viewport coordinates.
-    p.trail = [{ x: p.x, y: p.y }];
+    // cached vector used only during map interaction
+    p.lastU = null;
+    p.lastV = null;
+    p.lastSpeed = null;
+    p.lastTspeed = null;
+
+    // Geographic trail: follows map pan/zoom naturally.
+    p.trail = [{ lon: p.lon, lat: p.lat }];
 }
 function resetParticles(){
     particles = [];
@@ -487,14 +492,13 @@ function speedBasedParticleDrawLength(spd){
   if(map){
     const z = map.getZoom();
 
-    // zoomed out: +50% longer than previous overview setting.
-    // close-up view stays unchanged.
-    // z <= 5 : 1.35x
-    // z = 7  : about 1.175x
+    // zoomed out: reduce length by 1/3 from the current test setting.
+    // z <= 5 : 0.90x
+    // z = 7  : about 0.95x
     // z >= 9 : 1.00x
     let f = 1.0;
-    if(z <= 5.0) f = 1.35;
-    else if(z < 9.0) f = 1.35 - (z - 5.0) * (0.35 / 4.0);
+    if(z <= 5.0) f = 0.90;
+    else if(z < 9.0) f = 0.90 + (z - 5.0) * (0.10 / 4.0);
 
     minLen *= f;
     maxLen *= f;
@@ -570,68 +574,76 @@ function startParticles() {
                 continue;
             }
 
-            if (!screenPointInsideCanvas(p.x, p.y, 100)) {
-                resetParticle(p);
-                continue;
+            let vec = null;
+
+            if (!particleMapInteracting) {
+                // Normal mode: sample current field from current lon/lat.
+                vec = vectorAt(p.lon, p.lat);
+
+                if (!vec || !Number.isFinite(vec.u) || !Number.isFinite(vec.v)) {
+                    resetParticle(p);
+                    continue;
+                }
+
+                p.lastU = vec.u;
+                p.lastV = vec.v;
+                p.lastSpeed = vec.speed;
+
+                const r = currentSpeedRange ? currentSpeedRange() : {vmin:0, vmax:1};
+                let ts = (vec.speed - r.vmin) / Math.max(1e-12, r.vmax - r.vmin);
+                if(!Number.isFinite(ts)) ts = 0.0;
+                p.lastTspeed = Math.max(0.0, Math.min(1.0, ts));
+            } else {
+                // During pan/zoom:
+                // Do NOT resample vector field.
+                // Keep flowing with the last computed vector.
+                if(!Number.isFinite(p.lastU) || !Number.isFinite(p.lastV)){
+                    continue;
+                }
+
+                vec = {
+                    u: p.lastU,
+                    v: p.lastV,
+                    speed: Number.isFinite(p.lastSpeed) ? p.lastSpeed : Math.hypot(p.lastU, p.lastV)
+                };
             }
 
-            const ll = map.unproject([p.x, p.y]);
-            const vec = vectorAt(ll.lng, ll.lat);
-
-            if (!vec || !Number.isFinite(vec.u) || !Number.isFinite(vec.v)) {
-                resetParticle(p);
-                continue;
-            }
-
-            const latRad = ll.lat * Math.PI / 180.0;
+            const latRad = p.lat * Math.PI / 180.0;
             let coslat = Math.cos(latRad);
             if (Math.abs(coslat) < 1e-6) coslat = 1e-6;
 
             const dt = particleFlowScale();
+            const newLon = p.lon + (vec.u * dt) / coslat;
+            const newLat = p.lat + vec.v * dt;
 
-            // Estimate screen-space velocity by projecting a small
-            // geographic velocity step from the current screen point.
-            const nextLon = ll.lng + (vec.u * dt) / coslat;
-            const nextLat = ll.lat + vec.v * dt;
-            const nextPt = map.project([nextLon, nextLat]);
-
-            let dx = nextPt.x - p.x;
-            let dy = nextPt.y - p.y;
-            let len = Math.sqrt(dx * dx + dy * dy);
-
-            // If actual screen movement is too tiny, use local velocity
-            // direction so low-speed particles still have a visible direction.
-            if(!Number.isFinite(len) || len < 0.05){
-                dx = vec.u / coslat;
-                dy = vec.v;
-                len = Math.sqrt(dx * dx + dy * dy);
+            if (!particleMapInteracting) {
+                const vec2 = vectorAt(newLon, newLat);
+                if (!vec2) {
+                    resetParticle(p);
+                    continue;
+                }
             }
 
-            if(!Number.isFinite(len) || len <= 0.0){
-                resetParticle(p);
-                continue;
-            }
-
-            dx /= len;
-            dy /= len;
-
-            // Move particle in screen coordinates.
-            // This is the key difference from lon/lat particles:
-            // map pan/zoom no longer shakes particle positions.
-            const moveLen = Math.max(0.25, len);
-            p.x += dx * moveLen;
-            p.y += dy * moveLen;
+            p.lon = newLon;
+            p.lat = newLat;
             p.age += 1;
 
             if (!p.trail) p.trail = [];
-            p.trail.push({ x: p.x, y: p.y });
+            p.trail.push({ lon: p.lon, lat: p.lat });
 
             if (p.trail.length > trailLen) {
                 p.trail.shift();
             }
 
-            if (!screenPointInsideCanvas(p.x, p.y, 100)) {
-                resetParticle(p);
+            const head = map.project([p.lon, p.lat]);
+
+            if (
+                head.x < -120 || head.x > width + 120 ||
+                head.y < -120 || head.y > height + 120
+            ) {
+                if (!particleMapInteracting) {
+                    resetParticle(p);
+                }
                 continue;
             }
 
@@ -639,13 +651,40 @@ function startParticles() {
 
             const nTrail = p.trail.length;
             const qHead = p.trail[nTrail - 1];
+            const qPrev = p.trail[Math.max(0, nTrail - 2)];
 
-            // Use velocity direction for drawing, not old map.project()
-            // geographic trail. This keeps direction stable while panning.
+            const ptHead = map.project([qHead.lon, qHead.lat]);
+            const ptPrev = map.project([qPrev.lon, qPrev.lat]);
+
+            let dx = ptHead.x - ptPrev.x;
+            let dy = ptHead.y - ptPrev.y;
+            let len = Math.sqrt(dx * dx + dy * dy);
+
+            if(!Number.isFinite(len) || len < 0.05){
+                const latRad2 = p.lat * Math.PI / 180.0;
+                let coslat2 = Math.cos(latRad2);
+                if(Math.abs(coslat2) < 1e-6) coslat2 = 1e-6;
+
+                const dirLon = p.lon + (vec.u * dt) / coslat2;
+                const dirLat = p.lat + vec.v * dt;
+                const dirPt = map.project([dirLon, dirLat]);
+
+                dx = dirPt.x - ptHead.x;
+                dy = dirPt.y - ptHead.y;
+                len = Math.sqrt(dx * dx + dy * dy);
+            }
+
+            if(!Number.isFinite(len) || len <= 0.0){
+                continue;
+            }
+
+            dx /= len;
+            dy /= len;
+
             const segLen = Math.max(2.0, speedBasedParticleDrawLength(vec.speed) * 0.65);
 
-            const x1 = qHead.x;
-            const y1 = qHead.y;
+            const x1 = ptHead.x;
+            const y1 = ptHead.y;
             const x0 = x1 - dx * segLen;
             const y0 = y1 - dy * segLen;
 
@@ -653,10 +692,15 @@ function startParticles() {
             const fadeFactor = Math.min(1.0, p.fadeAge / 18.0);
 
             const baseColor = currentParticleColor(vec.speed);
+
             const r = currentSpeedRange ? currentSpeedRange() : {vmin:0, vmax:1};
-            let tSpeed = (vec.speed - r.vmin) / Math.max(1e-12, r.vmax - r.vmin);
-            if(!Number.isFinite(tSpeed)) tSpeed = 0.0;
-            tSpeed = Math.max(0.0, Math.min(1.0, tSpeed));
+            let tSpeed = Number.isFinite(p.lastTspeed) ? p.lastTspeed : 0.0;
+            if(!particleMapInteracting){
+                tSpeed = (vec.speed - r.vmin) / Math.max(1e-12, r.vmax - r.vmin);
+                if(!Number.isFinite(tSpeed)) tSpeed = 0.0;
+                tSpeed = Math.max(0.0, Math.min(1.0, tSpeed));
+                p.lastTspeed = tSpeed;
+            }
 
             const alphaBase = currentVar === "current"
                 ? (0.32 + 0.36 * tSpeed)
@@ -668,19 +712,18 @@ function startParticles() {
                 ? (1.05 + 0.65 * tSpeed) * widthMul
                 : (0.95 + 0.45 * tSpeed) * widthMul;
 
-            // Head/tail split, cheap and directional.
             const xm = x0 + (x1 - x0) * 0.62;
             const ym = y0 + (y1 - y0) * 0.62;
 
-            particleCtx.lineWidth = lineW * 0.78;
-            particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor * 0.34);
+            particleCtx.lineWidth = lineW * 0.72;
+            particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor * 0.30);
             particleCtx.beginPath();
             particleCtx.moveTo(x0, y0);
             particleCtx.lineTo(xm, ym);
             particleCtx.stroke();
 
             particleCtx.lineWidth = lineW;
-            particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor * 0.92);
+            particleCtx.strokeStyle = colorWithAlpha(baseColor, alphaBase * fadeFactor * 0.82);
             particleCtx.beginPath();
             particleCtx.moveTo(xm, ym);
             particleCtx.lineTo(x1, y1);
@@ -785,11 +828,21 @@ function setupEvents(){
         clearCurrentCanvas();
     });
 
-    // Screen-space particles keep flowing during map movement.
-    // Do not pause, snapshot, or restart animation on move.
-    map.on("zoomend", () => {
+    function beginMapInteraction(){
+        particleMapInteracting = true;
+    }
+
+    function endMapInteraction(){
+        particleMapInteracting = false;
+        clearCurrentCanvas();
+        resetParticles();
         reconcileParticleCount();
-    });
+    }
+
+    map.on("movestart", beginMapInteraction);
+    map.on("zoomstart", beginMapInteraction);
+    map.on("moveend", endMapInteraction);
+    map.on("zoomend", endMapInteraction);
 }
 
 
@@ -1066,3 +1119,5 @@ function setBaseMap(name) {
 // KOP_TEST_SCREEN_SPACE_PARTICLES_01
 
 // KOP_TEST_PARTICLE_LEN_COUNT_SPEED_150_01
+
+// KOP_TEST_GEO_CACHED_MOVE_RECALC_AFTER_01
