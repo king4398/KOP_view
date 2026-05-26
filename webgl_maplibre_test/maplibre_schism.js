@@ -398,11 +398,16 @@ function particleFlowScale(){
   const z = map.getZoom();
   const refZoom = 7.0;
 
-  // zoom 7: 100%
-  // zoom 8+: slower on screen as zoom increases
-  const factor = Math.pow(0.75, Math.max(0, z - refZoom));
+  // zoomed out: particles felt too slow, so speed them up.
+  // z <= 5 : 1.50x
+  // z = 6  : 1.25x
+  // z >= 7 : original zoom-in slowdown logic
+  if(z < refZoom){
+    const f = Math.min(1.50, 1.0 + (refZoom - z) * 0.25);
+    return base * f;
+  }
 
-  // do not go below 20% of base speed
+  const factor = Math.pow(0.75, Math.max(0, z - refZoom));
   return Math.max(base * 0.20, base * factor);
 }
 
@@ -419,7 +424,7 @@ function speedBasedParticleDrawLength(spd){
   if(!Number.isFinite(t)) t = 0.0;
   t = Math.max(0.0, Math.min(1.0, t));
 
-  // high-speed particles are still longer, but total length is reduced by 50%
+  // high-speed particles remain longer than low-speed particles
   t = Math.pow(t, 0.75);
 
   let minLen = 3.5;
@@ -428,13 +433,14 @@ function speedBasedParticleDrawLength(spd){
   if(map){
     const z = map.getZoom();
 
-    // zoomed out: still keep overview cleaner
-    // z <= 5 : 0.50x
-    // z = 7  : 0.75x
+    // zoomed out: previous value was 0.50x.
+    // Increase it by 50% -> 0.75x.
+    // z <= 5 : 0.75x
+    // z = 7  : about 0.875x
     // z >= 9 : 1.00x
     let f = 1.0;
-    if(z <= 5.0) f = 0.50;
-    else if(z < 9.0) f = 0.50 + (z - 5.0) * (0.50 / 4.0);
+    if(z <= 5.0) f = 0.75;
+    else if(z < 9.0) f = 0.75 + (z - 5.0) * (0.25 / 4.0);
 
     minLen *= f;
     maxLen *= f;
@@ -997,3 +1003,5 @@ function setBaseMap(name) {
 // KOP_TEST_PARTICLE_ALPHA_050_01
 
 // KOP_TEST_PARTICLE_COLOR_235_055_01
+
+// KOP_TEST_ZOOMOUT_SPEED_LENGTH_UP_01
