@@ -337,18 +337,18 @@ function isMobileLayout(){
 }
 
 function zoomOutParticleDensityMultiplier(){
-  if(!map) return 1.5;
+  if(!map) return 1.0;
 
   const z = map.getZoom();
 
-  // Test tune:
-  // overall particle density +50%.
-  // zoomed-out view gets the full boost.
-  // close-up is slightly limited to avoid over-clutter.
-  if(z <= 5.0) return 1.50;
-  if(z >= 9.0) return 1.25;
+  // Revert density boost.
+  // z <= 5 : 0.90x
+  // z = 7  : 0.95x
+  // z >= 9 : 1.00x
+  if(z <= 5.0) return 0.90;
+  if(z >= 9.0) return 1.00;
 
-  return 1.50 - (z - 5.0) * (0.25 / 4.0);
+  return 0.90 + (z - 5.0) * (0.10 / 4.0);
 }
 
 function effectiveParticleCount(){
@@ -1085,3 +1085,5 @@ function setBaseMap(name) {
 // KOP_TEST_LOGO_PARTICLES_TUNE_01
 
 // KOP_TEST_REMOVE_VEC2_CHECK_01
+
+// KOP_TEST_PARTICLE_DENSITY_BACK_01
