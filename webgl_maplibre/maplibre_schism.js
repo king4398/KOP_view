@@ -480,7 +480,9 @@ function startParticles() {
 
     function step() {
         if (!particleRunning || !shouldDrawCurrentParticles()) {
-            particleAnimId = requestAnimationFrame(step);
+            drawMeshOverlayOnParticleCanvas();
+
+        particleAnimId = requestAnimationFrame(step);
             return;
         }
 
@@ -640,8 +642,8 @@ function drawMeshOverlayOnParticleCanvas(){
 
     particleCtx.save();
     particleCtx.globalCompositeOperation = "source-over";
-    particleCtx.strokeStyle = "rgba(0,0,0,0.62)";
-    particleCtx.lineWidth = 0.55;
+    particleCtx.strokeStyle = "rgba(0,0,0,0.78)";
+    particleCtx.lineWidth = 0.65;
     particleCtx.beginPath();
 
     const maxEdges = meshEdges.length;
@@ -686,7 +688,7 @@ function setupEvents(){
         setFrame(currentFrame);
     });
 
-    els.meshOverlay.addEventListener("change", () => map.triggerRepaint());
+    els.meshOverlay.addEventListener("change", () => { clearCurrentCanvas(); drawMeshOverlayOnParticleCanvas(); map.triggerRepaint(); });
 
     els.varSelect.addEventListener("change", e => {
         currentVar = e.target.value;
@@ -1001,3 +1003,5 @@ function setBaseMap(name) {
 // KOP_APPLY_TEST_PARTICLES_TO_MAIN_01
 
 // KOP_MESH_OVERLAY_BLACK_01
+
+// KOP_MESH_OVERLAY_BLACK_CORRECT_01
