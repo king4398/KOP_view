@@ -694,7 +694,7 @@ function drawMeshOverlayOnParticleCanvas(){
 
     particleCtx.save();
     particleCtx.globalCompositeOperation = "source-over";
-    particleCtx.strokeStyle = "rgba(20,20,20,0.50)";
+    particleCtx.strokeStyle = "rgba(0,0,0,0.62)";
     particleCtx.lineWidth = 0.55;
     particleCtx.beginPath();
 
@@ -1087,3 +1087,5 @@ function setBaseMap(name) {
 // KOP_TEST_REMOVE_VEC2_CHECK_01
 
 // KOP_TEST_PARTICLE_DENSITY_BACK_01
+
+// KOP_MESH_OVERLAY_BLACK_01

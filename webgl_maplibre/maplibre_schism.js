@@ -640,7 +640,7 @@ function drawMeshOverlayOnParticleCanvas(){
 
     particleCtx.save();
     particleCtx.globalCompositeOperation = "source-over";
-    particleCtx.strokeStyle = "rgba(20,20,20,0.50)";
+    particleCtx.strokeStyle = "rgba(0,0,0,0.62)";
     particleCtx.lineWidth = 0.55;
     particleCtx.beginPath();
 
@@ -999,3 +999,5 @@ function setBaseMap(name) {
 // KOP_TEST_PARTICLE_COLOR_235_055_01
 
 // KOP_APPLY_TEST_PARTICLES_TO_MAIN_01
+
+// KOP_MESH_OVERLAY_BLACK_01
