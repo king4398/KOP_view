@@ -17,7 +17,7 @@ const els = {
   varSelect: document.getElementById("var-select"), playBtn: document.getElementById("play-btn"),
   frameSlider: document.getElementById("frame-slider"), speedSelect: document.getElementById("speed-select"),
   opacitySlider: document.getElementById("opacity-slider"), densitySelect: document.getElementById("particle-density-select"),
-  currentOverlay: document.getElementById("current-overlay-check"), meshOverlay: document.getElementById("mesh-overlay-check"), meshOnly: document.getElementById("mesh-only-check"),
+  currentOverlay: document.getElementById("current-overlay-check"), meshOverlay: document.getElementById("mesh-overlay-check"),
   timeLabel: document.getElementById("time-label"), legendBox: document.getElementById("legend-box"), statusLine: document.getElementById("status-line")
 };
 let map, meta, lookupMeta, nodesLonLat, nodesMerc, elems, meshEdges, lookupOffsets, lookupTriangles;
@@ -37,26 +37,24 @@ function scalarFrameUrl(v,i){ if(v==="temperature") return DATA_ROOT+`temp_bin/f
 function currentUUrl(i){ return DATA_ROOT+`current_u_bin/frame_${pad4(i)}.bin`; }
 function currentVUrl(i){ return DATA_ROOT+`current_v_bin/frame_${pad4(i)}.bin`; }
 function variableMeta(v){ if(v==="temperature") return meta.variables.temperature; if(v==="salinity") return meta.variables.salinity; if(v==="ssh") return meta.variables.ssh; return null; }
-function meshOnlyEnabled(){
-    return !!(els.meshOnly && els.meshOnly.checked);
-}
+function meshOnlyEnabled(){ return false; }
 function currentOverlayEnabled(){ return els.currentOverlay && els.currentOverlay.checked && (currentVar==="temperature" || currentVar==="salinity" || currentVar==="ssh"); }
-function shouldDrawCurrentParticles(){ if(meshOnlyEnabled()) return false; return currentVar==="current" || currentOverlayEnabled(); }
+function shouldDrawCurrentParticles(){
+    if(currentVar === "mesh") return false;
+    return currentVar === "current" || currentOverlayEnabled();
+}
 function updateCurrentOverlayAvailability(){
     if(!els.currentOverlay) return;
 
-    if(meshOnlyEnabled()){
+    if(currentVar === "mesh" || currentVar === "current"){
         els.currentOverlay.checked = false;
         els.currentOverlay.disabled = true;
         return;
     }
 
-    if(currentVar==="current"){
-        els.currentOverlay.checked=false;
-        els.currentOverlay.disabled=true;
-    } else {
-        els.currentOverlay.disabled=false;
-        if(!els.currentOverlay.dataset.userTouched) els.currentOverlay.checked=true;
+    els.currentOverlay.disabled = false;
+    if(!els.currentOverlay.dataset.userTouched){
+        els.currentOverlay.checked = true;
     }
 }
 async function fetchJson(url){ const sep = url.includes("?") ? "&" : "?"; const r=await fetch(url + sep + "v=july_meta_nostore_01", {cache:"no-store"}); if(!r.ok) throw new Error(`${url}: ${r.status}`); return await r.json(); }
@@ -118,43 +116,47 @@ function cmapCode(name){
 }
 
 function updateLegend(){
-  if(!els.legendBox || !meta || !meta.variables) return;
+    if(!els.legendBox || !meta || !meta.variables) return;
 
-  const jetGrad = "linear-gradient(to right,#0000cc,#0066ff,#00ccff,#00cc66,#ffff00,#ff9900,#cc0000)";
-  const elevGrad = "linear-gradient(to right,#0000cc,#ffffff,#cc0000)";
-  const currentGrad = jetGrad;
-  const ylgnbuGrad = "linear-gradient(to right,#ffffcc,#c7e9b4,#7fcdbb,#41b6c4,#2c7fb8,#253494)";
+    const jetGrad = "linear-gradient(to right,#0000cc,#0066ff,#00ccff,#00cc66,#ffff00,#ff9900,#cc0000)";
+    const elevGrad = "linear-gradient(to right,#0000cc,#ffffff,#cc0000)";
+    const currentGrad = jetGrad;
+    const ylgnbuGrad = "linear-gradient(to right,#ffffcc,#c7e9b4,#7fcdbb,#41b6c4,#2c7fb8,#253494)";
 
-  function box(title, grad, a, b, c){
-    els.legendBox.innerHTML =
-      `<div class="legend-title">${title}</div>` +
-      `<div style="height:14px; width:100%; min-width:190px; margin:6px 0 4px 0; border-radius:3px; background:${grad};"></div>` +
-      `<div class="legend-ticks" style="display:flex; justify-content:space-between; gap:12px;">` +
-      `<span>${a}</span><span>${b}</span><span>${c}</span>` +
-      `</div>`;
-  }
+    function box(title, grad, a, b, c){
+        els.legendBox.innerHTML =
+            `<div class="legend-title">${title}</div>` +
+            `<div style="height:14px; width:100%; min-width:190px; margin:6px 0 4px 0; border-radius:3px; background:${grad};"></div>` +
+            `<div class="legend-ticks" style="display:flex; justify-content:space-between; gap:12px;">` +
+            `<span>${a}</span><span>${b}</span><span>${c}</span>` +
+            `</div>`;
+    }
 
-  if(currentVar==="temperature"){
-    const v = meta.variables.temperature || {vmin:0, vmax:32};
-    box("Temperature [degC]", jetGrad,
-        fmtLegendNumber(v.vmin),
-        fmtLegendNumber((v.vmin+v.vmax)/2),
-        fmtLegendNumber(v.vmax));
-  } else if(currentVar==="salinity"){
-    const v = meta.variables.salinity || {vmin:25, vmax:35};
-    box("Salinity [psu]", ylgnbuGrad,
-        fmtLegendNumber(v.vmin),
-        fmtLegendNumber((v.vmin+v.vmax)/2),
-        fmtLegendNumber(v.vmax));
-  } else if(currentVar==="ssh"){
-    const v = meta.variables.ssh || {vmin:-1, vmax:1};
-    box("Elevation [m]", elevGrad,
-        fmtLegendNumber(v.vmin,2),
-        fmtLegendNumber((v.vmin+v.vmax)/2,2),
-        fmtLegendNumber(v.vmax,2));
-  } else {
-    box("Current Speed [m/s]", currentGrad, "0", "0.5", "1");
-  }
+    if(currentVar === "temperature"){
+        const v = meta.variables.temperature || {vmin:0, vmax:32};
+        box("Temperature [degC]", jetGrad,
+            fmtLegendNumber(v.vmin),
+            fmtLegendNumber((v.vmin + v.vmax) / 2),
+            fmtLegendNumber(v.vmax));
+    } else if(currentVar === "salinity"){
+        const v = meta.variables.salinity || {vmin:25, vmax:35};
+        box("Salinity [psu]", ylgnbuGrad,
+            fmtLegendNumber(v.vmin),
+            fmtLegendNumber((v.vmin + v.vmax) / 2),
+            fmtLegendNumber(v.vmax));
+    } else if(currentVar === "ssh"){
+        const v = meta.variables.ssh || {vmin:-1, vmax:1};
+        box("Elevation [m]", elevGrad,
+            fmtLegendNumber(v.vmin, 2),
+            fmtLegendNumber((v.vmin + v.vmax) / 2, 2),
+            fmtLegendNumber(v.vmax, 2));
+    } else if(currentVar === "current"){
+        box("Current Speed [m/s]", currentGrad, "0", "0.5", "1");
+    } else if(currentVar === "mesh"){
+        els.legendBox.innerHTML =
+            `<div class="legend-title">Mesh</div>` +
+            `<div style="font-size:12px; opacity:0.85; margin-top:4px;">SCHISM grid only</div>`;
+    }
 }
 
 function compileShader(gl,type,src){ const sh=gl.createShader(type); gl.shaderSource(sh,src); gl.compileShader(sh); if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)){ const log=gl.getShaderInfoLog(sh); gl.deleteShader(sh); throw new Error(log); } return sh; }
@@ -243,13 +245,58 @@ const MESH_VS=`precision highp float; attribute vec2 a_pos; uniform mat4 u_matri
 const MESH_FS=`precision highp float; uniform vec4 u_color; void main(){ gl_FragColor=u_color; }`;
 
 function buildMercatorNodes(){ nodesMerc=new Float32Array(meta.node_count*2); for(let i=0;i<meta.node_count;i++){ const lon=nodesLonLat[i*2], lat=nodesLonLat[i*2+1]; const mc=maplibregl.MercatorCoordinate.fromLngLat({lng:lon,lat:lat}); nodesMerc[i*2]=mc.x; nodesMerc[i*2+1]=mc.y; } }
-function makeSchismLayer(){ return { id:"schism-custom-layer", type:"custom", renderingMode:"2d", onAdd:function(m,gl){ GLState.gl=gl; gl.getExtension("OES_element_index_uint"); GLState.scalarProgram=makeProgram(gl,SCALAR_VS,SCALAR_FS); GLState.meshProgram=makeProgram(gl,MESH_VS,MESH_FS); GLState.aPos=gl.getAttribLocation(GLState.scalarProgram,"a_pos"); GLState.aVal=gl.getAttribLocation(GLState.scalarProgram,"a_value"); GLState.uMatrix=gl.getUniformLocation(GLState.scalarProgram,"u_matrix"); GLState.uVmin=gl.getUniformLocation(GLState.scalarProgram,"u_vmin"); GLState.uVmax=gl.getUniformLocation(GLState.scalarProgram,"u_vmax"); GLState.uOpacity=gl.getUniformLocation(GLState.scalarProgram,"u_opacity"); GLState.uCmap=gl.getUniformLocation(GLState.scalarProgram,"u_cmap"); GLState.uInvalid=gl.getUniformLocation(GLState.scalarProgram,"u_invalid"); GLState.meshAPos=gl.getAttribLocation(GLState.meshProgram,"a_pos"); GLState.meshUMatrix=gl.getUniformLocation(GLState.meshProgram,"u_matrix"); GLState.meshUColor=gl.getUniformLocation(GLState.meshProgram,"u_color"); GLState.nodeBuffer=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.nodeBuffer); gl.bufferData(gl.ARRAY_BUFFER,nodesMerc,gl.STATIC_DRAW); GLState.valueBuffer=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.valueBuffer); gl.bufferData(gl.ARRAY_BUFFER,meta.node_count*4,gl.DYNAMIC_DRAW); GLState.elemBuffer=gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,GLState.elemBuffer); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,elems,gl.STATIC_DRAW); GLState.meshNodeBuffer=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.meshNodeBuffer); gl.bufferData(gl.ARRAY_BUFFER,nodesMerc,gl.STATIC_DRAW); GLState.meshEdgeBuffer=gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,GLState.meshEdgeBuffer); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,meshEdges,gl.STATIC_DRAW); GLState.ready=true; }, render:function(gl,matrix){ if(!GLState.ready) return; gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA); if(!meshOnlyEnabled() && currentVar!=="current"){ const vm=variableMeta(currentVar); if(vm){ gl.useProgram(GLState.scalarProgram); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.nodeBuffer); gl.enableVertexAttribArray(GLState.aPos); gl.vertexAttribPointer(GLState.aPos,2,gl.FLOAT,false,0,0); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.valueBuffer); gl.enableVertexAttribArray(GLState.aVal); gl.vertexAttribPointer(GLState.aVal,1,gl.FLOAT,false,0,0); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,GLState.elemBuffer); gl.uniformMatrix4fv(GLState.uMatrix,false,matrix); gl.uniform1f(GLState.uVmin,vm.vmin); gl.uniform1f(GLState.uVmax,vm.vmax); gl.uniform1f(GLState.uOpacity,parseFloat(els.opacitySlider.value)); gl.uniform1i(GLState.uCmap,cmapCode(vm.cmap)); gl.uniform1f(GLState.uInvalid,meta.invalid_value); gl.drawElements(gl.TRIANGLES,meta.index_count,gl.UNSIGNED_INT,0); } } if((els.meshOverlay && els.meshOverlay.checked) || meshOnlyEnabled()){ gl.useProgram(GLState.meshProgram); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.meshNodeBuffer); gl.enableVertexAttribArray(GLState.meshAPos); gl.vertexAttribPointer(GLState.meshAPos,2,gl.FLOAT,false,0,0); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,GLState.meshEdgeBuffer); gl.uniformMatrix4fv(GLState.meshUMatrix,false,matrix); gl.uniform4f(GLState.meshUColor, 0.0, 0.0, 0.0, 0.55); gl.drawElements(gl.LINES,meshEdges.length,gl.UNSIGNED_INT,0); } } }; }
+function makeSchismLayer(){ return { id:"schism-custom-layer", type:"custom", renderingMode:"2d", onAdd:function(m,gl){ GLState.gl=gl; gl.getExtension("OES_element_index_uint"); GLState.scalarProgram=makeProgram(gl,SCALAR_VS,SCALAR_FS); GLState.meshProgram=makeProgram(gl,MESH_VS,MESH_FS); GLState.aPos=gl.getAttribLocation(GLState.scalarProgram,"a_pos"); GLState.aVal=gl.getAttribLocation(GLState.scalarProgram,"a_value"); GLState.uMatrix=gl.getUniformLocation(GLState.scalarProgram,"u_matrix"); GLState.uVmin=gl.getUniformLocation(GLState.scalarProgram,"u_vmin"); GLState.uVmax=gl.getUniformLocation(GLState.scalarProgram,"u_vmax"); GLState.uOpacity=gl.getUniformLocation(GLState.scalarProgram,"u_opacity"); GLState.uCmap=gl.getUniformLocation(GLState.scalarProgram,"u_cmap"); GLState.uInvalid=gl.getUniformLocation(GLState.scalarProgram,"u_invalid"); GLState.meshAPos=gl.getAttribLocation(GLState.meshProgram,"a_pos"); GLState.meshUMatrix=gl.getUniformLocation(GLState.meshProgram,"u_matrix"); GLState.meshUColor=gl.getUniformLocation(GLState.meshProgram,"u_color"); GLState.nodeBuffer=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.nodeBuffer); gl.bufferData(gl.ARRAY_BUFFER,nodesMerc,gl.STATIC_DRAW); GLState.valueBuffer=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.valueBuffer); gl.bufferData(gl.ARRAY_BUFFER,meta.node_count*4,gl.DYNAMIC_DRAW); GLState.elemBuffer=gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,GLState.elemBuffer); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,elems,gl.STATIC_DRAW); GLState.meshNodeBuffer=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.meshNodeBuffer); gl.bufferData(gl.ARRAY_BUFFER,nodesMerc,gl.STATIC_DRAW); GLState.meshEdgeBuffer=gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,GLState.meshEdgeBuffer); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,meshEdges,gl.STATIC_DRAW); GLState.ready=true; }, render:function(gl,matrix){ if(!GLState.ready) return; gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA); if(currentVar!=="current" && currentVar!=="mesh"){ const vm=variableMeta(currentVar); if(vm){ gl.useProgram(GLState.scalarProgram); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.nodeBuffer); gl.enableVertexAttribArray(GLState.aPos); gl.vertexAttribPointer(GLState.aPos,2,gl.FLOAT,false,0,0); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.valueBuffer); gl.enableVertexAttribArray(GLState.aVal); gl.vertexAttribPointer(GLState.aVal,1,gl.FLOAT,false,0,0); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,GLState.elemBuffer); gl.uniformMatrix4fv(GLState.uMatrix,false,matrix); gl.uniform1f(GLState.uVmin,vm.vmin); gl.uniform1f(GLState.uVmax,vm.vmax); gl.uniform1f(GLState.uOpacity,parseFloat(els.opacitySlider.value)); gl.uniform1i(GLState.uCmap,cmapCode(vm.cmap)); gl.uniform1f(GLState.uInvalid,meta.invalid_value); gl.drawElements(gl.TRIANGLES,meta.index_count,gl.UNSIGNED_INT,0); } } if((els.meshOverlay && els.meshOverlay.checked) || currentVar==="mesh"){ gl.useProgram(GLState.meshProgram); gl.bindBuffer(gl.ARRAY_BUFFER,GLState.meshNodeBuffer); gl.enableVertexAttribArray(GLState.meshAPos); gl.vertexAttribPointer(GLState.meshAPos,2,gl.FLOAT,false,0,0); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,GLState.meshEdgeBuffer); gl.uniformMatrix4fv(GLState.meshUMatrix,false,matrix); gl.uniform4f(GLState.meshUColor, 0.0, 0.0, 0.0, 0.55); gl.drawElements(gl.LINES,meshEdges.length,gl.UNSIGNED_INT,0); } } }; }
 
 async function loadScalarFrame(v,i){ const url=scalarFrameUrl(v,i); if(!url) return null; const key=`${v}:${i}`; if(scalarCache.has(key)) return scalarCache.get(key); if(scalarLoading.has(key)) return await scalarLoading.get(key); const promise=fetchFloat16AsFloat32(url, meta.node_count).then(arr=>{ scalarCache.set(key,arr); scalarLoading.delete(key); for(const k of Array.from(scalarCache.keys())){ const [vv,ff]=k.split(":"); if(vv!==v || Math.abs(parseInt(ff)-i)>2) scalarCache.delete(k); } return arr; }); scalarLoading.set(key,promise); return await promise; }
 function preloadScalarNeighbors(v,i){ if(v==="current") return; loadScalarFrame(v,Math.max(0,i-1)).catch(()=>{}); loadScalarFrame(v,Math.min(frameCount()-1,i+1)).catch(()=>{}); }
 async function loadCurrentFrame(i){ const key=String(i); if(currentCache.has(key)){ const c=currentCache.get(key); currentU=c.u; currentV=c.v; resetParticles(); return; } const [u,v]=await Promise.all([fetchFloat16AsFloat32(currentUUrl(i),meta.node_count),fetchFloat16AsFloat32(currentVUrl(i),meta.node_count)]); currentCache.set(key,{u,v}); for(const k of Array.from(currentCache.keys())) if(Math.abs(parseInt(k)-i)>2) currentCache.delete(k); currentU=u; currentV=v; resetParticles(); }
 function preloadCurrentFrame(i){ const next=Math.min(frameCount()-1,i+1), key=String(next); if(currentCache.has(key)) return; Promise.all([fetchFloat16AsFloat32(currentUUrl(next), meta.node_count),fetchFloat16AsFloat32(currentVUrl(next), meta.node_count)]).then(([u,v])=>currentCache.set(key,{u,v})).catch(()=>{}); }
-async function setFrame(i){ const n=frameCount(); if(n<=0) return; currentFrame=parseInt(i); if(!Number.isFinite(currentFrame)) currentFrame=0; currentFrame=Math.max(0,Math.min(n-1,currentFrame)); els.frameSlider.value=currentFrame; const fm=meta.frames[currentFrame]||{}; els.timeLabel.textContent=fm.label||`frame ${currentFrame}`; updateCurrentOverlayAvailability(); updateLegend(); if(currentVar!=="current"){ const arr=await loadScalarFrame(currentVar,currentFrame); if(GLState.gl && GLState.valueBuffer){ const gl=GLState.gl; gl.bindBuffer(gl.ARRAY_BUFFER,GLState.valueBuffer); gl.bufferSubData(gl.ARRAY_BUFFER,0,arr); } preloadScalarNeighbors(currentVar,currentFrame); } if(shouldDrawCurrentParticles()){ await loadCurrentFrame(currentFrame); clearCurrentCanvas(); startParticles(); preloadCurrentFrame(currentFrame); } else stopParticles(); setStatus(`${currentVar} frame ${currentFrame+1}/${n}`); map.triggerRepaint(); }
+async async function setFrame(i){
+    const n = frameCount();
+    if(n <= 0) return;
+
+    currentFrame = parseInt(i);
+    if(!Number.isFinite(currentFrame)) currentFrame = 0;
+    currentFrame = Math.max(0, Math.min(n - 1, currentFrame));
+
+    els.frameSlider.value = currentFrame;
+
+    const fm = meta.frames[currentFrame] || {};
+    els.timeLabel.textContent = fm.label || `frame ${currentFrame}`;
+
+    updateCurrentOverlayAvailability();
+    updateLegend();
+
+    if(currentVar === "mesh"){
+        stopParticles();
+        clearCurrentCanvas();
+        setStatus(`mesh frame ${currentFrame + 1}/${n}`);
+        map.triggerRepaint();
+        return;
+    }
+
+    if(currentVar !== "current"){
+        const arr = await loadScalarFrame(currentVar, currentFrame);
+        if(GLState.gl && GLState.valueBuffer && arr){
+            const gl = GLState.gl;
+            gl.bindBuffer(gl.ARRAY_BUFFER, GLState.valueBuffer);
+            gl.bufferSubData(gl.ARRAY_BUFFER, 0, arr);
+        }
+        preloadScalarNeighbors(currentVar, currentFrame);
+    }
+
+    if(shouldDrawCurrentParticles()){
+        await loadCurrentFrame(currentFrame);
+        clearCurrentCanvas();
+        startParticles();
+        preloadCurrentFrame(currentFrame);
+    } else {
+        stopParticles();
+    }
+
+    setStatus(`${currentVar} frame ${currentFrame + 1}/${n}`);
+    map.triggerRepaint();
+}
 function startTimer(){ if(timer!==null) clearInterval(timer); timer=setInterval(()=>{ currentFrame=(currentFrame+1)%frameCount(); setFrame(currentFrame); },1000/speed); }
 
 
@@ -1116,3 +1163,5 @@ function setBaseMap(name) {
 // KOP_REAL_WEBGL_MESH_BLACK_01
 
 // KOP_TEST_MESH_ONLY_OPTION_01
+
+// KOP_TEST_MESH_AS_VARIABLE_01
