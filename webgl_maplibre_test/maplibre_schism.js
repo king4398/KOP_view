@@ -251,7 +251,7 @@ async function loadScalarFrame(v,i){ const url=scalarFrameUrl(v,i); if(!url) ret
 function preloadScalarNeighbors(v,i){ if(v==="current") return; loadScalarFrame(v,Math.max(0,i-1)).catch(()=>{}); loadScalarFrame(v,Math.min(frameCount()-1,i+1)).catch(()=>{}); }
 async function loadCurrentFrame(i){ const key=String(i); if(currentCache.has(key)){ const c=currentCache.get(key); currentU=c.u; currentV=c.v; resetParticles(); return; } const [u,v]=await Promise.all([fetchFloat16AsFloat32(currentUUrl(i),meta.node_count),fetchFloat16AsFloat32(currentVUrl(i),meta.node_count)]); currentCache.set(key,{u,v}); for(const k of Array.from(currentCache.keys())) if(Math.abs(parseInt(k)-i)>2) currentCache.delete(k); currentU=u; currentV=v; resetParticles(); }
 function preloadCurrentFrame(i){ const next=Math.min(frameCount()-1,i+1), key=String(next); if(currentCache.has(key)) return; Promise.all([fetchFloat16AsFloat32(currentUUrl(next), meta.node_count),fetchFloat16AsFloat32(currentVUrl(next), meta.node_count)]).then(([u,v])=>currentCache.set(key,{u,v})).catch(()=>{}); }
-async async function setFrame(i){
+async function setFrame(i){
     const n = frameCount();
     if(n <= 0) return;
 
@@ -1165,3 +1165,5 @@ function setBaseMap(name) {
 // KOP_TEST_MESH_ONLY_OPTION_01
 
 // KOP_TEST_MESH_AS_VARIABLE_01
+
+// KOP_FIX_TEST_ASYNC_ASYNC_SETFRAME_01
