@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>KOP Basemap Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet">
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background: #111;
+    }
+
+    #map {
+      position: absolute;
+      inset: 0;
+    }
+
+    #panel {
+      position: absolute;
+      right: 14px;
+      top: 14px;
+      z-index: 10;
+      background: rgba(255,255,255,0.92);
+      border-radius: 10px;
+      padding: 10px 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+      font-size: 13px;
+      line-height: 1.6;
+      color: #111;
+      min-width: 145px;
+    }
+
+    #panel-title {
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    #panel label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .maplibregl-ctrl-attrib {
+      font-size: 11px;
+    }
+
+    @media (max-width: 700px) {
+      #panel {
+        right: 10px;
+        top: 10px;
+        font-size: 12px;
+        padding: 8px 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+
+  <div id="panel">
+    <div id="panel-title">Base Map</div>
+    <label>
+      <input type="radio" name="basemap" value="esri" checked>
+      Satellite
+    </label>
+    <label>
+      <input type="radio" name="basemap" value="carto">
+      Light Map
+    </label>
+  </div>
+
+  <script>
+    "use strict";
+
+    const style = {
+      version: 8,
+      sources: {
+        "carto-positron": {
+          type: "raster",
+          tiles: [
+            "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+            "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+            "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+            "https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
+          ],
+          tileSize: 256,
+          attribution: "© OpenStreetMap contributors © CARTO"
+        },
+        "esri-satellite": {
+          type: "raster",
+          tiles: [
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+          ],
+          tileSize: 256,
+          attribution: "Tiles © Esri"
+        }
+      },
+      layers: [
+        {
+          id: "basemap-carto",
+          type: "raster",
+          source: "carto-positron",
+          layout: { visibility: "none" }
+        },
+        {
+          id: "basemap-esri",
+          type: "raster",
+          source: "esri-satellite",
+          layout: { visibility: "visible" }
+        }
+      ]
+    };
+
+    const map = new maplibregl.Map({
+      container: "map",
+      style,
+      center: [126.45, 37.25],
+      zoom: 8,
+      minZoom: 3,
+      maxZoom: 16,
+      dragRotate: false,
+      pitchWithRotate: false,
+      renderWorldCopies: false,
+      attributionControl: true
+    });
+
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-left");
+
+    function setBaseMap(name) {
+      const useCarto = name === "carto";
+      const useEsri = name === "esri";
+
+      if (map.getLayer("basemap-carto")) {
+        map.setLayoutProperty("basemap-carto", "visibility", useCarto ? "visible" : "none");
+      }
+
+      if (map.getLayer("basemap-esri")) {
+        map.setLayoutProperty("basemap-esri", "visibility", useEsri ? "visible" : "none");
+      }
+    }
+
+    document.querySelectorAll('input[name="basemap"]').forEach(radio => {
+      radio.addEventListener("change", e => {
+        if (e.target.checked) setBaseMap(e.target.value);
+      });
+    });
+
+    map.on("load", () => {
+      map.resize();
+    });
+  </script>
+</body>
+</html>
